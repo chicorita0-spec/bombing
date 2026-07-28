@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>바밍 포토카드깡</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        :root {
+            --bg-color: #050507;
+            --t1-color: #ffffff; 
+            --t2-color: #9b59b6; /* 2성 매도 - 딥 퍼플 */
+            --t3-color: #ff007f; /* 3성 애교/노래 - 핫핑크 */
+            --t4-color: #ffea00; /* 4성 역팬/프사 - 황금색 */
+            --t5-color: #ff003c; /* 5성 방셀 - 레이저 레드 */
+            --t6-color: #00ffff; /* 6성 UR - 사이언 & 무지개 */
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: #ffffff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, #121420 0%, #050608 100%);
+        }
+
+        /* 임팩트 점멸 */
+        @keyframes impactFlash {
+            0% { filter: brightness(2.5); }
+            10% { filter: brightness(1.5) sepia(1) hue-rotate(30deg) saturate(300%); }
+            100% { filter: brightness(1); }
+        }
+        @keyframes mythicFlash {
+            0% { filter: brightness(3.5); }
+            10% { filter: brightness(2) sepia(1) hue-rotate(-50deg) saturate(400%); }
+            100% { filter: brightness(1); }
+        }
+        @keyframes urFlash6 {
+            0% { filter: brightness(5) sepia(1) hue-rotate(180deg) saturate(600%); }
+            15% { filter: brightness(2.5); }
+            100% { filter: brightness(1); }
+        }
+        body.impact-4 { animation: impactFlash 0.5s ease-out forwards; }
+        body.impact-5 { animation: mythicFlash 0.6s ease-out forwards; }
+        body.impact-6 { animation: urFlash6 1s ease-out forwards; }
+
+        .app-container { position: relative; z-index: 10; display: flex; width: 100%; height: 100%; flex-direction: row; }
+        
+        @media (max-width: 800px) {
+            .app-container { flex-direction: column; overflow-y: auto; }
+            .board-section { flex: none; height: 100vh; }
+            .control-section { width: 100% !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.1); flex: none; }
+        }
+
+        /* 메인 보드 */
+        .board-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; }
+        
+        .board-wrapper {
+            position: relative;
+            width: 440px; 
+            height: 620px; 
+            display: flex; flex-direction: column; align-items: center;
+            background-image: url('카드깡.png');
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            border-radius: 20px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(255, 51, 153, 0.3);
+            overflow: hidden; 
+        }
+
+        .board-title { display: none; }
+        
+        /* 남은 카드 카운터 */
+        .ammo-counter { 
+            position: absolute; top: 110px; left: 50%; transform: translateX(-50%);
+            color: #fff; font-weight: 900; font-size: 13px; background: rgba(0,0,0,0.85); 
+            border: 2px solid #ff3399; padding: 3px 14px; border-radius: 12px; 
+            box-shadow: 0 0 10px rgba(255, 51, 153, 0.5); z-index: 15; 
+        }
+
+        /* 당첨 현황 목록 */
+        .prize-status-board { 
+            position: absolute; top: 145px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; width: 90%; max-height: 48px; overflow-y: auto; z-index: 15; 
+        }
+        .prize-badge { background: rgba(0,0,0,0.85); border: 1.5px solid; padding: 2px 8px; border-radius: 8px; font-weight: 900; font-size: 11px; display: flex; align-items: center; gap: 4px; }
+        .prize-badge .badge-count { background: #fff; color: #000; padding: 1px 5px; border-radius: 6px; font-size: 10px; }
+        .prize-badge.sold-out { opacity: 0.2; filter: grayscale(1); box-shadow: none !important; border-color: #555 !important; }
+        .prize-badge.sold-out span { color: #888 !important; text-shadow: none !important; }
+
+        .card-stage { 
+            position: absolute; top: 195px; left: 50%; transform: translateX(-50%);
+            display: flex; justify-content: center; align-items: center; width: 192px; height: 285px; perspective: 1200px; z-index: 10; 
+        }
+        
+        .stage-backlight { position: absolute; width: 220px; height: 220px; border-radius: 50%; opacity: 0; transition: opacity 0.5s, background 0.3s; z-index: 1; filter: blur(30px); }
+        .card-stage.show-backlight .stage-backlight { opacity: 1; }
+
+        .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2; }
+        
+        @keyframes pack-hum { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
+        @keyframes pack-shake { 0%, 100% { transform: translate(1px, 1px) scale(1.03); } 25% { transform: translate(-2px, -3px) scale(1.03) rotate(-1deg); } 50% { transform: translate(3px, -1px) scale(1.03) rotate(1deg); } 75% { transform: translate(-1px, 2px) scale(1.03); } }
+        @keyframes pack-extreme { 0%, 100% { transform: translate(3px, 3px) scale(1.05); } 25% { transform: translate(-4px, -5px) scale(1.05) rotate(-3deg); } 50% { transform: translate(5px, -2px) scale(1.05) rotate(3deg); } 75% { transform: translate(-3px, 4px) scale(1.05); } }
+
+        .card.humming { animation: pack-hum 0.1s infinite; }
+        .card.shaking { animation: pack-shake 0.05s infinite; }
+        .card.extreme { animation: pack-extreme 0.04s infinite; }
+        .card.flipped { transform: rotateY(180deg) scale(1.08) translateY(-2px); animation: none !important; }
+
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; overflow: hidden; }
+        
+        .card-back { 
+            background: rgba(10, 5, 20, 0.1); 
+            border: 3px solid transparent; 
+            display: flex; justify-content: center; align-items: center; 
+            transition: all 0.25s ease-in-out;
+            border-radius: 16px;
+        }
+
+        .card.glow-1 .card-back { 
+            border-color: #ffffff; 
+            box-shadow: 0 0 30px #ffffff, inset 0 0 20px #ffffff; 
+            background: rgba(255, 255, 255, 0.25); 
+        }
+        .card.glow-2 .card-back { 
+            border-color: #00ffff; 
+            box-shadow: 0 0 40px #00ffff, 0 0 15px #8e44ad, inset 0 0 30px #00ffff; 
+            background: rgba(142, 68, 173, 0.45); 
+        }
+        .card.glow-3 .card-back { 
+            border-color: #ff007f; 
+            box-shadow: 0 0 45px #ff007f, 0 0 20px #ffffff, inset 0 0 35px #ff007f; 
+            background: rgba(255, 0, 127, 0.4); 
+        }
+        .card.glow-4 .card-back { 
+            border-color: #ffea00; 
+            box-shadow: 0 0 60px #ffea00, 0 0 25px #ff9900, inset 0 0 45px #ffea00; 
+            background: rgba(255, 234, 0, 0.45); 
+        }
+        .card.glow-5 .card-back { 
+            border-color: #ff003c; 
+            box-shadow: 0 0 80px #ff003c, 0 0 40px #ffffff, inset 0 0 60px #ff003c; 
+            background: rgba(255, 0, 60, 0.5); 
+            animation: rainbowGlow 0.25s infinite alternate; 
+        }
+        /* 🔥 6성 전용 무지개 오라 이펙트 */
+        .card.glow-6 .card-back { 
+            border-color: #00ffff; 
+            box-shadow: 0 0 100px #00ffff, 0 0 60px #ff007f, 0 0 30px #ffea00, inset 0 0 70px #00ffff; 
+            background: rgba(0, 255, 255, 0.5); 
+            animation: urRainbowGlow 0.15s infinite alternate; 
+        }
+
+        @keyframes rainbowGlow { 
+            from { box-shadow: 0 0 50px #ff003c, inset 0 0 30px #ff003c; } 
+            to { box-shadow: 0 0 100px #ffffff, 0 0 60px #ffea00, inset 0 0 70px #ff003c; } 
+        }
+
+        @keyframes urRainbowGlow { 
+            0% { box-shadow: 0 0 80px #00ffff, 0 0 40px #ff007f, inset 0 0 50px #00ffff; border-color: #00ffff; } 
+            50% { box-shadow: 0 0 120px #ffea00, 0 0 60px #ff003c, inset 0 0 70px #ffea00; border-color: #ffea00; } 
+            100% { box-shadow: 0 0 100px #ff007f, 0 0 50px #ffffff, inset 0 0 60px #ff007f; border-color: #ff007f; } 
+        }
+
+        /* 카드 앞면 */
+        .card-front { transform: rotateY(180deg); background: #000; border: 3px solid; display: flex; flex-direction: column; }
+        
+        .card-image { flex: 1; background-size: cover; background-position: center; background-color: #2c3e50; position: relative; }
+        .holo-overlay { position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.2) 30%, rgba(255,255,255,0.6) 40%, rgba(255,255,255,0.2) 50%, transparent 60%); mix-blend-mode: overlay; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
+        .card.flipped .holo-overlay { opacity: 1; animation: holoSlide 2.5s infinite linear; }
+        @keyframes holoSlide { 0% { transform: translate(0, 0); } 100% { transform: translate(30%, 30%); } }
+
+        .card-info { position: absolute; bottom: 0; width: 100%; padding: 25px 8px 10px 8px; background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 40%, transparent 100%); text-align: center; }
+        .card-stars { font-size: 13px; letter-spacing: 1px; margin-bottom: 2px; text-shadow: 0 2px 4px #000; }
+        .card-title { font-size: 20px; font-weight: 900; letter-spacing: -1px; }
+
+        /* 티어별 스타일상세 */
+        .t-1 { border-color: var(--t1-color); box-shadow: 0 0 15px rgba(255,255,255,0.3); } .t-1 .card-stars { color: var(--t1-color); } .t-1 .card-title { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.8); } .t-1 .holo-overlay { display: none; }
+        .t-2 { border-color: var(--t2-color); box-shadow: 0 0 25px rgba(155,89,182,0.8); } .t-2 .card-stars { color: #f1c40f; } .t-2 .card-title { color: #d288f9; text-shadow: 0 0 15px var(--t2-color); }
+        .t-3 { border-color: var(--t3-color); box-shadow: 0 0 30px rgba(255,0,127,0.8); } .t-3 .card-stars { color: #f1c40f; } .t-3 .card-title { color: var(--t3-color); text-shadow: 0 0 15px var(--t3-color); }
+        .t-4 { border-color: var(--t4-color); box-shadow: 0 0 40px rgba(255,234,0,0.9); } .t-4 .card-stars { color: var(--t4-color); } .t-4 .card-title { color: #fff; text-shadow: 0 0 20px var(--t4-color); }
+        .t-5 { border-color: var(--t5-color); box-shadow: 0 0 50px rgba(255,0,60,1); } .t-5 .card-stars { color: var(--t5-color); } .t-5 .card-title { color: #fff; text-shadow: 0 0 25px var(--t5-color); }
+        
+        /* 🔥 6성 전용 독보적인 무지개 홀로그램 테두리 */
+        .t-6 { 
+            border: 4px solid #00ffff; 
+            box-shadow: 0 0 60px #00ffff, 0 0 30px #ff007f, 0 0 15px #ffea00; 
+            animation: borderRainbow 2s infinite linear;
+        } 
+        @keyframes borderRainbow {
+            0% { border-color: #00ffff; box-shadow: 0 0 60px #00ffff, 0 0 30px #ff007f; }
+            33% { border-color: #ffea00; box-shadow: 0 0 60px #ffea00, 0 0 30px #00ffff; }
+            66% { border-color: #ff007f; box-shadow: 0 0 60px #ff007f, 0 0 30px #ffea00; }
+            100% { border-color: #00ffff; box-shadow: 0 0 60px #00ffff, 0 0 30px #ff007f; }
+        }
+        .t-6 .card-stars { color: #ffea00; text-shadow: 0 0 10px #ffea00; } 
+        .t-6 .card-title { color: #00ffff; text-shadow: 0 0 20px #00ffff, 0 0 10px #ff007f; }
+
+        .hud-controls { 
+            position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 15px; width: 88%; max-width: 380px; z-index: 15; height: 50px;
+        }
+        .btn-draw { 
+            flex: 1; height: 100%; border: none; border-radius: 12px; 
+            font-size: 16px; font-weight: 900; color: white; cursor: pointer; 
+            transition: all 0.1s; opacity: 0; 
+        }
+        .btn-draw:active { transform: translateY(2px) scale(0.98); }
+
+        /* 11연차 팝업 */
+        .popup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,10,0.98); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px; }
+        .popup-overlay.active { opacity: 1; pointer-events: auto; }
+        .popup-title { font-size: 26px; color: #fff; font-weight: 900; margin-bottom: 20px; text-shadow: 0 5px 20px rgba(0,0,0,1); letter-spacing: -1px;}
+        
+        .gacha-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 380px; margin-bottom: 20px; }
+        @media (max-width: 500px) { .gacha-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; } }
+
+        .gacha-item {
+            background-color: #111; background-size: cover; background-position: center;
+            border: 3px solid #333; border-radius: 10px; position: relative;
+            display: flex; align-items: flex-end; justify-content: center; min-height: 100px;
+            opacity: 0; transform: scale(0.5); transition: all 0.3s; overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.9);
+        }
+        .gacha-item.show { opacity: 1; transform: scale(1); }
+        .gacha-item-info { 
+            width: 100%; background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 100%); 
+            padding: 5px 2px; text-align: center; font-size: 11px; font-weight: 900; color: #fff; 
+        }
+
+        @keyframes gachaImpact { 
+            0% { transform: scale(3); filter: brightness(5) blur(10px); opacity: 0; } 
+            10% { opacity: 1; filter: brightness(2) blur(0); } 
+            100% { transform: scale(1); filter: brightness(1); opacity: 1; } 
+        }
+        
+        .gacha-item.t-1 { border-color: var(--t1-color); }
+        .gacha-item.t-2 { border-color: var(--t2-color); box-shadow: 0 0 20px var(--t2-color); } 
+        .gacha-item.t-3 { border-color: var(--t3-color); box-shadow: 0 0 25px var(--t3-color); } 
+        .gacha-item.t-4 { border-color: var(--t4-color); box-shadow: 0 0 35px var(--t4-color); } 
+        .gacha-item.t-5 { border-color: var(--t5-color); box-shadow: 0 0 45px var(--t5-color); } 
+        .gacha-item.t-6 { border-color: #00ffff; box-shadow: 0 0 50px #00ffff, 0 0 25px #ff007f; animation: borderRainbow 1.5s infinite linear; }
+
+        .btn-close { background: #fff; color: #000; padding: 12px 35px; border-radius: 25px; font-size: 16px; font-weight: 900; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255,255,255,0.4); opacity: 0; transition: opacity 0.5s; }
+        .btn-close:active { transform: scale(0.95); }
+
+        /* 제어판 */
+        .control-section { width: 380px; background: #161821; border-left: 1px solid #2a2d3d; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 20; }
+        .control-title { font-size: 16px; font-weight: 800; color: #fff; border-bottom: 2px solid #2a2d3d; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .sound-toggle-btn { background: #2a2d3d; border: none; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        .sound-toggle-btn.off { color: #888; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; color: #a0a5b5; font-weight: 700; }
+        .form-group input[type="text"], .form-group select { background: #222533; border: 1px solid #33374a; border-radius: 6px; padding: 10px; color: #fff; font-size: 13px; outline: none; }
+        .prize-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 5px;}
+        .prize-table th { color: #a0a5b5; text-align: left; padding-bottom: 8px; }
+        .prize-table input { background: #222533; border: 1px solid #33374a; color:#fff; border-radius: 4px; padding: 8px; width: 100%; }
+        .btn-del { background: none; border: none; color: #ff4757; font-size: 14px; cursor: pointer; font-weight: bold; }
+        
+        .btn-add { background: #3b82f6; border: none; color: white; border-radius: 6px; padding: 12px; font-size: 13px; margin-top: 5px; cursor: pointer; font-weight: bold; transition: background 0.2s;}
+        .btn-add:hover { background: #2563eb; }
+        
+        .kkwang-info { font-size: 13px; color: #fff; padding: 5px 0; font-weight: bold; }
+        .reset-btn-wrap { margin-top: 10px; display: flex; gap: 10px; }
+        .btn-obs { background: #2a2d3d; border: none; border-radius: 6px; color: #a0a5b5; flex: 1; padding: 12px; font-size: 13px; cursor: pointer; font-weight: bold;}
+        .btn-reset-main { background: #ff4757; border: none; border-radius: 6px; color: white; flex: 1; padding: 12px; font-size: 13px; cursor: pointer; font-weight: bold;}
+
+        .btn-restore { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); color: white; border: 2px solid #3b82f6; padding: 10px 15px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; z-index: 10000; display: none; }
+        body.obs-mode .control-section { display: none !important; }
+        body.obs-mode .btn-restore { display: block; }
+    </style>
+</head>
+<body>
+    <button id="obs-restore-btn" class="btn-restore">⚙️ 설정</button>
+
+    <div class="app-container">
+        <div class="board-section" id="board-section">
+            <div class="board-wrapper" id="board-wrapper">
+                <div class="board-title" id="display-title">📸 바밍 포토카드깡</div>
+                <div class="ammo-counter" id="hud-ammo">남은 카드: 100 / 100</div>
+                <div class="prize-status-board" id="prize-status-board"></div>
+
+                <div class="card-stage" id="card-stage">
+                    <div class="stage-backlight" id="stage-bl"></div>
+                    <div class="card" id="main-card">
+                        <div class="card-face card-back"></div>
+                        <div class="card-face card-front" id="card-front">
+                            <div class="card-image" id="card-img">
+                                <div class="holo-overlay"></div>
+                            </div>
+                            <div class="card-info">
+                                <div class="card-stars" id="c-stars">⭐</div>
+                                <div class="card-title" id="c-title">꽝</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-controls">
+                    <button class="btn-draw btn-draw-1" id="btn-draw-1">1회 뽑기</button>
+                    <button class="btn-draw btn-draw-11" id="btn-draw-11">11연차</button>
+                </div>
+
+                <div class="popup-overlay" id="popup-11">
+                    <div class="popup-title">🎰 11연차 포토카드 결과</div>
+                    <div class="gacha-grid" id="gacha-grid"></div>
+                    <button class="btn-close" id="btn-popup-close">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <div class="control-title">
+                ⚙️ 설정
+                <button id="sound-toggle" class="sound-toggle-btn">🔊 ON</button>
+            </div>
+            <div class="form-group" style="display:none;"><input type="text" id="title-input" value="📸 바밍 포토카드깡"></div>
+            <div class="form-group">
+                <label>📦 전체 수량</label>
+                <select id="board-size-select">
+                    <option value="100" selected>100개</option><option value="300">300개</option><option value="500">500개</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>🎁 당첨 목록 (나머지는 꽝)</label>
+                <table class="prize-table">
+                    <thead><tr><th>이름</th><th style="width:50px;">수량</th><th style="width:30px;">삭제</th></tr></thead>
+                    <tbody id="prize-list-body"></tbody>
+                </table>
+                <button class="btn btn-add" id="add-prize-btn">+ 항목 추가</button>
+                <div class="kkwang-info" id="kkwang-count-display">자동 꽝: 54개 (미션: 46/100개)</div>
+            </div>
+            <div class="reset-btn-wrap">
+                <button class="btn btn-obs" id="obs-toggle-btn">📺 OBS 모드</button>
+                <button class="btn btn-reset-main" id="reset-btn">🔄 새 팩 뽑기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let prizePool = [], remainingPrizes = {}, initialPrizes = {}, totalCount = 100, isDrawing = false, isSoundOn = true, currentAmmo = 0;
+        
+        const audioFiles = {
+            click: new Audio('click.mp3'),
+            hum: new Audio('pack_hum.mp3'), 
+            tick: new Audio('tick.mp3'),
+            draw_normal: new Audio('draw_normal.mp3'),   
+            draw_legend: new Audio('draw_legend.mp3'), 
+            legend_wait: new Audio('legend_wait.mp3'), 
+            gacha_pop: new Audio('gacha_pop.mp3')        
+        };
+        
+        function playSnd(key) { if(isSoundOn && audioFiles[key]) { let s=audioFiles[key].cloneNode(); s.play().catch(()=>{}); } }
+        let loopSnd = null;
+        function playLoopSnd(key) { stopLoopSnd(); if(isSoundOn && audioFiles[key]) { loopSnd=audioFiles[key].cloneNode(); loopSnd.loop=true; loopSnd.play().catch(()=>{}); } }
+        function stopLoopSnd() { if(loopSnd) { loopSnd.pause(); loopSnd=null; } }
+        document.getElementById('sound-toggle').addEventListener('click', function() { isSoundOn=!isSoundOn; this.innerText=isSoundOn?'🔊 ON':'🔇 OFF'; this.classList.toggle('off',!isSoundOn); stopLoopSnd(); });
+
+        /* 🔥 [개선] 수량이 2개 이하인 항목은 6성 UR 레전드로 무지개 테두리 판정 */
+        function getCardData(name) {
+            if (name.includes('꽝')) return { t: 1, stars: '⭐', id: 'ggwang', cls: 't-1' };
+            
+            const initCount = initialPrizes[name] || 999;
+            if (initCount <= 2) {
+                return { t: 6, stars: '⭐⭐⭐⭐⭐⭐', id: 'bangsel', cls: 't-6' };
+            }
+
+            if (name.includes('매도') || name.includes('조리돌림') || name.includes('놀림') || name.includes('조롱') || name.includes('메롱')) return { t: 2, stars: '⭐⭐', id: 'maedo', cls: 't-2' };
+            if (name.includes('애교')) return { t: 3, stars: '⭐⭐⭐', id: 'aegyo', cls: 't-3' };
+            if (name.includes('노래')) return { t: 3, stars: '⭐⭐⭐', id: 'song', cls: 't-3' };
+            if (name.includes('프사')) return { t: 4, stars: '⭐⭐⭐⭐', id: 'mingcaso', cls: 't-4' };
+            if (name.includes('역팬')) return { t: 4, stars: '⭐⭐⭐⭐', id: 'yeokfan', cls: 't-4' };
+            if (name.includes('방셀')) return { t: 5, stars: '⭐⭐⭐⭐⭐', id: 'bangsel', cls: 't-5' };
+            
+            return { t: 1, stars: '⭐', id: 'ggwang', cls: 't-1' }; 
+        }
+
+        const sizeSelect = document.getElementById('board-size-select'), prizeListBody = document.getElementById('prize-list-body');
+        const kkwangDisplay = document.getElementById('kkwang-count-display'), statusBoard = document.getElementById('prize-status-board');
+        const mainCard = document.getElementById('main-card'), cardFront = document.getElementById('card-front');
+        const cardImg = document.getElementById('card-img'), cStars = document.getElementById('c-stars'), cTitle = document.getElementById('c-title');
+        const popup11 = document.getElementById('popup-11'), gachaGrid = document.getElementById('gacha-grid'), stageBl = document.getElementById('stage-bl');
+
+        function updateKkwangCount() {
+            totalCount = parseInt(sizeSelect.value); let sum = 0;
+            document.querySelectorAll('.p-count').forEach(i => sum += parseInt(i.value)||0);
+            const kkw = Math.max(0, totalCount - sum);
+            kkwangDisplay.innerText = `자동 꽝: ${kkw}개 (미션: ${sum}/${totalCount}개)`;
+            return { totalCount, kkw };
+        }
+
+        function addPrizeRow(n, c) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><input type="text" class="p-name" value="${n}"></td><td><input type="number" class="p-count" value="${c}"></td><td><button class="btn-del">❌</button></td>`;
+            prizeListBody.appendChild(tr);
+            tr.querySelector('.btn-del').addEventListener('click', (e)=>{ e.target.closest('tr').remove(); updateKkwangCount(); saveSettings(); });
+            tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', ()=>{ updateKkwangCount(); saveSettings(); }));
+        }
+        document.getElementById('add-prize-btn').addEventListener('click', ()=>{ addPrizeRow('새 미션', 1); updateKkwangCount(); saveSettings(); });
+
+        function initPool() {
+            const { totalCount, kkw } = updateKkwangCount();
+            prizePool = []; remainingPrizes = {}; initialPrizes = {};
+            document.querySelectorAll('#prize-list-body tr').forEach(row => {
+                const n = row.querySelector('.p-name').value.trim(), c = parseInt(row.querySelector('.p-count').value)||0;
+                if (n && c > 0) { 
+                    remainingPrizes[n] = c; 
+                    initialPrizes[n] = c;
+                    for (let i=0; i<c; i++) prizePool.push(n); 
+                }
+            });
+            if (kkw > 0) { remainingPrizes['일반(꽝)'] = kkw; initialPrizes['일반(꽝)'] = kkw; for(let i=0; i<kkw; i++) prizePool.push('일반(꽝)'); }
+            prizePool = prizePool.slice(0, totalCount);
+            
+            for (let i = prizePool.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [prizePool[i], prizePool[j]] = [prizePool[j], prizePool[i]]; }
+            mainCard.className = 'card'; document.getElementById('card-stage').classList.remove('show-backlight'); isDrawing = false; stopLoopSnd(); 
+            
+            currentAmmo = prizePool.length;
+            renderStatusBoard();
+        }
+
+        function renderStatusBoard() {
+            statusBoard.innerHTML = '';
+            for (const [name, count] of Object.entries(remainingPrizes)) {
+                if (name.includes('꽝')) continue; 
+                const d = getCardData(name);
+                const badge = document.createElement('div'); 
+                badge.className = 'prize-badge';
+                
+                const col = d.t === 6 ? '#00ffff' : `var(--t${d.t}-color)`;
+                badge.style.borderColor = col;
+                badge.style.boxShadow = `0 0 8px ${col}`;
+                
+                if(count<=0) {
+                    badge.classList.add('sold-out');
+                    badge.innerHTML = `<span>${name}</span><span class="badge-count">${count}</span>`;
+                } else {
+                    badge.innerHTML = `<span style="color:${col}; text-shadow:0 0 6px ${col};">${name}</span><span class="badge-count">${count}</span>`;
+                }
+                statusBoard.appendChild(badge);
+            }
+            document.getElementById('hud-ammo').innerText = `남은 카드: ${currentAmmo} / ${totalCount}`;
+        }
+
+        function fireConfetti(tier) {
+            try {
+                if(typeof confetti !== 'function') return;
+                if(tier === 6) confetti({ zIndex: 9999, particleCount: 400, spread: 180, colors: ['#ff003c', '#ffea00', '#00ffff', '#ffffff', '#df40ff'], startVelocity: 75, scalar: 1.6 });
+                else if(tier === 5) confetti({ zIndex: 9999, particleCount: 250, spread: 150, colors: ['#ff003c', '#ffffff', '#ffde00'], startVelocity: 65, scalar: 1.4 });
+                else if(tier === 4) confetti({ zIndex: 9999, particleCount: 180, spread: 120, colors: ['#ffde00', '#ffffff'], startVelocity: 55 });
+                else if(tier === 3) confetti({ zIndex: 9999, particleCount: 100, spread: 100, colors: ['#ff3399', '#fff'], startVelocity: 45 });
+                else if(tier === 2) confetti({ zIndex: 9999, particleCount: 60, spread: 70, colors: ['#df40ff', '#fff'] });
+            } catch(e) {}
+        }
+
+        function runColorBuildup(maxTier, callback) {
+            let current = 1; mainCard.className = 'card humming glow-1'; 
+            
+            function nextGlow() {
+                if(current >= maxTier) {
+                    if(maxTier >= 4) { mainCard.className = `card pre-legend extreme glow-${maxTier}`; playLoopSnd('legend_wait'); setTimeout(callback, 1500); }
+                    else if(maxTier >= 2) { mainCard.className = `card shaking glow-${maxTier}`; setTimeout(callback, 800); }
+                    else { setTimeout(callback, 400); }
+                    return;
+                }
+                current++;
+                playSnd('tick'); 
+                
+                if(current===2 || current===4 || current===6) mainCard.className = `card shaking glow-${current}`;
+                else mainCard.className = `card humming glow-${current}`;
+                setTimeout(nextGlow, 500); 
+            }
+            setTimeout(nextGlow, 600);
+        }
+
+        // --- 1회 뽑기 ---
+        document.getElementById('btn-draw-1').addEventListener('click', () => {
+            playSnd('click');
+            if(isDrawing || prizePool.length < 1) return;
+            isDrawing = true; document.getElementById('card-stage').classList.remove('show-backlight');
+            
+            const result = prizePool.pop(); const d = getCardData(result);
+
+            runColorBuildup(d.t, () => {
+                stopLoopSnd();
+                
+                if(remainingPrizes[result]>0) remainingPrizes[result]--; 
+                currentAmmo--;
+                renderStatusBoard();
+
+                mainCard.className = 'card';
+                if(d.t >= 4) {
+                    const impactCls = d.t === 6 ? 'impact-6' : `impact-${d.t}`;
+                    document.body.classList.add(impactCls); setTimeout(()=>document.body.classList.remove(impactCls), 800);
+                    document.getElementById('card-stage').classList.add('show-backlight');
+                    stageBl.style.background = `radial-gradient(circle, ${d.t===6?'#00ffff':`var(--t${d.t}-color)`} 0%, transparent 70%)`;
+                    playSnd('draw_legend');
+                } else playSnd('draw_normal');
+
+                cardFront.className = `card-face card-front ${d.cls}`;
+                cardImg.style.backgroundImage = `url('${d.id}.png')`;
+                cStars.innerText = d.stars; cTitle.innerText = result.replace('일반(꽝)','꽝').replace(/\(.*\)/,'');
+                
+                mainCard.classList.add('flipped');
+                setTimeout(()=>{ fireConfetti(d.t); isDrawing=false; }, 300);
+            });
+        });
+
+        // --- 11연차 ---
+        document.getElementById('btn-draw-11').addEventListener('click', () => {
+            playSnd('click'); 
+            if(isDrawing || prizePool.length < 11) { if(prizePool.length<11) alert("카드가 부족합니다!"); return; }
+            isDrawing = true; gachaGrid.innerHTML = '';
+
+            const results = []; let maxT = 1;
+            for(let i=0; i<11; i++) {
+                const res = prizePool.pop(); const d = getCardData(res);
+                results.push({ res: res, d: d });
+                if(d.t > maxT) maxT = d.t;
+            }
+
+            runColorBuildup(maxT, () => {
+                stopLoopSnd();
+                popup11.classList.add('active');
+                if(maxT>=4) playLoopSnd('legend_wait'); else playSnd('hum');
+                
+                let current = 0;
+                function popNext() {
+                    if (current >= 11) { setTimeout(() => { stopLoopSnd(); fireConfetti(maxT); document.getElementById('btn-popup-close').style.opacity = 1; isDrawing = false; }, 500); return; }
+
+                    const itemData = results[current]; const d = itemData.d;
+                    
+                    if(remainingPrizes[itemData.res]>0) remainingPrizes[itemData.res]--;
+                    currentAmmo--;
+                    renderStatusBoard();
+
+                    const item = document.createElement('div');
+                    item.className = `gacha-item ${d.cls}`;
+                    item.style.backgroundImage = `url('${d.id}.png')`;
+                    item.innerHTML = `<div class="gacha-item-info">${itemData.res.replace('일반(꽝)','꽝').replace(/\(.*\)/,'')}</div>`;
+                    gachaGrid.appendChild(item);
+
+                    let ms = 250; 
+                    if (d.t >= 4) {
+                        ms = 1800; 
+                        const impactCls = d.t === 6 ? 'impact-6' : `impact-${d.t}`;
+                        document.body.classList.add(impactCls); setTimeout(()=>document.body.classList.remove(impactCls), 800);
+                        playSnd('draw_legend');
+                        
+                        item.classList.add('show'); 
+                        item.style.animation = 'gachaImpact 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+                        setTimeout(() => fireConfetti(d.t), 200);
+                    } else {
+                        playSnd('gacha_pop'); setTimeout(()=>item.classList.add('show'), 10);
+                        if(d.t >= 2) ms = 400; 
+                    }
+                    current++; setTimeout(popNext, ms);
+                }
+                document.getElementById('btn-popup-close').style.opacity = 0;
+                setTimeout(popNext, 600); 
+            });
+        });
+
+        document.getElementById('btn-popup-close').addEventListener('click', () => { popup11.classList.remove('active'); stopLoopSnd(); isDrawing = false; mainCard.className='card'; });
+
+        // --- 제어판 로직 ---
+        function saveSettings() {
+            try {
+                const missions = []; document.querySelectorAll('#prize-list-body tr').forEach(row => { missions.push({ name: row.querySelector('.p-name').value, count: parseInt(row.querySelector('.p-count').value)||0 }); });
+                localStorage.setItem('baumingCardsFinalV3', JSON.stringify({ t: document.getElementById('title-input').value, s: sizeSelect.value, m: missions }));
+            } catch(e) {}
+        }
+
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('baumingCardsFinalV3'); prizeListBody.innerHTML = '';
+                if (saved) {
+                    const s = JSON.parse(saved);
+                    document.getElementById('title-input').value = s.t; document.getElementById('display-title').innerText = s.t;
+                    sizeSelect.value = s.s; 
+                    s.m.forEach(m => addPrizeRow(m.name, m.count));
+                } else { 
+                    addPrizeRow('조리돌림', 15); 
+                    addPrizeRow('애교', 15); 
+                    addPrizeRow('역팬(✨)', 5); 
+                    addPrizeRow('간단 프사(✨)', 4); 
+                    addPrizeRow('즉석방셀(✨)', 4); 
+                    addPrizeRow('니니바밍방셀', 1); 
+                    addPrizeRow('노래방셀', 1); 
+                    addPrizeRow('영상방셀2', 1); 
+                }
+            } catch(e) { 
+                prizeListBody.innerHTML = ''; 
+                addPrizeRow('조리돌림', 15); 
+                addPrizeRow('애교', 15); 
+                addPrizeRow('역팬(✨)', 5); 
+                addPrizeRow('간단 프사(✨)', 4); 
+                addPrizeRow('즉석방셀(✨)', 4); 
+                addPrizeRow('니니바밍방셀', 1); 
+                addPrizeRow('노래방셀', 1); 
+                addPrizeRow('영상방셀2', 1); 
+            }
+            updateKkwangCount();
+        }
+
+        document.getElementById('title-input').addEventListener('input', (e) => document.getElementById('display-title').innerText = e.target.value);
+        document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("진행 중인 카드를 모두 버리고 새 팩을 가져오시겠습니까?")) initPool(); });
+        document.getElementById('obs-toggle-btn').addEventListener('click', () => document.body.classList.add('obs-mode'));
+        document.getElementById('obs-restore-btn').addEventListener('click', () => document.body.classList.remove('obs-mode'));
+        document.querySelectorAll('.control-section input, .control-section select').forEach(i => i.addEventListener('change', saveSettings));
+
+        loadSettings(); initPool();
+    </script>
+</body>
+</html>
