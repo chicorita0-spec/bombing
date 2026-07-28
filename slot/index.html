@@ -10,9 +10,10 @@
         :root { 
             --t1:#8c92ac; 
             --t2:#df40ff; 
-            --t3:#ff3399; 
-            --t4:#ffde00; 
+            --t3:#ff007f; 
+            --t4:#ffea00; 
             --t5:#ff003c; 
+            --t6:#00ffff;
         }
         body { font-family:'Pretendard', -apple-system, sans-serif; background:#05050a; color:#fff; height:100vh; display:flex; overflow:hidden; }
         
@@ -99,9 +100,9 @@
         .slot-row.multi-mode .slot-reel { width:65px; height:74px; border-width:2px; border-radius:8px; }
         .slot-stage-wrapper.grid-layout .slot-reel { width:52px; height:56px; border-width:1.5px; border-radius:5px; }
 
-        .slot-reel.active-glow { border-color:#ffde00!important; box-shadow:0 0 25px #ffde00!important; transform:scale(1.05); }
-        .slot-reel.active-mythic { border-color:#ff003c!important; box-shadow:0 0 35px #ff003c, 0 0 15px #ffea00!important; animation: mythicBorder 0.3s infinite alternate; }
-        @keyframes mythicBorder { from { border-color:#ff003c; } to { border-color:#ffea00; } }
+        .slot-reel.active-glow { border-color:#ffea00!important; box-shadow:0 0 25px #ffea00!important; transform:scale(1.05); }
+        .slot-reel.active-mythic { border-color:#00ffff!important; box-shadow:0 0 35px #00ffff, 0 0 15px #ff007f!important; animation: mythicBorder 0.3s infinite alternate; }
+        @keyframes mythicBorder { from { border-color:#00ffff; } to { border-color:#ff003c; } }
 
         .slot-reel-text { background:rgba(0,0,0,0.9); width:100%; text-align:center; padding:2px 0; font-size:10px; font-weight:900; margin-top:auto; border-top:1px solid rgba(255,255,255,0.2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
         .slot-row.multi-mode .slot-reel-text { font-size:8px; padding:1px 0; }
@@ -116,7 +117,7 @@
         @keyframes popIn { from { transform:scale(0.2); opacity:0; } to { transform:scale(1); opacity:1; } }
 
         .res-card.t-5 { border-color:#ff003c!important; box-shadow:0 0 25px #ff003c; }
-        .res-card.t-6 { border-color:#ffea00!important; box-shadow:0 0 40px #ffea00, 0 0 20px #ff007f; animation:popIn 0.3s, mythicGlow 0.3s infinite alternate; }
+        .res-card.t-6 { border-color:#00ffff!important; box-shadow:0 0 40px #00ffff, 0 0 20px #ff007f; animation:popIn 0.3s, mythicGlow 0.3s infinite alternate; }
         @keyframes mythicGlow { from { box-shadow:0 0 20px #ff003c; } to { box-shadow:0 0 50px #ffea00, 0 0 20px #00ffff; } }
 
         .confirm-btn-wrap { width:100%; display:flex; justify-content:center; padding-top:4px; flex-shrink:0; }
@@ -224,17 +225,17 @@
     </div>
 
     <script>
-        let prizePool = [], remainingPrizes = {}, totalCount = 100;
+        let prizePool = [], remainingPrizes = {}, initialPrizes = {}, totalCount = 100;
         const boardWrapper = document.getElementById('board-wrapper');
         const stageWrapper = document.getElementById('slot-stage-wrapper');
         const sizeSelect = document.getElementById('board-size-select');
         const prizeListBody = document.getElementById('prize-list-body');
         const kkwangDisplay = document.getElementById('kkwang-count-display');
 
-        /* 🔊 사운드 파일 설정 및 볼륨 조절 */
+        /* 🔊 사운드 파일 */
         const spinAudio = new Audio('sound2.mp3'); 
         const stopAudio = new Audio('sound3.mp3'); 
-        stopAudio.volume = 0.3; // 🔥 스톱 소리 볼륨 30%로 낮춤 (귀 안 아프게)
+        stopAudio.volume = 0.3;
 
         function playStopSound() {
             try {
@@ -244,17 +245,34 @@
             } catch(e) {}
         }
 
+        /* 🔥 [핵심 요청사항 적용] 수량 기준 등급 산정 및 색상 표준화 */
         function getCardData(name) {
-            if (name.includes('꽝')) return { t:1, id:'ggwang' };
-            if (name.includes('메롱') || name.includes('조리돌림') || name.includes('매도') || name.includes('놀리기')) return { t:2, id:'maedo' };
-            if (name.includes('애교')) return { t:3, id:'aegyo' };
-            if (name.includes('간단 프사') || name.includes('프사')) return { t:4, id:'mingcaso' };
-            if (name.includes('역팬')) return { t:4, id:'yeokfan' };
-            if (name.includes('즉석방셀')) return { t:5, id:'bangsel' };
+            if (name.includes('꽝')) return { t: 1, id: 'ggwang', color: 'var(--t1)' };
             
-            if (name.includes('니니바밍방셀') || name.includes('노래방셀') || name.includes('영상방셀')) return { t:6, id:'bangsel' };
-            
-            return { t:1, id:'ggwang' };
+            const initCount = initialPrizes[name] || 999;
+
+            // 1. 수량 2개 이하 ➔ 6성 (UR 사이언 무지개)
+            if (initCount <= 2) {
+                return { t: 6, id: 'bangsel', color: '#00ffff' };
+            }
+
+            // 2. 수량 3~4개 이하 ➔ 5성 (SSR 레이저 레드)
+            if (initCount <= 4) {
+                return { t: 5, id: 'bangsel', color: '#ff003c' };
+            }
+
+            // 3. 수량 5~10개 이하 ➔ 4성 (SR 골드/황금색)
+            if (initCount <= 10 || name.includes('프사') || name.includes('역팬')) {
+                return { t: 4, id: 'yeokfan', color: '#ffea00' };
+            }
+
+            // 4. 수량 11~15개 이하 ➔ 3성 (R 핫핑크)
+            if (initCount <= 15 || name.includes('애교') || name.includes('노래')) {
+                return { t: 3, id: 'aegyo', color: '#ff007f' };
+            }
+
+            // 5. 수량 16개 이상 ➔ 2성 (보라 / 매도·조리돌림)
+            return { t: 2, id: 'maedo', color: '#df40ff' };
         }
 
         function updateKkwangCount() {
@@ -276,12 +294,16 @@
 
         function initPool() {
             const { totalCount, kkw } = updateKkwangCount();
-            prizePool = []; remainingPrizes = {};
+            prizePool = []; remainingPrizes = {}; initialPrizes = {};
             document.querySelectorAll('#prize-list-body tr').forEach(row => {
                 const n = row.querySelector('.p-name').value.trim(), c = parseInt(row.querySelector('.p-count').value)||0;
-                if (n && c > 0) { remainingPrizes[n] = c; for (let i=0; i<c; i++) prizePool.push(n); }
+                if (n && c > 0) { 
+                    remainingPrizes[n] = c; 
+                    initialPrizes[n] = c;
+                    for (let i=0; i<c; i++) prizePool.push(n); 
+                }
             });
-            if (kkw > 0) { remainingPrizes['일반(꽝)'] = kkw; for(let i=0; i<kkw; i++) prizePool.push('일반(꽝)'); }
+            if (kkw > 0) { remainingPrizes['일반(꽝)'] = kkw; initialPrizes['일반(꽝)'] = kkw; for(let i=0; i<kkw; i++) prizePool.push('일반(꽝)'); }
             prizePool = prizePool.slice(0, totalCount);
             
             for (let i = prizePool.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [prizePool[i], prizePool[j]] = [prizePool[j], prizePool[i]]; }
@@ -294,8 +316,7 @@
             for(const [n, c] of Object.entries(remainingPrizes)) {
                 if(n.includes('꽝')) continue;
                 const d = getCardData(n);
-                const col = d.t === 6 ? '#ff003c' : `var(--t${d.t}-color)`;
-                board.innerHTML += `<div class="prize-badge ${c<=0?'sold-out':''}" style="border-color:${col}; color:${col};">${n} <span style="background:#fff; color:#000; padding:1px 5px; border-radius:4px;">${c}</span></div>`;
+                board.innerHTML += `<div class="prize-badge ${c<=0?'sold-out':''}" style="border-color:${d.color}; color:${d.color};">${n} <span style="background:#fff; color:#000; padding:1px 5px; border-radius:4px;">${c}</span></div>`;
             }
             document.getElementById('hud-ammo').innerText = `남은 횟수: ${prizePool.length} / ${totalCount}`;
         }
@@ -385,21 +406,21 @@
                     rData[1] = baitData; rNames[1] = baitItemName;
                 }
 
-                /* 🔥 [릴 1번 정지] 다연차 시에도 대표로 첫 번째 행(k===0) 멈출 때만 1번 소리 재생 */
+                /* 릴 1번 정지 */
                 setTimeout(() => {
                     clearInterval(intervalMap[`${k}-0`]);
                     setReelCard(k, 0, rData[0], rNames[0]);
                     if (k === 0) playStopSound();
                 }, 900 + (k * 150));
 
-                /* 🔥 [릴 2번 정지] */
+                /* 릴 2번 정지 */
                 setTimeout(() => {
                     clearInterval(intervalMap[`${k}-1`]);
                     setReelCard(k, 1, rData[1], rNames[1]);
                     if (k === 0) playStopSound();
                 }, 1900 + (k * 150));
 
-                /* 🔥 [릴 3번 정지] */
+                /* 릴 3번 정지 */
                 setTimeout(() => {
                     clearInterval(intervalMap[`${k}-2`]);
                     setReelCard(k, 2, rData[2], rNames[2]);
@@ -419,16 +440,16 @@
             });
         }
 
+        /* 🔥 [수정] 릴 슬롯 테두리 및 글자 색상 정확한 등급 컬러로 완전 일치화 */
         function setReelCard(rowIdx, reelIdx, d, name) {
             const reel = document.getElementById(`r-${rowIdx}-${reelIdx}`);
             const text = document.getElementById(`rt-${rowIdx}-${reelIdx}`);
             if(!reel || !text) return;
 
             reel.style.backgroundImage = `url('${d.id}.png')`;
-            const borderCol = d.t === 6 ? '#ff003c' : `var(--t${d.t}-color)`;
-            reel.style.borderColor = borderCol;
+            reel.style.borderColor = d.color;
             text.innerText = name.replace('일반(꽝)','꽝');
-            text.style.color = borderCol;
+            text.style.color = d.color;
             
             if(d.t >= 4 && d.t < 6) reel.classList.add('active-glow');
             if(d.t === 6) reel.classList.add('active-mythic');
@@ -451,10 +472,9 @@
                 const card = document.createElement('div');
                 card.className = `res-card t-${d.t}`;
                 
-                const borderCol = d.t === 6 ? '#ffde00' : `var(--t${d.t}-color)`;
-                card.style.borderColor = borderCol;
+                card.style.borderColor = d.color;
                 card.style.backgroundImage = `url('${d.id}.png')`;
-                card.innerHTML = `<div style="background:rgba(0,0,0,0.85); padding:3px; color:${borderCol}; border-top:1.5px solid rgba(255,255,255,0.2);">${name.replace('일반(꽝)','꽝')}</div>`;
+                card.innerHTML = `<div style="background:rgba(0,0,0,0.85); padding:3px; color:${d.color}; border-top:1.5px solid rgba(255,255,255,0.2);">${name.replace('일반(꽝)','꽝')}</div>`;
                 grid.appendChild(card);
             });
 
@@ -479,13 +499,13 @@
                 document.querySelectorAll('#prize-list-body tr').forEach(row => { 
                     missions.push({ name: row.querySelector('.p-name').value, count: parseInt(row.querySelector('.p-count').value)||0 }); 
                 });
-                localStorage.setItem('baumingSlotFinalV4', JSON.stringify({ s: sizeSelect.value, m: missions }));
+                localStorage.setItem('baumingSlotFinalV5', JSON.stringify({ s: sizeSelect.value, m: missions }));
             } catch(e) {}
         }
 
         function loadSettings() {
             try {
-                const saved = localStorage.getItem('baumingSlotFinalV4'); prizeListBody.innerHTML = '';
+                const saved = localStorage.getItem('baumingSlotFinalV5'); prizeListBody.innerHTML = '';
                 if (saved) {
                     const s = JSON.parse(saved);
                     sizeSelect.value = s.s; 
