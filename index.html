@@ -1,376 +1,77 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#120518" />
-  <title>바밍 미니게임</title>
-  <style>
-    :root {
-      --bg: #090511;
-      --panel: rgba(28, 10, 39, 0.78);
-      --panel-2: rgba(43, 13, 57, 0.88);
-      --pink: #ff4fbf;
-      --hot-pink: #ff177f;
-      --purple: #a74cff;
-      --cyan: #2ee8ff;
-      --yellow: #ffd84d;
-      --text: #fff7fd;
-      --muted: #d6bdd8;
-      --border: rgba(255, 104, 204, 0.48);
-      --shadow: 0 0 18px rgba(255, 59, 180, 0.38);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      color: var(--text);
-      font-family: Pretendard, "Noto Sans KR", Arial, sans-serif;
-      background:
-        radial-gradient(circle at 15% 20%, rgba(255, 28, 144, 0.18), transparent 28%),
-        radial-gradient(circle at 85% 10%, rgba(139, 76, 255, 0.2), transparent 30%),
-        radial-gradient(circle at 50% 100%, rgba(46, 232, 255, 0.08), transparent 35%),
-        linear-gradient(160deg, #08030f 0%, #15051d 52%, #07030c 100%);
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      opacity: 0.24;
-      background-image:
-        radial-gradient(circle, rgba(255,255,255,.9) 0 1px, transparent 1.5px),
-        radial-gradient(circle, rgba(255,97,198,.7) 0 1px, transparent 1.7px);
-      background-size: 72px 72px, 110px 110px;
-      background-position: 0 0, 22px 35px;
-      animation: drift 18s linear infinite;
-    }
-
-    @keyframes drift {
-      from { transform: translateY(0); }
-      to { transform: translateY(72px); }
-    }
-
-    .shell {
-      width: min(1180px, calc(100% - 28px));
-      margin: 0 auto;
-      padding: 28px 0 54px;
-    }
-
-    .hero {
-      position: relative;
-      padding: 38px 24px 32px;
-      text-align: center;
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      background:
-        linear-gradient(180deg, rgba(255, 56, 166, 0.08), rgba(255,255,255,0.01)),
-        rgba(18, 7, 27, 0.84);
-      box-shadow:
-        0 0 0 1px rgba(255,255,255,0.04) inset,
-        0 0 36px rgba(255, 42, 164, 0.2);
-      overflow: hidden;
-    }
-
-    .hero::after {
-      content: "";
-      position: absolute;
-      inset: -2px;
-      border-radius: inherit;
-      padding: 2px;
-      background: linear-gradient(110deg, var(--pink), var(--purple), var(--cyan), var(--pink));
-      background-size: 260% 260%;
-      animation: borderFlow 7s ease infinite;
-      -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      pointer-events: none;
-    }
-
-    @keyframes borderFlow {
-      0%, 100% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-      padding: 7px 13px;
-      color: #ffe5f5;
-      font-size: 14px;
-      font-weight: 800;
-      border: 1px solid rgba(255, 116, 207, 0.45);
-      border-radius: 999px;
-      background: rgba(255, 52, 161, 0.1);
-      box-shadow: 0 0 16px rgba(255, 52, 161, 0.14);
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(37px, 7vw, 76px);
-      line-height: 1;
-      letter-spacing: -0.055em;
-      color: white;
-      text-shadow:
-        0 2px 0 #a91168,
-        0 0 12px rgba(255, 97, 198, 0.9),
-        0 0 30px rgba(255, 25, 134, 0.64);
-    }
-
-    .hero p {
-      margin: 18px auto 0;
-      max-width: 670px;
-      color: var(--muted);
-      font-size: clamp(15px, 2.2vw, 18px);
-      line-height: 1.7;
-    }
-
-    .section-title {
-      margin: 38px 4px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: end;
-      gap: 12px;
-    }
-
-    .section-title h2 {
-      margin: 0;
-      font-size: 24px;
-      letter-spacing: -0.04em;
-    }
-
-    .section-title span {
-      color: #bca8c3;
-      font-size: 13px;
-    }
-
-    .games {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .game-card {
-      position: relative;
-      min-height: 238px;
-      padding: 22px;
-      text-decoration: none;
-      color: var(--text);
-      border-radius: 23px;
-      border: 1px solid rgba(255,255,255,0.1);
-      background:
-        linear-gradient(150deg, rgba(255,255,255,0.08), transparent 38%),
-        var(--panel);
-      box-shadow:
-        0 16px 38px rgba(0,0,0,0.35),
-        0 0 0 1px rgba(255,255,255,0.025) inset;
-      overflow: hidden;
-      isolation: isolate;
-      transition: transform .24s ease, border-color .24s ease, box-shadow .24s ease;
-    }
-
-    .game-card::before {
-      content: "";
-      position: absolute;
-      width: 190px;
-      height: 190px;
-      right: -68px;
-      top: -64px;
-      border-radius: 50%;
-      background: var(--glow);
-      filter: blur(3px);
-      opacity: .28;
-      z-index: -1;
-    }
-
-    .game-card::after {
-      content: "";
-      position: absolute;
-      inset: auto 0 0;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      opacity: .9;
-    }
-
-    .game-card:hover {
-      transform: translateY(-7px);
-      border-color: color-mix(in srgb, var(--accent) 60%, white 10%);
-      box-shadow:
-        0 24px 52px rgba(0,0,0,0.48),
-        0 0 22px color-mix(in srgb, var(--accent) 38%, transparent);
-    }
-
-    .game-card:active {
-      transform: translateY(-2px) scale(.99);
-    }
-
-    .game-icon {
-      width: 62px;
-      height: 62px;
-      display: grid;
-      place-items: center;
-      margin-bottom: 20px;
-      font-size: 34px;
-      border: 1px solid rgba(255,255,255,.16);
-      border-radius: 18px;
-      background: rgba(255,255,255,.07);
-      box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 25%, transparent);
-    }
-
-    .game-card h3 {
-      margin: 0;
-      font-size: 24px;
-      letter-spacing: -0.045em;
-    }
-
-    .game-card p {
-      margin: 9px 0 24px;
-      color: #cdbbd2;
-      font-size: 14px;
-      line-height: 1.65;
-    }
-
-    .enter {
-      position: absolute;
-      left: 22px;
-      bottom: 20px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      color: white;
-      font-size: 14px;
-      font-weight: 900;
-    }
-
-    .enter b {
-      transition: transform .2s ease;
-    }
-
-    .game-card:hover .enter b {
-      transform: translateX(5px);
-    }
-
-    .photocard { --accent: #ff4fbd; --glow: #ff258f; }
-    .bomb      { --accent: #ff3b51; --glow: #ff1f3a; }
-    .slot      { --accent: #a854ff; --glow: #833cff; }
-    .roulette  { --accent: #2ee8ff; --glow: #17bcd6; }
-    .lottery   { --accent: #ffd34d; --glow: #ffad21; }
-    .soon      { --accent: #9b8aa7; --glow: #604a70; opacity: .72; cursor: default; }
-
-    .footer {
-      margin-top: 30px;
-      padding: 20px 16px;
-      text-align: center;
-      color: #9f8da8;
-      font-size: 13px;
-    }
-
-    @media (max-width: 850px) {
-      .games {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 560px) {
-      .shell {
-        width: min(100% - 18px, 1180px);
-        padding-top: 10px;
-      }
-
-      .hero {
-        padding: 30px 18px 26px;
-        border-radius: 22px;
-      }
-
-      .games {
-        grid-template-columns: 1fr;
-        gap: 14px;
-      }
-
-      .game-card {
-        min-height: 205px;
-      }
-
-      .section-title {
-        margin-top: 28px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>바밍 미니게임</title>
+<style>
+body{margin:0;font-family:Pretendard,'Noto Sans KR',sans-serif;background:#0d0716;color:#fff;
+background-image:radial-gradient(circle at top,#ff3ea533,transparent 35%),linear-gradient(#12071e,#09040f);}
+.wrap{max-width:1200px;margin:auto;padding:30px 18px;}
+h1{text-align:center;font-size:52px;margin:10px 0;color:#fff;text-shadow:0 0 15px #ff4fbf;}
+p.sub{text-align:center;color:#d9bfd7;margin-bottom:35px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.card{display:block;text-decoration:none;color:#fff;background:#1b1028;border:1px solid #ff5fc466;
+border-radius:22px;padding:22px;transition:.25s;box-shadow:0 0 20px #0005}
+.card:hover{transform:translateY(-6px);box-shadow:0 0 30px #ff4fbf55}
+.icon{font-size:44px}
+h2{margin:15px 0 8px}
+.desc{color:#ceb8d8;min-height:44px}
+.go{margin-top:18px;font-weight:bold;color:#ff87d2}
+footer{text-align:center;color:#8d7b97;margin:35px 0 10px}
+</style>
 </head>
 <body>
-  <main class="shell">
-    <section class="hero">
-      <div class="eyebrow">✨ Bombing Mini Game Zone</div>
-      <h1>바밍 미니게임</h1>
-      <p>포토카드부터 폭탄 가챠, 슬롯, 룰렛, 즉석복권까지.<br>원하는 게임을 골라 바로 시작해 보세요!</p>
-    </section>
+<div class="wrap">
+<h1>🎮 바밍 미니게임</h1>
+<p class="sub">원하는 게임을 선택하세요!</p>
 
-    <div class="section-title">
-      <h2>게임 선택</h2>
-      <span>카드를 누르면 게임으로 이동합니다</span>
-    </div>
+<div class="grid">
 
-    <section class="games">
-      <a class="game-card photocard" href="./photocard/">
-        <div class="game-icon">📸</div>
-        <h3>포토카드깡</h3>
-        <p>랜덤 포토카드를 뽑고 특별한 등급을 노려보세요.</p>
-        <span class="enter">입장하기 <b>→</b></span>
-      </a>
+<a class="card" href="./photocard/">
+<div class="icon">🎴</div>
+<h2>포토카드깡</h2>
+<div class="desc">랜덤 포토카드를 뽑아보세요.</div>
+<div class="go">입장하기 →</div>
+</a>
 
-      <a class="game-card bomb" href="./bomb/">
-        <div class="game-icon">💣</div>
-        <h3>폭탄 가챠</h3>
-        <p>오싹오싹… 폭탄이 터진 뒤 상품 결과를 확인하세요.</p>
-        <span class="enter">폭파하러 가기 <b>→</b></span>
-      </a>
+<a class="card" href="./dance/">
+<div class="icon">💃</div>
+<h2>랜덤 댄스</h2>
+<div class="desc">랜덤 플레이 댄스용 음악 플레이어.</div>
+<div class="go">입장하기 →</div>
+</a>
 
-      <a class="game-card slot" href="./slot/">
-        <div class="game-icon">🎰</div>
-        <h3>가챠 슬롯</h3>
-        <p>레버를 당기고 돌아가는 슬롯에서 행운을 확인하세요.</p>
-        <span class="enter">슬롯 돌리기 <b>→</b></span>
-      </a>
+<a class="card" href="./slot/">
+<div class="icon">🎰</div>
+<h2>가챠 슬롯</h2>
+<div class="desc">레버를 당겨 행운을 확인!</div>
+<div class="go">입장하기 →</div>
+</a>
 
-      <a class="game-card roulette" href="./roulette/">
-        <div class="game-icon">🎡</div>
-        <h3>행운의 룰렛</h3>
-        <p>빙글빙글 돌아가는 룰렛이 오늘의 결과를 정합니다.</p>
-        <span class="enter">룰렛 돌리기 <b>→</b></span>
-      </a>
+<a class="card" href="./bomb/">
+<div class="icon">💣</div>
+<h2>폭탄 가챠</h2>
+<div class="desc">폭탄이 터지면 상품이 공개됩니다.</div>
+<div class="go">입장하기 →</div>
+</a>
 
-      <a class="game-card lottery" href="./lottery/">
-        <div class="game-icon">🎫</div>
-        <h3>즉석복권</h3>
-        <p>은박을 긁고 바로 당첨 결과를 확인해 보세요.</p>
-        <span class="enter">복권 긁기 <b>→</b></span>
-      </a>
+<a class="card" href="./roulette/">
+<div class="icon">🎡</div>
+<h2>룰렛</h2>
+<div class="desc">행운의 뽑기에 도전하세요.</div>
+<div class="go">입장하기 →</div>
+</a>
 
-      <div class="game-card soon" aria-disabled="true">
-        <div class="game-icon">🌟</div>
-        <h3>새 게임 준비 중</h3>
-        <p>바밍의 새로운 미니게임이 곧 추가됩니다.</p>
-        <span class="enter">COMING SOON</span>
-      </div>
-    </section>
+<a class="card" href="./lottery/">
+<div class="icon">🎫</div>
+<h2>즉석복권</h2>
+<div class="desc">은박을 긁고 바로 결과 확인!</div>
+<div class="go">입장하기 →</div>
+</a>
 
-    <footer class="footer">
-      © 2026 Boming Mini Game. 재미있게 즐겨주세요 💖
-    </footer>
-  </main>
+</div>
+<footer>© Bombing Mini Game</footer>
+</div>
 </body>
 </html>
