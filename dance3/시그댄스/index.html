@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시그댄스 전용 플레이어</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0f1015;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .player-container {
+            background: rgba(20, 20, 28, 0.95);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 800px;
+            padding: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .header {
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            color: #ff6b81;
+            margin-bottom: 8px;
+        }
+        .now-playing-text {
+            font-size: 16px;
+            color: #a1a1aa;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+        .song-title {
+            font-size: 42px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-top: 6px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            min-height: 50px;
+            word-break: keep-all;
+        }
+
+        /* 🎛️ 컨트롤 영역 (재생, 정지) */
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        .btn-play {
+            background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+            border: none;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            color: white;
+            font-size: 36px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(255, 71, 87, 0.4);
+            transition: transform 0.1s, box-shadow 0.2s;
+            padding-left: 6px; 
+        }
+        .btn-play.playing {
+            padding-left: 0; 
+        }
+        .btn-play:hover { transform: scale(1.05); }
+        .btn-play:active { transform: scale(0.95); }
+
+        .btn-stop {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            color: #a1a1aa;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn-stop:hover { background: rgba(255, 255, 255, 0.2); color: #fff; }
+
+        /* ⏳ 진행바 (Time Bar) */
+        .progress-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .time-text {
+            font-size: 14px;
+            color: #a1a1aa;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            width: 45px;
+        }
+        .progress-bar {
+            flex: 1;
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+        .progress-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff4757;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+        }
+        .progress-bar::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        /* 🔊 볼륨 컨트롤 */
+        .volume-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 24px;
+            border-radius: 16px;
+            width: fit-content;
+            margin: 0 auto;
+        }
+        .volume-icon { font-size: 20px; }
+        .volume-slider {
+            -webkit-appearance: none;
+            width: 150px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 5px 0;
+        }
+
+        /* 🎵 플레이리스트 및 카테고리 영역 */
+        .playlist-wrapper {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 12px;
+        }
+        /* 스크롤바 디자인 */
+        .playlist-wrapper::-webkit-scrollbar { width: 8px; }
+        .playlist-wrapper::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 4px; }
+        .playlist-wrapper::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        .playlist-wrapper::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
+
+        .category-header {
+            font-size: 18px;
+            font-weight: 800;
+            margin: 20px 0 12px 0;
+            padding-left: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .category-header:first-child { margin-top: 0; }
+        .category-header.tier-500 { color: #feca57; border-left: 4px solid #feca57; }
+        .category-header.tier-300 { color: #ff9ff3; border-left: 4px solid #ff9ff3; }
+
+        .playlist {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        /* 공통 곡 버튼 디자인 */
+        .song-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 14px 10px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            word-break: keep-all;
+        }
+        .song-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* 💎 500개 활성화 버튼 테마 (골드) */
+        .song-btn.tier-500.active {
+            background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+            border-color: #f1c40f;
+            color: #000000;
+            box-shadow: 0 4px 12px rgba(241, 196, 15, 0.4);
+            text-shadow: none;
+        }
+
+        /* 💖 300개 활성화 버튼 테마 (핫핑크) */
+        .song-btn.tier-300.active {
+            background: linear-gradient(135deg, #e84393 0%, #fd79a8 100%);
+            border-color: #fd79a8;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(253, 121, 168, 0.4);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="player-container">
+        <!-- 상단 곡 정보 -->
+        <div class="header">
+            <h1>🎧 바밍 시그댄스</h1>
+            <div class="now-playing-text">NOW PLAYING</div>
+            <div class="song-title" id="display-title">곡을 선택해주세요</div>
+        </div>
+
+        <!-- 재생 컨트롤 -->
+        <div class="controls">
+            <button class="btn-stop" id="btn-stop" title="정지">⏹</button>
+            <button class="btn-play" id="btn-play" title="재생/일시정지">▶</button>
+        </div>
+
+        <!-- 진행바 -->
+        <div class="progress-wrapper">
+            <span class="time-text" id="time-current">0:00</span>
+            <input type="range" class="progress-bar" id="progress-bar" value="0" min="0" max="100" step="0.1">
+            <span class="time-text" id="time-total" style="text-align: right;">0:00</span>
+        </div>
+
+        <!-- 볼륨 조절 -->
+        <div class="volume-wrapper">
+            <span class="volume-icon" id="volume-icon">🔊</span>
+            <input type="range" class="volume-slider" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+
+        <hr>
+
+        <!-- 스크롤 가능한 재생 목록 영역 -->
+        <div class="playlist-wrapper">
+            
+            <!-- 💎 500개 영역 -->
+            <div class="category-header tier-500">💎 500개 리액션</div>
+            <div class="playlist" id="playlist-500"></div>
+
+            <!-- 💖 300개 영역 -->
+            <div class="category-header tier-300">💖 300개 리액션</div>
+            <div class="playlist" id="playlist-300"></div>
+
+        </div>
+    </div>
+
+    <script>
+        // 🎵 곡 목록 데이터 분류
+        const songs500 = [
+            "관제탑", "남순로겐", "솜사탕", "최악의세대", "나루토", 
+            "진압해", "캐치캐치", "꼬마선장", "우치다", "지코토닉", "거울춤"
+        ];
+        
+        // 💡 300개 목록 마지막에 '캉캉' 추가 완료
+        const songs300 = [
+            "케이춤", "콩나물", "뿌애뿌애", "구미베어", "우마우마", 
+            "홀리몰리", "삐끼삐끼", "파라파라", "제로투", "트월킹덕", 
+            "LSD", "뾱뾱이", "캉캉"
+        ];
+
+        const audio = new Audio();
+        
+        // UI 요소 가져오기
+        const displayTitle = document.getElementById('display-title');
+        const btnPlay = document.getElementById('btn-play');
+        const btnStop = document.getElementById('btn-stop');
+        const progressBar = document.getElementById('progress-bar');
+        const timeCurrent = document.getElementById('time-current');
+        const timeTotal = document.getElementById('time-total');
+        const volumeSlider = document.getElementById('volume-slider');
+        const volumeIcon = document.getElementById('volume-icon');
+
+        let isPlaying = false;
+        let currentSong = null; 
+        let isDraggingProgress = false;
+
+        audio.volume = volumeSlider.value;
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        // 🎵 버튼 동적 생성 함수
+        function createButtons(songList, containerId, tierClass) {
+            const container = document.getElementById(containerId);
+            songList.forEach(song => {
+                const btn = document.createElement('button');
+                btn.className = `song-btn ${tierClass}`;
+                btn.innerText = song; // 버튼 글씨는 무조건 배열에 적힌 이름
+                btn.addEventListener('click', () => playSong(song, btn));
+                container.appendChild(btn);
+            });
+        }
+
+        // 500개, 300개 버튼 각각 화면에 렌더링
+        createButtons(songs500, 'playlist-500', 'tier-500');
+        createButtons(songs300, 'playlist-300', 'tier-300');
+
+        // 특정 곡 재생 함수
+        function playSong(songName, btnElement) {
+            if (currentSong === songName) {
+                // 이미 선택된 곡이면 재생/일시정지 토글
+                togglePlay();
+                return;
+            }
+
+            // 모든 버튼에서 active 클래스 제거
+            document.querySelectorAll('.song-btn').forEach(btn => btn.classList.remove('active'));
+            // 방금 클릭한 버튼에 active 클래스 추가
+            btnElement.classList.add('active');
+
+            currentSong = songName;
+            displayTitle.innerText = songName; 
+            
+            // 💡 파일 이름 맵핑 로직 (거울춤 -> 디스코몬스터.mp3)
+            let fileName = songName;
+            if (songName === "거울춤") {
+                fileName = "디스코몬스터";
+            }
+            
+            audio.src = `${fileName}.mp3`;
+            audio.load();
+            
+            audio.play().then(() => {
+                isPlaying = true;
+                updatePlayButton();
+            }).catch(e => {
+                alert(`[${fileName}.mp3] 파일을 찾을 수 없거나 재생할 수 없습니다.\n폴더에 파일이 잘 있는지 확인해주세요!`);
+            });
+        }
+
+        // 재생/일시정지 토글
+        function togglePlay() {
+            if (currentSong === null) {
+                alert("아래 목록에서 곡을 먼저 선택해주세요!");
+                return;
+            }
+            if (isPlaying) {
+                audio.pause();
+            } else {
+                audio.play();
+            }
+            isPlaying = !isPlaying;
+            updatePlayButton();
+        }
+
+        // UI 버튼 업데이트
+        function updatePlayButton() {
+            if (isPlaying) {
+                btnPlay.innerHTML = "⏸";
+                btnPlay.classList.add('playing');
+            } else {
+                btnPlay.innerHTML = "▶";
+                btnPlay.classList.remove('playing');
+            }
+        }
+
+        // 정지 버튼 로직 (처음으로 돌아가기)
+        btnStop.addEventListener('click', () => {
+            if (currentSong !== null) {
+                audio.pause();
+                audio.currentTime = 0;
+                isPlaying = false;
+                updatePlayButton();
+            }
+        });
+
+        // 메인 재생 버튼 이벤트
+        btnPlay.addEventListener('click', togglePlay);
+
+        // 오디오 로드 및 시간 업데이트
+        audio.addEventListener('loadedmetadata', () => {
+            progressBar.max = audio.duration;
+            timeTotal.innerText = formatTime(audio.duration);
+        });
+
+        audio.addEventListener('timeupdate', () => {
+            if (!isDraggingProgress) {
+                progressBar.value = audio.currentTime;
+                timeCurrent.innerText = formatTime(audio.currentTime);
+            }
+        });
+
+        audio.addEventListener('ended', () => {
+            isPlaying = false;
+            updatePlayButton();
+            progressBar.value = 0;
+            timeCurrent.innerText = "0:00";
+        });
+
+        // 진행바 드래그 로직
+        progressBar.addEventListener('mousedown', () => { isDraggingProgress = true; });
+        progressBar.addEventListener('touchstart', () => { isDraggingProgress = true; });
+        
+        progressBar.addEventListener('input', () => {
+            timeCurrent.innerText = formatTime(progressBar.value);
+        });
+
+        progressBar.addEventListener('mouseup', (e) => {
+            isDraggingProgress = false;
+            if (currentSong !== null) audio.currentTime = e.target.value;
+        });
+        progressBar.addEventListener('touchend', (e) => {
+            isDraggingProgress = false;
+            if (currentSong !== null) audio.currentTime = e.target.value;
+        });
+
+        // 🔊 볼륨 조절
+        volumeSlider.addEventListener('input', (e) => {
+            const vol = e.target.value;
+            audio.volume = vol;
+            if (vol == 0) volumeIcon.innerText = "🔇";
+            else if (vol < 0.5) volumeIcon.innerText = "🔉";
+            else volumeIcon.innerText = "🔊";
+        });
+
+    </script>
+</body>
+</html>

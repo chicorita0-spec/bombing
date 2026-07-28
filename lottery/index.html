@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>바밍 즉석 스크래치 복권</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        :root {
+            --bg-color: #0d0e15;
+            --t1-color: #8c92ac; 
+            --t2-color: #d980fa; 
+            --t3-color: #ff3399; 
+            --t4-color: #feca57; 
+            --t5-color: #ff4d4d; 
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: #ffffff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(135deg, #121420 0%, #050608 100%);
+        }
+
+        .app-container { position: relative; z-index: 10; display: flex; width: 100%; height: 100%; flex-direction: row; }
+        
+        @media (max-width: 800px) {
+            .app-container { flex-direction: column; overflow-y: auto; }
+            .board-section { flex: none; height: 100vh; }
+            .control-section { width: 100% !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.1); flex: none; }
+        }
+
+        /* 🎯 메인 보드 */
+        .board-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; }
+        
+        .hud-top { display: flex; flex-direction: column; align-items: center; margin-bottom: 15px; }
+        .ammo-counter { color: #fff; font-weight: 900; font-size: 16px; background: rgba(0,0,0,0.8); border: 2px solid #ff4757; padding: 8px 20px; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 0 15px rgba(255, 71, 87, 0.4); }
+        .prize-status-board { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; width: 100%; max-height: 80px; overflow-y: auto; }
+        
+        .prize-badge { background: rgba(0,0,0,0.7); border: 2px solid; padding: 5px 12px; border-radius: 12px; font-weight: 900; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+        .prize-badge .badge-count { background: #fff; color: #000; padding: 2px 7px; border-radius: 8px; font-size: 12px; }
+        .prize-badge.sold-out { opacity: 0.3; filter: grayscale(1); box-shadow: none !important; border-color: #555 !important; }
+        .prize-badge.sold-out span { color: #888 !important; text-shadow: none !important; }
+
+        /* 🎟️ 복권 영역 (이미지 통째로 사용) */
+        .ticket-container {
+            position: relative; 
+            width: 420px; /* 방송 화면 비율에 맞춰 조정 */
+            height: 600px; 
+            margin-bottom: 25px;
+            border-radius: 15px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 20px rgba(255, 51, 153, 0.2);
+            /* 형님이 올린 이미지 삽입 */
+            background-image: url('7d2ee171-3ed1-4fc5-9e84-18b6cd4aaa48.png');
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* 🔥 은박지 구역 (이미지 상의 은박지 위치에 정확히 오버레이) */
+        .scratch-zone {
+            position: absolute;
+            top: 34%;       /* 위에서부터의 위치 */
+            right: 3.5%;    /* 오른쪽에서부터의 위치 */
+            width: 40.5%;   /* 가로 너비 */
+            height: 47.5%;  /* 세로 높이 */
+            border-radius: 15px; /* 이미지 속 은박지의 곡률 */
+            overflow: hidden; 
+            /* 🔥 추가: 회색 테두리 밖으로 삐져나가는 현상 방지 */
+            transform: translateZ(0); 
+            background-color: #ffffff; /* 가장자리를 긁었을 때 하얀 종이가 보이도록 처리 */
+        }
+
+        /* 🎁 당첨 결과 컨테이너 - 스포 방지를 위해 안쪽으로 훅 밀어넣음! */
+        .result-content {
+            position: absolute; 
+            /* 🔥 수정: 은박지 구역 테두리에서부터 30px이나 밀어넣음 (가장자리 스포 원천 차단) */
+            top: 30px; left: 30px; right: 30px; bottom: 30px; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background-size: cover; background-position: center;
+            background-color: #ffffff; 
+            border-radius: 8px; 
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5) inset;
+        }
+
+        /* 🔥 수정: 답답한 전체 검은 막 제거! 글씨 쪽에만 투명한 그림자 추가 */
+        .result-overlay {
+            position: absolute; top: auto; bottom: 0; left: 0; width: 100%; height: 40%;
+            background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%); z-index: 1;
+        }
+
+        .result-info {
+            position: relative; z-index: 2; text-align: center;
+            transform: scale(0.8); opacity: 0; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* 🔥 추가: 텍스트를 하단으로 내림 */
+            margin-top: auto; padding-bottom: 20px;
+        }
+        
+        .result-info.revealed { transform: scale(1); opacity: 1; }
+
+        .result-stars { font-size: 16px; margin-bottom: 4px; text-shadow: 0 2px 4px rgba(0,0,0,1); }
+        .result-title { font-size: 24px; font-weight: 900; text-shadow: 0 3px 6px rgba(0,0,0,1); letter-spacing: -1px; }
+
+        /* 🪙 은박지 캔버스 - 🔥 수정: 500원 동전 커서 적용 */
+        #scratch-canvas {
+            display: block; position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 10; 
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="%23f1c40f" stroke="%23d35400" stroke-width="2"/><circle cx="20" cy="20" r="14" fill="none" stroke="%23f39c12" stroke-width="1"/><text x="20" y="25" font-size="14" text-anchor="middle" fill="%23d35400" font-family="Arial, sans-serif" font-weight="900">500</text></svg>') 20 20, pointer;
+        }
+
+        /* 🎛️ 하단 버튼 */
+        .hud-controls { display: flex; gap: 12px; width: 100%; max-width: 420px;}
+        .btn-draw { flex: 1; padding: 18px 0; border: none; border-radius: 14px; font-size: 18px; font-weight: 900; color: white; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.6); transition: all 0.1s; }
+        .btn-draw:active { transform: translateY(3px) scale(0.98); box-shadow: 0 2px 5px rgba(0,0,0,0.6); }
+        .btn-draw-1 { background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); border-bottom: 4px solid #1e8449; }
+        .btn-draw-1:disabled { background: #555; border-bottom: 4px solid #333; cursor: not-allowed; color: #888; }
+
+        /* ⚙️ 제어판 */
+        .control-section { width: 380px; background: #161821; border-left: 1px solid #2a2d3d; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 20; }
+        .control-title { font-size: 16px; font-weight: 800; color: #fff; border-bottom: 2px solid #2a2d3d; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .sound-toggle-btn { background: #2a2d3d; border: none; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        .sound-toggle-btn.off { color: #888; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; color: #a0a5b5; font-weight: 700; }
+        .form-group input[type="text"], .form-group select { background: #222533; border: 1px solid #33374a; border-radius: 6px; padding: 10px; color: #fff; font-size: 13px; outline: none; }
+        .prize-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 5px;}
+        .prize-table th { color: #a0a5b5; text-align: left; padding-bottom: 8px; }
+        .prize-table input { background: #222533; border: 1px solid #33374a; color:#fff; border-radius: 4px; padding: 8px; width: 100%; }
+        .btn-del { background: none; border: none; color: #ff4757; font-size: 14px; cursor: pointer; font-weight: bold; }
+        .btn-add { background: #3b82f6; border: none; color: white; border-radius: 6px; padding: 12px; font-size: 13px; margin-top: 5px; cursor: pointer; font-weight: bold; transition: background 0.2s;}
+        .btn-add:hover { background: #2563eb; }
+        .kkwang-info { font-size: 13px; color: #fff; padding: 5px 0; font-weight: bold; }
+        .reset-btn-wrap { margin-top: 10px; display: flex; gap: 10px; }
+        .btn-obs { background: #2a2d3d; border: none; border-radius: 6px; color: #a0a5b5; flex: 1; padding: 12px; font-size: 13px; cursor: pointer; font-weight: bold;}
+        .btn-reset-main { background: #ff4757; border: none; border-radius: 6px; color: white; flex: 1; padding: 12px; font-size: 13px; cursor: pointer; font-weight: bold;}
+        .btn-restore { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); color: white; border: 2px solid #3b82f6; padding: 10px 15px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; z-index: 10000; display: none; }
+        body.obs-mode .control-section { display: none !important; }
+        body.obs-mode .btn-restore { display: block; }
+
+        @keyframes impactFlash { 0% { filter: brightness(2.5); } 10% { filter: brightness(1.5) sepia(1) hue-rotate(30deg) saturate(300%); } 100% { filter: brightness(1); } }
+        @keyframes mythicFlash { 0% { filter: brightness(3.5); } 10% { filter: brightness(2) sepia(1) hue-rotate(-50deg) saturate(400%); } 100% { filter: brightness(1); } }
+        body.impact-4 #ticket-container { animation: impactFlash 0.6s ease-out forwards; box-shadow: 0 0 50px var(--t4-color); }
+        body.impact-5 #ticket-container { animation: mythicFlash 0.8s ease-out forwards; box-shadow: 0 0 70px var(--t5-color); }
+    </style>
+</head>
+<body>
+    <button id="obs-restore-btn" class="btn-restore">⚙️ 설정</button>
+
+    <div class="app-container">
+        <!-- 🎯 메인 보드 -->
+        <div class="board-section" id="board-section">
+            <div class="hud-top">
+                <div class="ammo-counter" id="hud-ammo">남은 복권: 100 / 100</div>
+                <div class="prize-status-board" id="prize-status-board"></div>
+            </div>
+
+            <!-- 🎟️ 복권 영역 (통짜 이미지) -->
+            <div class="ticket-container" id="ticket-container">
+                <!-- 🔥 스크래치 존 (은박지 위치에 절대 좌표로 맞춤) -->
+                <div class="scratch-zone" id="scratch-zone">
+                    <!-- 결과 영역 (안전 여백 적용) -->
+                    <div class="result-content" id="result-content">
+                        <div class="result-overlay" id="result-overlay"></div>
+                        <div class="result-info" id="result-info">
+                            <div class="result-stars" id="r-stars">⭐</div>
+                            <div class="result-title" id="r-title">꽝</div>
+                        </div>
+                    </div>
+                    <!-- 은박지 캔버스 -->
+                    <canvas id="scratch-canvas"></canvas>
+                </div>
+            </div>
+
+            <div class="hud-controls">
+                <button class="btn-draw btn-draw-1" id="btn-draw-1">🪙 새 복권 꺼내기</button>
+            </div>
+        </div>
+
+        <!-- ⚙️ 제어판 -->
+        <div class="control-section">
+            <div class="control-title">
+                ⚙️ 설정
+                <button id="sound-toggle" class="sound-toggle-btn">🔊 ON</button>
+            </div>
+            <!-- 복권 배경이 들어가므로 타이틀 입력칸 숨김 처리 (기능은 유지) -->
+            <div class="form-group" style="display:none;"><input type="text" id="title-input" value="🪙 바밍 즉석 스크래치 복권"></div>
+            <div class="form-group">
+                <label>📦 전체 수량</label>
+                <select id="board-size-select">
+                    <option value="100" selected>100개</option><option value="300">300개</option><option value="500">500개</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>🎁 당첨 목록 (나머지는 꽝)</label>
+                <table class="prize-table">
+                    <thead><tr><th>이름</th><th style="width:50px;">수량</th><th style="width:30px;">삭제</th></tr></thead>
+                    <tbody id="prize-list-body"></tbody>
+                </table>
+                <button class="btn btn-add" id="add-prize-btn">+ 항목 추가</button>
+                <div class="kkwang-info" id="kkwang-count-display">자동 꽝: 61개 (미션: 39/100개)</div>
+            </div>
+            <div class="reset-btn-wrap">
+                <button class="btn btn-obs" id="obs-toggle-btn">📺 OBS 모드</button>
+                <button class="btn btn-reset-main" id="reset-btn">🔄 게임 초기화</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let prizePool = [], remainingPrizes = {}, totalCount = 100, isSoundOn = true, currentAmmo = 0;
+        let isDrawing = false; 
+        let currentResult = null; 
+        let isRevealed = false; 
+
+        // 🎵 오디오 파일 설정
+        const audioFiles = {
+            click: new Audio('click.mp3'),
+            scratch: new Audio('scratch.mp3'), 
+            draw_normal: new Audio('draw_normal.mp3'),   
+            draw_legend: new Audio('draw_legend.mp3')
+        };
+        
+        function playSnd(key) { if(isSoundOn && audioFiles[key]) { let s=audioFiles[key].cloneNode(); s.play().catch(()=>{}); } }
+        
+        let scratchMoveTimeout = null;
+
+        function playScratchSnd() {
+            if(!isSoundOn || !audioFiles.scratch) return;
+            audioFiles.scratch.loop = true;
+            audioFiles.scratch.volume = 0.5;
+            if (audioFiles.scratch.paused) {
+                audioFiles.scratch.play().catch(()=>{});
+            }
+        }
+
+        function stopScratchSnd() {
+            if (audioFiles.scratch && !audioFiles.scratch.paused) {
+                audioFiles.scratch.pause();
+            }
+        }
+        
+        document.getElementById('sound-toggle').addEventListener('click', function() { isSoundOn=!isSoundOn; this.innerText=isSoundOn?'🔊 ON':'🔇 OFF'; this.classList.toggle('off',!isSoundOn); stopScratchSnd(); });
+
+        function getCardData(name) {
+            if (name.includes('꽝')) return { t: 1, stars: '⭐', id: 'ggwang', cls: 't-1' };
+            if (name.includes('노래')) return { t: 3, stars: '⭐⭐⭐', id: 'song', cls: 't-3' };
+            if (name.includes('매도')) return { t: 2, stars: '⭐⭐', id: 'maedo', cls: 't-2' };
+            if (name.includes('애교')) return { t: 3, stars: '⭐⭐⭐', id: 'aegyo', cls: 't-3' };
+            if (name.includes('프사')) return { t: 4, stars: '⭐⭐⭐⭐', id: 'mingcaso', cls: 't-4' };
+            if (name.includes('역팬')) return { t: 4, stars: '⭐⭐⭐⭐', id: 'yeokfan', cls: 't-4' };
+            if (name.includes('방셀')) return { t: 5, stars: '⭐⭐⭐⭐⭐', id: 'bangsel', cls: 't-5' };
+            return { t: 1, stars: '⭐', id: 'ggwang', cls: 't-1' }; 
+        }
+
+        const sizeSelect = document.getElementById('board-size-select'), prizeListBody = document.getElementById('prize-list-body');
+        const kkwangDisplay = document.getElementById('kkwang-count-display'), statusBoard = document.getElementById('prize-status-board');
+        
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true }); 
+        const scratchZone = document.getElementById('scratch-zone');
+        const resultContent = document.getElementById('result-content');
+        const resultInfo = document.getElementById('result-info');
+        const rStars = document.getElementById('r-stars');
+        const rTitle = document.getElementById('r-title');
+        const btnDraw = document.getElementById('btn-draw-1');
+        
+        let isDrawingCanvas = false; 
+        
+        // 스크래치 존 크기와 캔버스 픽셀을 정확히 1:1 매칭
+        function resizeCanvas() {
+            canvas.width = scratchZone.clientWidth;
+            canvas.height = scratchZone.clientHeight;
+            if(!isDrawing) fillCanvas(); 
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function fillCanvas() {
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // 은박지 색상
+            ctx.fillStyle = '#909497'; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 살짝 노이즈/패턴 느낌 추가
+            ctx.fillStyle = 'rgba(255,255,255,0.05)';
+            for(let i=0; i<1000; i++){
+                ctx.beginPath();
+                ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, Math.random()*2, 0, 2*Math.PI);
+                ctx.fill();
+            }
+        }
+
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            
+            if(e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function startScratch(e) {
+            if(!isDrawing || isRevealed) return; 
+            isDrawingCanvas = true;
+            scratch(e);
+        }
+
+        function endScratch() {
+            isDrawingCanvas = false;
+            stopScratchSnd();
+            clearTimeout(scratchMoveTimeout);
+        }
+
+        function scratch(e) {
+            if(!isDrawingCanvas || !isDrawing || isRevealed) return;
+            e.preventDefault(); 
+            
+            playScratchSnd();
+            clearTimeout(scratchMoveTimeout);
+            scratchMoveTimeout = setTimeout(() => {
+                stopScratchSnd();
+            }, 100);
+            
+            const pos = getPointerPos(e);
+            
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            // 🔥 수정: 브러쉬 크기를 기존 12에서 35로 확 키워서 시원하게 긁어냄
+            ctx.arc(pos.x, pos.y, 28, 0, Math.PI * 2); 
+            ctx.fill();
+            
+            checkReveal();
+        }
+
+        canvas.addEventListener('mousedown', startScratch);
+        canvas.addEventListener('mousemove', scratch);
+        window.addEventListener('mouseup', endScratch);
+        
+        canvas.addEventListener('touchstart', startScratch, {passive: false});
+        canvas.addEventListener('touchmove', scratch, {passive: false});
+        window.addEventListener('touchend', endScratch);
+
+        function checkReveal() {
+            const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let transparentPixels = 0;
+            const totalPixels = pixels.length / 4;
+            
+            for(let i=0; i<pixels.length; i+=16) {
+                if(pixels[i+3] < 128) transparentPixels++; 
+            }
+            
+            const percent = (transparentPixels / (totalPixels/4)) * 100;
+            
+            // 🔥 수정: 기존 35% -> 20%만 긁어내면 바로 확정 공개!
+            if(percent > 35 && !isRevealed) {
+                isRevealed = true;
+                revealResult();
+            }
+        }
+
+        function revealResult() {
+            stopScratchSnd();
+            clearTimeout(scratchMoveTimeout);
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            
+            const d = currentResult.d;
+            resultInfo.classList.add('revealed');
+            
+            if(remainingPrizes[currentResult.name] > 0) remainingPrizes[currentResult.name]--;
+            currentAmmo--;
+            renderStatusBoard();
+            
+            if(d.t >= 4) {
+                document.body.classList.add(`impact-${d.t}`); 
+                setTimeout(()=>document.body.classList.remove(`impact-${d.t}`), 1000);
+                playSnd('draw_legend');
+            } else {
+                playSnd('draw_normal');
+            }
+            
+            fireConfetti(d.t);
+            
+            btnDraw.disabled = false;
+            btnDraw.innerText = "🪙 새 복권 꺼내기";
+        }
+
+
+        function updateKkwangCount() {
+            totalCount = parseInt(sizeSelect.value); let sum = 0;
+            document.querySelectorAll('.p-count').forEach(i => sum += parseInt(i.value)||0);
+            const kkw = Math.max(0, totalCount - sum);
+            kkwangDisplay.innerText = `자동 꽝: ${kkw}개 (미션: ${sum}/${totalCount}개)`;
+            return { totalCount, kkw };
+        }
+
+        function addPrizeRow(n, c) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><input type="text" class="p-name" value="${n}"></td><td><input type="number" class="p-count" value="${c}"></td><td><button class="btn-del">❌</button></td>`;
+            prizeListBody.appendChild(tr);
+            tr.querySelector('.btn-del').addEventListener('click', (e)=>{ e.target.closest('tr').remove(); updateKkwangCount(); saveSettings(); });
+            tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', ()=>{ updateKkwangCount(); saveSettings(); }));
+        }
+        document.getElementById('add-prize-btn').addEventListener('click', ()=>{ addPrizeRow('새 미션', 1); updateKkwangCount(); saveSettings(); });
+
+        function initPool() {
+            const { totalCount, kkw } = updateKkwangCount();
+            prizePool = []; remainingPrizes = {};
+            document.querySelectorAll('#prize-list-body tr').forEach(row => {
+                const n = row.querySelector('.p-name').value.trim(), c = parseInt(row.querySelector('.p-count').value)||0;
+                if (n && c > 0) { remainingPrizes[n] = c; for (let i=0; i<c; i++) prizePool.push(n); }
+            });
+            if (kkw > 0) { remainingPrizes['일반(꽝)'] = kkw; for(let i=0; i<kkw; i++) prizePool.push('일반(꽝)'); }
+            prizePool = prizePool.slice(0, totalCount);
+            
+            for (let i = prizePool.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [prizePool[i], prizePool[j]] = [prizePool[j], prizePool[i]]; }
+            
+            currentAmmo = prizePool.length;
+            renderStatusBoard();
+            
+            isDrawing = false;
+            isRevealed = false;
+            currentResult = null;
+            resizeCanvas();
+            fillCanvas();
+            resultContent.style.backgroundImage = 'none';
+            resultInfo.classList.remove('revealed');
+            
+            btnDraw.disabled = false;
+            btnDraw.innerText = "🪙 첫 복권 꺼내기";
+        }
+
+        function renderStatusBoard() {
+            statusBoard.innerHTML = '';
+            for (const [name, count] of Object.entries(remainingPrizes)) {
+                if (name.includes('꽝')) continue; 
+                const d = getCardData(name);
+                const badge = document.createElement('div'); 
+                badge.className = 'prize-badge';
+                
+                badge.style.borderColor = `var(--t${d.t}-color)`;
+                
+                if(count<=0) {
+                    badge.classList.add('sold-out');
+                    badge.innerHTML = `<span>${name}</span><span class="badge-count">${count}</span>`;
+                } else {
+                    badge.innerHTML = `<span style="color:var(--t${d.t}-color);">${name}</span><span class="badge-count" style="background:var(--t${d.t}-color); color:#000;">${count}</span>`;
+                }
+                statusBoard.appendChild(badge);
+            }
+            document.getElementById('hud-ammo').innerText = `남은 복권: ${currentAmmo} / ${totalCount}`;
+        }
+
+        function fireConfetti(tier) {
+            try {
+                if(typeof confetti !== 'function') return;
+                if(tier === 5) confetti({ zIndex: 9999, particleCount: 250, spread: 150, colors: ['#ff003c', '#ffffff', '#ffde00'], startVelocity: 65, scalar: 1.4 });
+                else if(tier === 4) confetti({ zIndex: 9999, particleCount: 180, spread: 120, colors: ['#ffde00', '#ffffff'], startVelocity: 55 });
+                else if(tier === 3) confetti({ zIndex: 9999, particleCount: 100, spread: 100, colors: ['#ff3399', '#fff'], startVelocity: 45 });
+                else if(tier === 2) confetti({ zIndex: 9999, particleCount: 60, spread: 70, colors: ['#d980fa', '#fff'] });
+            } catch(e) {}
+        }
+
+        btnDraw.addEventListener('click', () => {
+            playSnd('click');
+            if(prizePool.length < 1) {
+                alert("복권이 매진되었습니다!");
+                return;
+            }
+            
+            isDrawing = true;
+            isRevealed = false;
+            
+            btnDraw.disabled = true;
+            btnDraw.innerText = "박박 긁어주세요!";
+            
+            const resultName = prizePool.pop(); 
+            const d = getCardData(resultName);
+            currentResult = { name: resultName, d: d };
+            
+            resultInfo.classList.remove('revealed');
+            
+            resultContent.style.backgroundImage = `url('${d.id}.png')`;
+            rStars.innerText = d.stars;
+            rStars.style.color = `var(--t${d.t}-color)`;
+            
+            rTitle.innerText = resultName.replace('일반(꽝)','꽝').replace(/\(.*\)/,'');
+            rTitle.style.color = (d.t === 1) ? '#fff' : `var(--t${d.t}-color)`;
+            
+            resizeCanvas(); 
+            fillCanvas();
+        });
+
+        function saveSettings() {
+            try {
+                const missions = []; document.querySelectorAll('#prize-list-body tr').forEach(row => { missions.push({ name: row.querySelector('.p-name').value, count: parseInt(row.querySelector('.p-count').value)||0 }); });
+                localStorage.setItem('baumingScratch', JSON.stringify({ s: sizeSelect.value, m: missions }));
+            } catch(e) {}
+        }
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('baumingScratch'); prizeListBody.innerHTML = '';
+                if (saved) {
+                    const s = JSON.parse(saved);
+                    sizeSelect.value = s.s; 
+                    s.m.forEach(m => addPrizeRow(m.name, m.count));
+                } else { addPrizeRow('노래', 5); addPrizeRow('매도', 15); addPrizeRow('애교', 15); addPrizeRow('프사그려주기(✨)', 1); addPrizeRow('역팬(✨)', 1); addPrizeRow('즉석방셀(✨)', 3); }
+            } catch(e) { prizeListBody.innerHTML = ''; addPrizeRow('노래', 5); addPrizeRow('매도', 15); addPrizeRow('애교', 15); addPrizeRow('프사그려주기(✨)', 1); addPrizeRow('역팬(✨)', 1); addPrizeRow('즉석방셀(✨)', 3); }
+            updateKkwangCount();
+        }
+
+        document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("초기화 하시겠습니까?")) initPool(); });
+        document.getElementById('obs-toggle-btn').addEventListener('click', () => document.body.classList.add('obs-mode'));
+        document.getElementById('obs-restore-btn').addEventListener('click', () => document.body.classList.remove('obs-mode'));
+        document.querySelectorAll('.control-section input, .control-section select').forEach(i => i.addEventListener('change', saveSettings));
+
+        window.addEventListener('load', () => {
+            loadSettings(); 
+            setTimeout(() => {
+                resizeCanvas();
+                initPool();
+            }, 100);
+        });
+
+    </script>
+</body>
+</html>

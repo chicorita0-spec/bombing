@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스트리머 전용 사격장</title>
+    <!-- 폭죽 효과 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0f1015;
+            color: #ffffff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #bg-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: contain; background-position: center;
+            background-repeat: no-repeat; background-color: #121218;
+            background-image: url('bg.png'); z-index: 1;
+        }
+        #bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.1); z-index: 2;
+        }
+
+        .app-container {
+            position: relative; z-index: 10; display: flex;
+            width: 100%; height: 100%;
+        }
+
+        .board-section {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: flex-start; 
+            justify-content: center; padding: 40px;
+            transition: align-items 0.3s ease;
+        }
+
+        .board-wrapper {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; max-width: 620px;
+        }
+
+        .board-title {
+            font-size: 32px; font-weight: 900; margin-bottom: 16px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.8); color: #ffffff;
+            letter-spacing: -0.5px; text-align: center;
+        }
+
+        /* 과녁판 테두리를 전체를 감싸는 프레임 */
+        .target-board-frame {
+            position: relative;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px); 
+            border: 4px solid #ffffff;
+            box-shadow: 0 0 0 4px #ff4757, 0 0 0 8px #ffffff, 0 0 0 12px #ff4757, 0 15px 35px 12px rgba(0,0,0,0.4); 
+            border-radius: 24px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: opacity 0.3s ease;
+            opacity: 0.85; 
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" stroke="%23ff4757" stroke-width="2" fill="none"/><line x1="16" y1="0" x2="16" y2="8" stroke="%23ff4757" stroke-width="2"/><line x1="16" y1="24" x2="16" y2="32" stroke="%23ff4757" stroke-width="2"/><line x1="0" y1="16" x2="8" y2="16" stroke="%23ff4757" stroke-width="2"/><line x1="24" y1="16" x2="32" y2="16" stroke="%23ff4757" stroke-width="2"/><circle cx="16" cy="16" r="2" fill="%23ff4757"/></svg>') 16 16, crosshair;
+        }
+
+        /* 랜덤 적장 얼굴 */
+        .target-face-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            background-repeat: no-repeat; opacity: 0.4; 
+            border-radius: 20px; pointer-events: none; z-index: 0;
+        }
+
+        /* 프레임 내부 상단 투명 HUD */
+        .board-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            z-index: 2; 
+            padding: 0 4px;
+        }
+
+        .prize-status-board {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            justify-content: flex-start; flex: 1;
+        }
+
+        .prize-badge {
+            background: rgba(0, 0, 0, 0.55); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            color: #ffffff;
+            padding: 4px 10px; border-radius: 16px; font-weight: 800;
+            font-size: 13px; display: flex; align-items: center; gap: 6px;
+            backdrop-filter: blur(4px); text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            transition: all 0.2s;
+        }
+        .prize-badge .badge-count {
+            background: #ff4757; color: white; padding: 2px 6px;
+            border-radius: 10px; font-size: 12px; text-shadow: none;
+        }
+        .prize-badge.sold-out { opacity: 0.4; background: rgba(0,0,0,0.3); border-color: transparent; }
+        .prize-badge.sold-out .badge-count { background: #666; }
+
+        /* 🎲 랜덤 뽑기 버튼 및 탄약 래퍼 */
+        .hud-controls {
+            display: flex; gap: 8px; align-items: center;
+        }
+        .btn-draw {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #38bdf8;
+            color: #38bdf8;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 14px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        .btn-draw.btn-11 {
+            border-color: #ff9ff3;
+            color: #ff9ff3;
+        }
+        .btn-draw:hover {
+            background: #ffffff;
+            color: #000000;
+            transform: translateY(-2px);
+        }
+
+        .ammo-counter {
+            color: #feca57; font-weight: 900; font-size: 15px;
+            background: rgba(0, 0, 0, 0.55); border: 2px solid rgba(254, 202, 87, 0.8);
+            padding: 6px 14px; border-radius: 20px; backdrop-filter: blur(4px);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8); white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        /* 메인 그리드 */
+        .board-grid {
+            display: grid; gap: 8px; width: 100%; z-index: 2;
+        }
+
+        @keyframes gunRecoil {
+            0% { transform: translateY(0) scale(1); }
+            20% { transform: translateY(-3px) rotate(-0.5deg) scale(1.01); }
+            40% { transform: translateY(2px) rotate(0.5deg); }
+            60% { transform: translateY(-1px) rotate(-0.2deg); }
+            100% { transform: translateY(0) scale(1); }
+        }
+        .recoil-active { animation: gunRecoil 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+        .cell { position: relative; perspective: 800px; aspect-ratio: 1; user-select: none; z-index: 1; }
+
+        .target-back {
+            position: absolute; inset: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 14px; color: #fff;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.3);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.4); z-index: 1; word-break: keep-all;
+            text-align: center; padding: 2px; opacity: 0; transform: scale(0.5); 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+
+        .cell.shot .target-back { opacity: 1; transform: scale(1); }
+
+        .target-back.win { background: linear-gradient(135deg, #ff4757, #ff6b81); border: 3px solid #ff4757; }
+        .target-back.song { background: linear-gradient(135deg, #48dbfb, #0abde3); border: 3px solid #0abde3; }
+        .target-back.aegyo { background: linear-gradient(135deg, #ff9ff3, #f368e0); border: 3px solid #f368e0; }
+        .target-back.bangcel { background: linear-gradient(135deg, #feca57, #ff9f43); border: 3px solid #ff9f43; }
+        .target-back.maedo { background: linear-gradient(135deg, #6c5ce7, #4834d4); border: 3px solid #4834d4; }
+        .target-back.kkwang { background: linear-gradient(135deg, #2f3542, #1e272e); color: #747d8c; border: 3px solid #1e272e; text-shadow: none; }
+        .target-back.custom-win { box-shadow: inset 0 3px 6px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
+        .block-front {
+            position: absolute; inset: 0;
+            background: linear-gradient(180deg, #e1b12c 0%, #c23616 100%);
+            background: url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><rect width="100" height="100" fill="%23d18b47"/><rect y="20" width="100" height="2" fill="%23a05c1e"/><rect y="50" width="100" height="2" fill="%23a05c1e"/><rect y="80" width="100" height="2" fill="%23a05c1e"/></svg>'); 
+            background-size: cover; border: 2px solid #8b4513; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 20px; color: #fff;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8); box-shadow: 0 4px 0 #5c3a21;
+            transform-origin: bottom; transition: transform 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53), opacity 0.2s; z-index: 2;
+        }
+
+        .block-front:hover { filter: brightness(1.1); }
+        .cell.shot .block-front { transform: rotateX(90deg) scale(0.8) translateY(-10px); opacity: 0; }
+
+        @keyframes earthquake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-2px, 0px) rotate(1deg); }
+            40% { transform: translate(2px, -2px) rotate(0deg); }
+            60% { transform: translate(-2px, 2px) rotate(-1deg); }
+            80% { transform: translate(2px, 1px) rotate(1deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
+        }
+        .earthquake-active { animation: earthquake 0.4s cubic-bezier(.36,.07,.19,.97) both !important; border-color: #ff4757 !important; }
+
+        /* 🏆 투명하고 가리지 않는 팝업창 */
+        .popup-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent; z-index: 10000; display: flex; 
+            align-items: flex-start; justify-content: center;
+            padding-top: 15%; border-radius: 20px; 
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .popup-overlay.active { opacity: 1; pointer-events: auto; }
+        .popup-content {
+            background: rgba(20, 20, 28, 0.95); backdrop-filter: blur(12px);
+            border: 3px solid #feca57; padding: 24px 40px; border-radius: 20px; text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 20px rgba(254, 202, 87, 0.4);
+            transform: scale(0.7) translateY(-20px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;
+        }
+        .popup-overlay.active .popup-content { transform: scale(1) translateY(0); }
+        .popup-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 18px; cursor: pointer; color: #a4b0be; transition: color 0.2s, transform 0.2s; }
+        .popup-close:hover { color: #ffffff; transform: scale(1.2); }
+        
+        .popup-title { font-size: 18px; color: #feca57; font-weight: 800; margin-bottom: 12px; letter-spacing: 2px; }
+        .popup-prize-name { font-size: 40px; color: #ffffff; font-weight: 900; text-shadow: 0 4px 15px rgba(254, 202, 87, 0.6); word-break: keep-all; }
+
+        /* 가챠 결과 리스트용 커스텀 스크롤바 */
+        .gacha-result-list::-webkit-scrollbar { width: 6px; }
+        .gacha-result-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
+        .gacha-result-list::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
+
+        .control-section {
+            width: 360px; background: rgba(20, 20, 28, 0.98); border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5); cursor: default; 
+        }
+
+        .control-title { font-size: 18px; font-weight: 800; color: #ff6b81; border-bottom: 2px solid rgba(255, 107, 129, 0.3); padding-bottom: 10px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .sound-toggle-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+        .sound-toggle-btn.off { color: #a1a1aa; text-decoration: line-through; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 13px; color: #e4e4e7; font-weight: 700; }
+        .form-group input[type="text"], .form-group select { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none; }
+        .form-group input:focus, .form-group select:focus { border-color: #ff4757; }
+        .form-group select option { background-color: #1e1e24; color: #ffffff; }
+        input[type="range"] { accent-color: #ff4757; cursor: pointer; }
+        .prize-table { width: 100%; border-collapse: collapse; }
+        .prize-table th { font-size: 12px; color: #a1a1aa; text-align: left; padding-bottom: 8px; }
+        .prize-table td { padding: 4px 0; }
+        .prize-table input[type="text"], .prize-table input[type="number"] { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color:#fff; border-radius: 4px; padding: 6px; }
+        .prize-table input[type="text"] { width: 95%; }
+        .prize-table input[type="number"] { width: 60px; text-align: center; }
+        .btn-del { background: none; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 4px; transition: transform 0.2s; }
+        .btn-del:hover { transform: scale(1.2); }
+        .kkwang-info { font-size: 13px; font-weight: 700; color: #38bdf8; background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; text-align: center; }
+        .btn { background: #ff4757; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; text-align: center; font-size: 14px; transition: background 0.2s; }
+        .btn:hover { background: #ff6b81; }
+        .btn-add { background: #3b82f6; margin-top: 8px; padding: 8px; font-size: 12px; }
+        .btn-sec { background: rgba(255, 255, 255, 0.1); color: #ccc; }
+        .file-btn { background: #2563eb; color: white; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 700; }
+
+        .btn-restore { position: absolute; top: 24px; right: 24px; background: rgba(0, 0, 0, 0.6); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; z-index: 100; display: none; backdrop-filter: blur(4px); }
+        .btn-restore:hover { background: rgba(0, 0, 0, 0.8); }
+
+        body.obs-mode .control-section, body.obs-mode #bg-overlay { display: none; }
+        body.obs-mode #bg-container { background-color: transparent !important; }
+        body.obs-mode .btn-restore { display: block; }
+    </style>
+</head>
+<body>
+    <div id="bg-container"></div>
+    <div id="bg-overlay"></div>
+    <button id="obs-restore-btn" class="btn-restore">⚙️ 설정창 열기</button>
+
+    <div class="app-container">
+        <div class="board-section" id="board-section">
+            <div class="board-wrapper">
+                <div class="board-title" id="display-title">바밍 전용 사격장</div>
+                
+                <!-- 💡 캡처 영역 시작 -->
+                <div class="target-board-frame" id="target-board-frame">
+                    
+                    <div class="target-face-bg" id="target-face-bg"></div>
+
+                    <!-- 🔫 프레임 안쪽 HUD (현황판 + 랜덤버튼 + 총알수) -->
+                    <div class="board-hud">
+                        <div class="prize-status-board" id="prize-status-board"></div>
+                        
+                        <div class="hud-controls">
+                            <!-- 🎲 추가된 랜덤 사격 버튼 -->
+                            <button class="btn-draw" id="btn-draw-1">🎲 1회</button>
+                            <button class="btn-draw btn-11" id="btn-draw-11">🎰 11회</button>
+                            <div class="ammo-counter" id="hud-ammo">🔫 100</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 🎯 메인 그리드 -->
+                    <div class="board-grid" id="board"></div>
+
+                    <!-- 🏆 공용 팝업창 -->
+                    <div id="prize-popup" class="popup-overlay">
+                        <div class="popup-content">
+                            <button id="popup-close-btn" class="popup-close">❌</button>
+                            <div class="popup-title" id="popup-title">🎉 스페셜 당첨! 🎉</div>
+                            <div id="popup-prize-name" class="popup-prize-name">즉석방셀</div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- 💡 캡처 영역 끝 -->
+
+            </div>
+        </div>
+
+        <div class="control-section">
+            <div class="control-title">
+                ⚙️ 사격장 설정
+                <button id="sound-toggle" class="sound-toggle-btn">🔊 사운드 ON</button>
+            </div>
+            <div class="form-group"><label>방송 타이틀 / 스트리머명</label><input type="text" id="title-input" value="바밍 전용 사격장"></div>
+            <div class="form-group">
+                <label>📐 타겟 크기 선택</label>
+                <select id="board-size-select">
+                    <option value="100" selected>100칸 (10x10)</option>
+                    <option value="50">50칸 (10x5)</option>
+                    <option value="25">25칸 (5x5)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>↔️ 덩어리 가로 위치</label>
+                <select id="position-select">
+                    <option value="flex-start" selected>왼쪽</option>
+                    <option value="center">가운데</option>
+                    <option value="flex-end">오른쪽</option>
+                </select>
+            </div>
+            <div class="form-group"><label>🔊 총소리 볼륨 조절</label><input type="range" id="shoot-volume-slider" min="0" max="1" step="0.05" value="0.25"></div>
+            <div class="form-group"><label>🎛️ 사격장 투명도 조절</label><input type="range" id="opacity-slider" min="0.3" max="1" step="0.05" value="0.85"></div>
+            <div class="form-group"><label>🖼️ 배경 이미지 변경</label><label for="bg-file" class="file-btn">컴퓨터에서 배경 이미지 선택</label><input type="file" id="bg-file" accept="image/*" style="display: none;"></div>
+            <div class="form-group">
+                <label>🎁 당첨 미션 및 개수 설정</label>
+                <table class="prize-table">
+                    <thead><tr><th>미션 이름</th><th style="width: 70px;">수량</th><th style="width: 30px;">삭제</th></tr></thead>
+                    <tbody id="prize-list-body"></tbody>
+                </table>
+                <button class="btn btn-add" id="add-prize-btn">+ 항목 추가</button>
+                <div class="kkwang-info" id="kkwang-count-display">자동 적용 꽝: 62개</div>
+            </div>
+            <button class="btn" id="reset-btn">🔄 타겟 초기화 & 장전하기</button>
+            <button class="btn btn-sec" id="obs-toggle-btn">📺 OBS 모드 전환 (설정창 숨기기)</button>
+        </div>
+    </div>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        const targetBoardFrame = document.getElementById('target-board-frame');
+        const boardSection = document.getElementById('board-section');
+        const titleInput = document.getElementById('title-input');
+        const displayTitle = document.getElementById('display-title');
+        const sizeSelect = document.getElementById('board-size-select');
+        const positionSelect = document.getElementById('position-select');
+        const opacitySlider = document.getElementById('opacity-slider');
+        const shootVolumeSlider = document.getElementById('shoot-volume-slider');
+        const resetBtn = document.getElementById('reset-btn');
+        const bgFileInput = document.getElementById('bg-file');
+        const bgContainer = document.getElementById('bg-container');
+        const obsToggleBtn = document.getElementById('obs-toggle-btn');
+        const obsRestoreBtn = document.getElementById('obs-restore-btn'); 
+        const prizeListBody = document.getElementById('prize-list-body');
+        const addPrizeBtn = document.getElementById('add-prize-btn');
+        const kkwangDisplay = document.getElementById('kkwang-count-display');
+        const statusBoard = document.getElementById('prize-status-board');
+        const hudAmmo = document.getElementById('hud-ammo');
+        const targetFaceBg = document.getElementById('target-face-bg');
+
+        // 버튼들
+        const btnDraw1 = document.getElementById('btn-draw-1');
+        const btnDraw11 = document.getElementById('btn-draw-11');
+
+        let totalTargets = 100;
+        let shotTargets = 0;
+        let isRandomDraw = false;
+
+        const popupOverlay = document.getElementById('prize-popup');
+        const popupTitle = document.getElementById('popup-title');
+        const popupPrizeName = document.getElementById('popup-prize-name');
+        const popupCloseBtn = document.getElementById('popup-close-btn');
+        popupCloseBtn.addEventListener('click', () => { popupOverlay.classList.remove('active'); });
+
+        let remainingPrizes = {}; 
+        let initialPrizes = {}; // 🔥 설정된 초기 수량 추적
+        let isSoundOn = true;
+        const soundToggleBtn = document.getElementById('sound-toggle');
+        
+        const audioFiles = {
+            shoot: new Audio('shoot.mp3'), win: new Audio('win.mp3'),
+            bangcel: new Audio('bangcel.mp3'), maedo: new Audio('maedo.mp3'), kkwang: new Audio('kkwang.mp3')
+        };
+
+        function playSound(type) {
+            if (!isSoundOn) return;
+            try {
+                let snd = audioFiles[type].cloneNode();
+                snd.volume = (type === 'shoot') ? parseFloat(shootVolumeSlider.value) : 0.6;
+                snd.play().catch(e => {});
+            } catch (e) {}
+        }
+
+        soundToggleBtn.addEventListener('click', () => {
+            isSoundOn = !isSoundOn;
+            if (isSoundOn) { soundToggleBtn.innerText = '🔊 사운드 ON'; soundToggleBtn.classList.remove('off'); } 
+            else { soundToggleBtn.innerText = '🔇 사운드 OFF'; soundToggleBtn.classList.add('off'); }
+        });
+
+        function showPopup(title, contentHTML) {
+            popupTitle.innerHTML = title;
+            popupPrizeName.innerHTML = contentHTML;
+            popupOverlay.classList.add('active');
+        }
+
+        function saveSettings() {
+            const missions = [];
+            document.querySelectorAll('#prize-list-body tr').forEach(row => {
+                missions.push({ name: row.querySelector('.p-name').value, count: row.querySelector('.p-count').value });
+            });
+            const settings = {
+                title: titleInput.value, size: sizeSelect.value, position: positionSelect.value,
+                volume: shootVolumeSlider.value, opacity: opacitySlider.value, missions: missions
+            };
+            localStorage.setItem('bamingShooterSettingsV2', JSON.stringify(settings));
+        }
+
+        /* 🔥 [수정] 매도/조리돌림/메롱 및 수량 2개 이하 희귀템 판단 함수 */
+        function isMaedoCategory(prize) {
+            return prize.includes('매도') || prize.includes('조리돌림') || prize.includes('놀림') || prize.includes('조롱') || prize.includes('메롱');
+        }
+
+        function isRarePrize(prize) {
+            if (prize === '꽝') return false;
+            if (prize.includes('방셀')) return true;
+            const initCount = initialPrizes[prize] || 999;
+            return initCount <= 2; // 초기 설정 수량이 2개 이하인 대박 미션
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('bamingShooterSettingsV2');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                titleInput.value = settings.title; displayTitle.innerText = settings.title;
+                sizeSelect.value = settings.size; positionSelect.value = settings.position;
+                boardSection.style.alignItems = settings.position;
+                shootVolumeSlider.value = settings.volume || 0.25;
+                opacitySlider.value = settings.opacity || 0.85;
+                targetBoardFrame.style.opacity = settings.opacity; 
+
+                prizeListBody.innerHTML = '';
+                settings.missions.forEach(m => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><input type="text" class="p-name" value="${m.name}"></td><td><input type="number" class="p-count" value="${m.count}" min="0"></td><td><button class="btn-del">❌</button></td>`;
+                    prizeListBody.appendChild(tr);
+                });
+            } else {
+                const defaultMissions = [ 
+                    {name:'조리돌림', count:15}, {name:'애교', count:15}, {name:'역팬(✨)', count:5}, 
+                    {name:'간단 프사(✨)', count:4}, {name:'즉석방셀(✨)', count:4}, 
+                    {name:'니니바밍방셀', count:1}, {name:'노래방셀', count:1}, {name:'영상방셀2', count:1} 
+                ];
+                prizeListBody.innerHTML = '';
+                defaultMissions.forEach(m => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><input type="text" class="p-name" value="${m.name}"></td><td><input type="number" class="p-count" value="${m.count}" min="0"></td><td><button class="btn-del">❌</button></td>`;
+                    prizeListBody.appendChild(tr);
+                });
+            }
+            document.querySelectorAll('.btn-del').forEach(attachDeleteEvent);
+            bindInputEvents();
+        }
+
+        titleInput.addEventListener('input', (e) => { displayTitle.innerText = e.target.value; saveSettings(); });
+        positionSelect.addEventListener('change', (e) => { boardSection.style.alignItems = e.target.value; saveSettings(); });
+        opacitySlider.addEventListener('input', (e) => { targetBoardFrame.style.opacity = e.target.value; saveSettings(); });
+        shootVolumeSlider.addEventListener('input', saveSettings);
+
+        bgFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => bgContainer.style.backgroundImage = `url('${event.target.result}')`;
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function attachDeleteEvent(btn) {
+            btn.addEventListener('click', (e) => { e.target.closest('tr').remove(); updateKkwangCount(); saveSettings(); });
+        }
+
+        addPrizeBtn.addEventListener('click', () => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><input type="text" class="p-name" value="새 미션"></td><td><input type="number" class="p-count" value="1" min="0"></td><td><button class="btn-del">❌</button></td>`;
+            prizeListBody.appendChild(tr);
+            attachDeleteEvent(tr.querySelector('.btn-del'));
+            updateKkwangCount(); saveSettings(); bindInputEvents();
+        });
+
+        function updateKkwangCount() {
+            const total = parseInt(sizeSelect.value);
+            let prizeSum = 0;
+            document.querySelectorAll('.p-count').forEach(input => prizeSum += parseInt(input.value) || 0);
+            const kkwang = Math.max(0, total - prizeSum);
+            kkwangDisplay.innerText = `자동 적용 꽝: ${kkwang}개 (설정된 미션: ${prizeSum}/${total}개)`;
+            return { total, kkwang };
+        }
+
+        function bindInputEvents() { document.querySelectorAll('.p-count, .p-name').forEach(input => { input.oninput = () => { updateKkwangCount(); saveSettings(); }; }); }
+        sizeSelect.addEventListener('change', () => { updateKkwangCount(); saveSettings(); initBoard(); });
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function renderStatusBoard() {
+            statusBoard.innerHTML = '';
+            for (const [name, count] of Object.entries(remainingPrizes)) {
+                if (name === '꽝') continue; 
+                const badge = document.createElement('div');
+                badge.className = 'prize-badge';
+                
+                // 수량 2개 이하 초희귀 항목은 노란빛 발광
+                if (isRarePrize(name)) {
+                    badge.style.borderColor = '#feca57';
+                    badge.style.boxShadow = '0 0 8px #feca57';
+                } else if (isMaedoCategory(name)) {
+                    badge.style.borderColor = '#6c5ce7';
+                }
+
+                if (count <= 0) badge.classList.add('sold-out');
+                badge.innerHTML = `<span>${name}</span><span class="badge-count">${count}</span>`;
+                statusBoard.appendChild(badge);
+            }
+        }
+
+        function updateRemainingDisplay() {
+            const left = totalTargets - shotTargets;
+            hudAmmo.innerText = `🔫 ${left}`; 
+        }
+
+        function getEmojiShape(emojiText) {
+            try { if (typeof confetti.shapeFromText === 'function') return confetti.shapeFromText({ text: emojiText, scalar: 3 }); } catch (e) { }
+            return 'circle'; 
+        }
+
+        const emojis = {
+            mic: getEmojiShape('🎤'), note: getEmojiShape('🎵'), heart: getEmojiShape('💖'), 
+            sparkle: getEmojiShape('✨'), angry: getEmojiShape('💢'), brokenHeart: getEmojiShape('💔')
+        };
+
+        /* 🔥 [개선] 매도/조리돌림 계열 보라색 통일 */
+        function getPrizeColor(prize) {
+            if(prize === '꽝') return '#a1a1aa';
+            if(isRarePrize(prize)) return '#feca57';
+            if(isMaedoCategory(prize)) return '#6c5ce7';
+            if(prize.includes('노래')) return '#48dbfb';
+            if(prize.includes('애교')) return '#ff9ff3';
+            
+            const palette = ['#00b894', '#0984e3', '#e17055', '#e84393', '#f39c12'];
+            let hash = 0; for(let i=0; i<prize.length; i++) hash += prize.charCodeAt(i);
+            return palette[hash % palette.length];
+        }
+
+        function applyCustomStyle(element, prizeName) {
+            const color = getPrizeColor(prizeName);
+            element.style.background = `linear-gradient(135deg, ${color} 0%, #ffffff 150%)`;
+            element.style.border = `3px solid ${color}`;
+            return {c1: color, c2: '#ffffff'}; 
+        }
+
+        function triggerWoodSplinters(x, y) {
+            confetti({ zIndex: 9999, particleCount: 80, spread: 150, origin: { x, y }, colors: ['#8b4513', '#a05c1e', '#d18b47', '#5c3a21'], shapes: ['square'], scalar: 1.5, startVelocity: 35, gravity: 1.2, ticks: 70 });
+        }
+
+        function triggerDudExplosion(x, y) {
+            targetBoardFrame.classList.remove('earthquake-active'); void targetBoardFrame.offsetWidth; targetBoardFrame.classList.add('earthquake-active'); setTimeout(() => targetBoardFrame.classList.remove('earthquake-active'), 500);
+            confetti({ zIndex: 9999, particleCount: 60, spread: 120, origin: { x, y }, colors: ['#2f3542', '#57606f', '#1e272e', '#ff4757'], startVelocity: 35, scalar: 1.2, ticks: 70 });
+            playSound('kkwang');
+        }
+
+        function triggerSpecialFirework(x, y) {
+            confetti({ zIndex: 10001, particleCount: 150, spread: 120, origin: { x: 0.5, y: 0.5 }, colors: ['#ff4757', '#ffa502', '#2ed573', '#1e90ff', '#ffffff'], startVelocity: 45, scalar: 1.2 });
+            setTimeout(() => {
+                confetti({ zIndex: 10001, particleCount: 100, angle: 60, spread: 55, origin: { x: 0, y: 1 }, colors: ['#ff4757', '#ffa502'] });
+                confetti({ zIndex: 10001, particleCount: 100, angle: 120, spread: 55, origin: { x: 1, y: 1 }, colors: ['#1e90ff', '#2ed573'] });
+            }, 250);
+            playSound('bangcel');
+        }
+
+        function triggerSong(x, y) { confetti({ zIndex: 9999, particleCount: 40, spread: 80, origin: { x, y }, shapes: [emojis.mic, emojis.note, 'circle'], colors: ['#ff9ff3', '#feca57', '#48dbfb'], scalar: 1.5, startVelocity: 25 }); playSound('win'); }
+        function triggerAegyo(x, y) { confetti({ zIndex: 9999, particleCount: 40, spread: 80, origin: { x, y }, shapes: [emojis.heart, emojis.sparkle, 'circle'], colors: ['#ff6b81', '#ff9ff3', '#ffffff'], scalar: 1.5, startVelocity: 25 }); playSound('win'); }
+        function triggerMaedo(x, y) { confetti({ zIndex: 9999, particleCount: 30, spread: 60, origin: { x, y }, shapes: [emojis.angry, emojis.brokenHeart, 'square'], colors: ['#2d3436', '#d63031', '#636e72'], scalar: 1.5, startVelocity: 15, gravity: 2, ticks: 80 }); playSound('maedo'); }
+        function triggerCustomWin(x, y, customColor) { confetti({ zIndex: 9999, particleCount: 70, spread: 70, origin: { x, y }, colors: [customColor.c1, customColor.c2, '#ffffff', '#ffd32a'], startVelocity: 30 }); playSound('win'); }
+
+        // 🎲 랜덤 자동 뽑기 기능
+        function doRandomDraw(count) {
+            const unshotCells = Array.from(document.querySelectorAll('.cell:not(.shot)'));
+            if (unshotCells.length === 0) return alert("남은 과녁이 없습니다!");
+            
+            const drawCount = Math.min(count, unshotCells.length);
+            shuffle(unshotCells);
+            const targets = unshotCells.slice(0, drawCount);
+
+            isRandomDraw = true; 
+            boardEl.style.pointerEvents = 'none';
+
+            let results = [];
+            
+            targets.forEach((cell, idx) => {
+                setTimeout(() => {
+                    const num = cell.dataset.number;
+                    const prize = cell.dataset.prize;
+                    results.push({ num, prize });
+                    
+                    cell.click();
+
+                    if (idx === targets.length - 1) {
+                        setTimeout(() => {
+                            if (drawCount === 1) {
+                                let color = getPrizeColor(prize);
+                                showPopup("🎲 랜덤 1회 사격 결과", `<div style="font-size:24px; color:#a1a1aa; margin-bottom:10px;">🎯 ${num}번 명중!</div><div style="font-size:52px; color:${color}; text-shadow: 0 4px 10px rgba(0,0,0,0.8);">${prize}</div>`);
+                            } else {
+                                let html = `<div class="gacha-result-list" style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:16px; max-height:300px; overflow-y:auto; padding: 10px;">`;
+                                results.forEach(r => {
+                                    let color = getPrizeColor(r.prize);
+                                    html += `<div style="background:rgba(0,0,0,0.6); padding:10px 18px; border-radius:16px; border:2px solid ${color}; display:flex; flex-direction:column; min-width: 90px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                                        <span style="font-size:14px; color:#ccc; margin-bottom:4px;">🎯 ${r.num}번</span>
+                                        <span style="font-size:20px; font-weight:bold; color:${color};">${r.prize}</span>
+                                    </div>`;
+                                });
+                                html += `</div>`;
+                                showPopup(`🎰 랜덤 ${drawCount}연사 결과`, html);
+                                
+                                /* 🔥 수량 2개 이하 희귀템이 포함된 경우 화려한 축하 폭죽 추가! */
+                                if(results.some(r => isRarePrize(r.prize))) {
+                                    triggerSpecialFirework(0.5, 0.5);
+                                }
+                            }
+                            isRandomDraw = false;
+                            boardEl.style.pointerEvents = 'auto';
+                        }, 800);
+                    }
+                }, idx * 250);
+            });
+        }
+
+        btnDraw1.addEventListener('click', () => doRandomDraw(1));
+        btnDraw11.addEventListener('click', () => doRandomDraw(11));
+
+        function initBoard() {
+            boardEl.innerHTML = '';
+            
+            const randomEnemyNum = Math.floor(Math.random() * 5) + 1;
+            targetFaceBg.style.backgroundImage = `url('target${randomEnemyNum}.png')`;
+
+            const { total, kkwang } = updateKkwangCount();
+            remainingPrizes = {}; initialPrizes = {};
+            totalTargets = total; shotTargets = 0;
+            updateRemainingDisplay();
+
+            if (total === 25) boardEl.style.gridTemplateColumns = 'repeat(5, 1fr)';
+            else boardEl.style.gridTemplateColumns = 'repeat(10, 1fr)';
+
+            let prizePool = [];
+            document.querySelectorAll('#prize-list-body tr').forEach(row => {
+                const name = row.querySelector('.p-name').value.trim();
+                const count = parseInt(row.querySelector('.p-count').value) || 0;
+                if (name && count > 0) {
+                    remainingPrizes[name] = count; 
+                    initialPrizes[name] = count; // 🔥 초기 수량 기록
+                    for (let i = 0; i < count; i++) prizePool.push(name);
+                }
+            });
+
+            if (kkwang > 0) {
+                remainingPrizes['꽝'] = kkwang;
+                initialPrizes['꽝'] = kkwang;
+                for (let i = 0; i < kkwang; i++) prizePool.push('꽝');
+            }
+
+            prizePool = prizePool.slice(0, total);
+            shuffle(prizePool);
+            renderStatusBoard();
+
+            for (let i = 0; i < total; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                
+                cell.dataset.number = i + 1;
+                cell.dataset.prize = prizePool[i];
+
+                const targetBack = document.createElement('div');
+                targetBack.className = 'target-back';
+                targetBack.innerText = prizePool[i];
+
+                const blockFront = document.createElement('div');
+                blockFront.className = 'block-front';
+                blockFront.innerText = i + 1;
+
+                cell.appendChild(targetBack);
+                cell.appendChild(blockFront);
+
+                cell.addEventListener('click', (e) => {
+                    if (!cell.classList.contains('shot')) {
+                        cell.classList.add('shot');
+                        
+                        shotTargets++;
+                        updateRemainingDisplay();
+                        
+                        const rect = cell.getBoundingClientRect();
+                        const originX = (rect.left + rect.width / 2) / window.innerWidth;
+                        const originY = (rect.top + rect.height / 2) / window.innerHeight;
+
+                        playSound('shoot');
+                        targetBoardFrame.classList.remove('recoil-active'); void targetBoardFrame.offsetWidth; targetBoardFrame.classList.add('recoil-active');
+                        setTimeout(() => targetBoardFrame.classList.remove('recoil-active'), 300);
+                        
+                        triggerWoodSplinters(originX, originY);
+
+                        const prize = prizePool[i];
+                        let assignedCustomColor = null;
+
+                        /* 🔥 [수정] 클래스 분기 - 매도 계열 / 희귀 2개 이하 보상 인지 */
+                        if (prize === '꽝') targetBack.classList.add('kkwang');
+                        else if (isRarePrize(prize)) targetBack.classList.add('bangcel'); // 대박 황금 오라
+                        else if (isMaedoCategory(prize)) targetBack.classList.add('maedo'); // 보라 오라
+                        else if (prize.includes('노래')) targetBack.classList.add('song');
+                        else if (prize.includes('애교')) targetBack.classList.add('aegyo');
+                        else {
+                            targetBack.classList.add('custom-win');
+                            assignedCustomColor = applyCustomStyle(targetBack, prize);
+                        }
+
+                        setTimeout(() => {
+                            if (prize === '꽝') { triggerDudExplosion(originX, originY); } 
+                            /* 🔥 [수정] 수량 2개 이하 희귀 항목 당첨 시 무조건 팝업 오픈! */
+                            else if (isRarePrize(prize)) {
+                                if(!isRandomDraw) showPopup("🎉 스페셜 대박 당첨! 🎉", prize);
+                                triggerSpecialFirework(originX, originY);
+                            } 
+                            else if (isMaedoCategory(prize)) triggerMaedo(originX, originY);
+                            else if (prize.includes('노래')) triggerSong(originX, originY);
+                            else if (prize.includes('애교')) triggerAegyo(originX, originY);
+                            else { triggerCustomWin(originX, originY, assignedCustomColor); }
+
+                            if (remainingPrizes[prize] > 0) {
+                                remainingPrizes[prize]--; renderStatusBoard();
+                            }
+                        }, 250); 
+                    }
+                });
+                boardEl.appendChild(cell);
+            }
+        }
+
+        resetBtn.addEventListener('click', initBoard);
+        obsToggleBtn.addEventListener('click', () => { document.body.classList.add('obs-mode'); });
+        obsRestoreBtn.addEventListener('click', () => { document.body.classList.remove('obs-mode'); });
+
+        loadSettings();
+        initBoard();
+    </script>
+</body>
+</html>

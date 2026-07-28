@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>바밍 가챠 슬롯</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { 
+            --t1:#8c92ac; 
+            --t2:#df40ff; 
+            --t3:#ff3399; 
+            --t4:#ffde00; 
+            --t5:#ff003c; 
+        }
+        body { font-family:'Pretendard', -apple-system, sans-serif; background:#05050a; color:#fff; height:100vh; display:flex; overflow:hidden; }
+        
+        @keyframes mythicFlash6 {
+            0% { filter: brightness(5) sepia(1) hue-rotate(180deg) saturate(600%); }
+            15% { filter: brightness(2.5); }
+            100% { filter: brightness(1); }
+        }
+        body.impact-6 { animation: mythicFlash6 1s ease-out forwards; }
+
+        @keyframes shakeStage {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-8px, 5px); }
+            40% { transform: translate(8px, -5px); }
+            60% { transform: translate(-5px, -8px); }
+            80% { transform: translate(5px, 8px); }
+        }
+        .board-wrapper.shaking { animation: shakeStage 0.3s ease-in-out; }
+
+        .app-container { display:flex; width:100%; height:100%; }
+        
+        .board-section { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; position:relative; }
+        
+        /* 🖼️ 배경 이미지(bg.png) 프레임 설정 */
+        .board-wrapper { 
+            width: 960px; 
+            height: 780px; 
+            background: url('bg.png') no-repeat center center / contain; 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+
+        /* 상단 현황 정보 */
+        .hud-header {
+            position: absolute;
+            top: 130px;
+            width: 80%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .ammo-counter { color:#fff; font-weight:900; font-size:12px; background:rgba(0,0,0,0.85); border:1.5px solid #00ffff; padding:2px 14px; border-radius:14px; margin-bottom:4px; box-shadow:0 0 8px #00ffff; }
+        .prize-status-board { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; width:100%; max-height:42px; overflow-y:auto; }
+        .prize-badge { background:rgba(0,0,0,0.9); border:1.5px solid; padding:1px 6px; border-radius:6px; font-weight:900; font-size:10px; display:flex; align-items:center; gap:3px; }
+        .prize-badge.sold-out { opacity:0.25; filter:grayscale(1); }
+
+        /* 🎰 슬롯 무대 */
+        .slot-stage-wrapper { 
+            position: absolute;
+            top: 195px;
+            left: 95px;
+            width: 770px;
+            height: 440px;
+            background: transparent;
+            border-radius: 20px;
+            padding: 4px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        .slot-stage-wrapper.grid-layout { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 3px 10px; 
+            align-content: center; 
+            justify-items: center; 
+        }
+        
+        .slot-row { display:flex; justify-content:center; align-items:center; gap:6px; width:100%; background:rgba(0,0,0,0.3); padding:2px; border-radius:10px; border:1px solid rgba(255,255,255,0.08); }
+        .slot-stage-wrapper.grid-layout .slot-row { padding:1px; border-radius:6px; }
+
+        /* 🔥 릴 슬롯 */
+        .slot-reel { width:115px; height:145px; background:#16102e; border:3px solid #ff3399; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; background-size:cover; background-position:center; box-shadow:0 0 15px rgba(255,51,153,0.4); transition:all 0.15s; }
+        
+        .slot-row.multi-mode .slot-reel { width:65px; height:74px; border-width:2px; border-radius:8px; }
+        .slot-stage-wrapper.grid-layout .slot-reel { width:52px; height:56px; border-width:1.5px; border-radius:5px; }
+
+        .slot-reel.active-glow { border-color:#ffde00!important; box-shadow:0 0 25px #ffde00!important; transform:scale(1.05); }
+        .slot-reel.active-mythic { border-color:#ff003c!important; box-shadow:0 0 35px #ff003c, 0 0 15px #ffea00!important; animation: mythicBorder 0.3s infinite alternate; }
+        @keyframes mythicBorder { from { border-color:#ff003c; } to { border-color:#ffea00; } }
+
+        .slot-reel-text { background:rgba(0,0,0,0.9); width:100%; text-align:center; padding:2px 0; font-size:10px; font-weight:900; margin-top:auto; border-top:1px solid rgba(255,255,255,0.2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .slot-row.multi-mode .slot-reel-text { font-size:8px; padding:1px 0; }
+        .slot-stage-wrapper.grid-layout .slot-reel-text { font-size:7px; padding:0; border-top:none; }
+
+        /* 🎁 대형 결과 오버레이 */
+        .multi-result-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(5,5,10,0.97); z-index:100; display:none; flex-direction:column; align-items:center; justify-content:space-between; padding:25px; border-radius:28px; }
+        .multi-result-overlay.active { display:flex; }
+        
+        .multi-grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; width:100%; overflow-y:auto; padding:6px 0; }
+        .res-card { width:100px; height:135px; border-radius:12px; border:3px solid; background-size:cover; background-position:center; display:flex; flex-direction:column; justify-content:flex-end; padding:4px; text-align:center; font-size:11px; font-weight:900; background-color:#000; box-shadow:0 0 15px rgba(255,255,255,0.25); animation:popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn { from { transform:scale(0.2); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+        .res-card.t-5 { border-color:#ff003c!important; box-shadow:0 0 25px #ff003c; }
+        .res-card.t-6 { border-color:#ffea00!important; box-shadow:0 0 40px #ffea00, 0 0 20px #ff007f; animation:popIn 0.3s, mythicGlow 0.3s infinite alternate; }
+        @keyframes mythicGlow { from { box-shadow:0 0 20px #ff003c; } to { box-shadow:0 0 50px #ffea00, 0 0 20px #00ffff; } }
+
+        .confirm-btn-wrap { width:100%; display:flex; justify-content:center; padding-top:4px; flex-shrink:0; }
+
+        /* 🔘 bg.png 투명 터치 영역 */
+        .hud-controls-invisible { 
+            position: absolute;
+            bottom: 25px;
+            left: 35px;
+            width: 890px;
+            height: 70px;
+            display: flex; 
+            gap: 20px; 
+            z-index: 10;
+        }
+        .btn-touch-area { 
+            flex: 1; 
+            height: 100%; 
+            background: transparent; 
+            border: none; 
+            cursor: pointer; 
+            outline: none;
+            border-radius: 18px;
+        }
+        .btn-touch-area:active { 
+            background: rgba(255, 255, 255, 0.15); 
+        }
+
+        /* ⚙️ 제어판 */
+        .control-section { width:360px; background:#121420; border-left:1px solid #2a2d3d; padding:18px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; z-index:20; }
+        .form-group { display:flex; flex-direction:column; gap:6px; }
+        .form-group label { font-size:12px; color:#a0a5b5; font-weight:700; }
+        .form-group select { background:#222533; border:1px solid #33374a; border-radius:6px; padding:8px; color:#fff; font-size:13px; outline:none; }
+        .prize-table { width:100%; font-size:12px; border-collapse:collapse; margin-top:4px; }
+        .prize-table th { color:#a0a5b5; text-align:left; padding-bottom:6px; }
+        .prize-table input { background:#222533; border:1px solid #33374a; color:#fff; border-radius:4px; padding:6px; width:100%; }
+        .btn-del { background:none; border:none; color:#ff4757; font-size:14px; cursor:pointer; font-weight:bold; }
+        .btn-add { background:#3b82f6; border:none; color:white; border-radius:6px; padding:8px; font-size:12px; margin-top:4px; cursor:pointer; font-weight:bold; }
+        .kkwang-info { font-size:12px; color:#fff; padding:4px 0; font-weight:bold; }
+        .reset-btn-wrap { margin-top:8px; display:flex; gap:8px; }
+        .btn-obs { background:#2a2d3d; border:none; color:#a0a5b5; flex:1; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; }
+        .btn-reset-main { background:#ff4757; border:none; color:white; flex:1; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; }
+        .btn-restore { position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.8); color:white; border:2px solid #3b82f6; padding:8px 14px; border-radius:8px; display:none; z-index:10000; }
+        body.obs-mode .control-section { display:none!important; }
+        body.obs-mode .btn-restore { display:block; }
+    </style>
+</head>
+<body>
+    <button id="obs-restore-btn" class="btn-restore" onclick="document.body.classList.remove('obs-mode')">⚙️ 설정</button>
+    <div class="app-container">
+        <div class="board-section">
+            <div class="board-wrapper" id="board-wrapper">
+                
+                <div class="hud-header">
+                    <div class="ammo-counter" id="hud-ammo">남은 횟수: 100 / 100</div>
+                    <div class="prize-status-board" id="prize-status-board"></div>
+                </div>
+
+                <div class="slot-stage-wrapper" id="slot-stage-wrapper"></div>
+
+                <div class="multi-result-overlay" id="multi-overlay">
+                    <div style="font-size:26px; font-weight:900; color:#ffde00; text-shadow:0 0 15px #ffde00;" id="multi-title">🎉 결과 확인</div>
+                    <div class="multi-grid" id="multi-grid"></div>
+                    <div class="confirm-btn-wrap">
+                        <button style="padding:10px 40px; background:linear-gradient(135deg,#ff007f,#ff003c); border:3px solid #ffde00; color:#fff; border-radius:12px; font-size:18px; font-weight:900; cursor:pointer; box-shadow:0 0 20px #ff007f;" onclick="closeOverlay()">확인 (닫기)</button>
+                    </div>
+                </div>
+
+                <div class="hud-controls-invisible">
+                    <button class="btn-touch-area" id="btn-draw-1" onclick="drawMulti(1)"></button>
+                    <button class="btn-touch-area" id="btn-draw-5" onclick="drawMulti(5)"></button>
+                    <button class="btn-touch-area" id="btn-draw-10" onclick="drawMulti(11)"></button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="control-section">
+            <div style="font-size:16px; font-weight:800; border-bottom:2px solid #2a2d3d; padding-bottom:8px; color:#fff;">⚙️ 설정판</div>
+            
+            <div class="form-group">
+                <label>📦 전체 수량</label>
+                <select id="board-size-select" onchange="updateKkwangCount(); saveSettings();">
+                    <option value="100" selected>100개</option>
+                    <option value="300">300개</option>
+                    <option value="500">500개</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>🎁 당첨 목록 (나머지는 자동 꽝)</label>
+                <table class="prize-table">
+                    <thead><tr><th>이름</th><th style="width:55px;">수량</th><th style="width:30px;">삭제</th></tr></thead>
+                    <tbody id="prize-list-body"></tbody>
+                </table>
+                <button class="btn-add" id="add-prize-btn">+ 항목 추가</button>
+                <div class="kkwang-info" id="kkwang-count-display">자동 꽝: 54개 (미션: 46/100개)</div>
+            </div>
+
+            <div class="reset-btn-wrap">
+                <button class="btn-obs" onclick="document.body.classList.add('obs-mode')">📺 OBS 모드</button>
+                <button class="btn-reset-main" onclick="if(confirm('초기화하시겠습니까?')) initPool();">🔄 초기화</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let prizePool = [], remainingPrizes = {}, totalCount = 100;
+        const boardWrapper = document.getElementById('board-wrapper');
+        const stageWrapper = document.getElementById('slot-stage-wrapper');
+        const sizeSelect = document.getElementById('board-size-select');
+        const prizeListBody = document.getElementById('prize-list-body');
+        const kkwangDisplay = document.getElementById('kkwang-count-display');
+
+        /* 🔊 사운드 파일 설정 및 볼륨 조절 */
+        const spinAudio = new Audio('sound2.mp3'); 
+        const stopAudio = new Audio('sound3.mp3'); 
+        stopAudio.volume = 0.3; // 🔥 스톱 소리 볼륨 30%로 낮춤 (귀 안 아프게)
+
+        function playStopSound() {
+            try {
+                let sound = stopAudio.cloneNode();
+                sound.volume = 0.3;
+                sound.play().catch(() => {});
+            } catch(e) {}
+        }
+
+        function getCardData(name) {
+            if (name.includes('꽝')) return { t:1, id:'ggwang' };
+            if (name.includes('메롱') || name.includes('조리돌림') || name.includes('매도') || name.includes('놀리기')) return { t:2, id:'maedo' };
+            if (name.includes('애교')) return { t:3, id:'aegyo' };
+            if (name.includes('간단 프사') || name.includes('프사')) return { t:4, id:'mingcaso' };
+            if (name.includes('역팬')) return { t:4, id:'yeokfan' };
+            if (name.includes('즉석방셀')) return { t:5, id:'bangsel' };
+            
+            if (name.includes('니니바밍방셀') || name.includes('노래방셀') || name.includes('영상방셀')) return { t:6, id:'bangsel' };
+            
+            return { t:1, id:'ggwang' };
+        }
+
+        function updateKkwangCount() {
+            totalCount = parseInt(sizeSelect.value); let sum = 0;
+            document.querySelectorAll('.p-count').forEach(i => sum += parseInt(i.value)||0);
+            const kkw = Math.max(0, totalCount - sum);
+            kkwangDisplay.innerText = `자동 꽝: ${kkw}개 (미션: ${sum}/${totalCount}개)`;
+            return { totalCount, kkw };
+        }
+
+        function addPrizeRow(n, c) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><input type="text" class="p-name" value="${n}"></td><td><input type="number" class="p-count" value="${c}"></td><td><button class="btn-del">❌</button></td>`;
+            prizeListBody.appendChild(tr);
+            tr.querySelector('.btn-del').addEventListener('click', (e)=>{ e.target.closest('tr').remove(); updateKkwangCount(); saveSettings(); });
+            tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', ()=>{ updateKkwangCount(); saveSettings(); }));
+        }
+        document.getElementById('add-prize-btn').addEventListener('click', ()=>{ addPrizeRow('새 미션', 1); updateKkwangCount(); saveSettings(); });
+
+        function initPool() {
+            const { totalCount, kkw } = updateKkwangCount();
+            prizePool = []; remainingPrizes = {};
+            document.querySelectorAll('#prize-list-body tr').forEach(row => {
+                const n = row.querySelector('.p-name').value.trim(), c = parseInt(row.querySelector('.p-count').value)||0;
+                if (n && c > 0) { remainingPrizes[n] = c; for (let i=0; i<c; i++) prizePool.push(n); }
+            });
+            if (kkw > 0) { remainingPrizes['일반(꽝)'] = kkw; for(let i=0; i<kkw; i++) prizePool.push('일반(꽝)'); }
+            prizePool = prizePool.slice(0, totalCount);
+            
+            for (let i = prizePool.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [prizePool[i], prizePool[j]] = [prizePool[j], prizePool[i]]; }
+            renderStatus();
+            renderInitialSlot();
+        }
+
+        function renderStatus() {
+            const board = document.getElementById('prize-status-board'); board.innerHTML = '';
+            for(const [n, c] of Object.entries(remainingPrizes)) {
+                if(n.includes('꽝')) continue;
+                const d = getCardData(n);
+                const col = d.t === 6 ? '#ff003c' : `var(--t${d.t}-color)`;
+                board.innerHTML += `<div class="prize-badge ${c<=0?'sold-out':''}" style="border-color:${col}; color:${col};">${n} <span style="background:#fff; color:#000; padding:1px 5px; border-radius:4px;">${c}</span></div>`;
+            }
+            document.getElementById('hud-ammo').innerText = `남은 횟수: ${prizePool.length} / ${totalCount}`;
+        }
+
+        function renderInitialSlot() {
+            stageWrapper.classList.remove('grid-layout');
+            stageWrapper.innerHTML = `
+                <div class="slot-row" id="slot-row-0">
+                    <div class="slot-reel" id="r-0-0"><div class="slot-reel-text" id="rt-0-0">준비</div></div>
+                    <div class="slot-reel" id="r-0-1"><div class="slot-reel-text" id="rt-0-1">준비</div></div>
+                    <div class="slot-reel" id="r-0-2"><div class="slot-reel-text" id="rt-0-2">준비</div></div>
+                </div>
+            `;
+        }
+
+        function drawMulti(count) {
+            try {
+                let spinSnd = spinAudio.cloneNode();
+                spinSnd.play().catch(()=>{});
+            } catch(e) {}
+
+            if(prizePool.length < 1) return alert("남은 수량이 없습니다!");
+            const actualCount = Math.min(count, prizePool.length);
+            const results = [];
+
+            setButtonsDisabled(true);
+
+            stageWrapper.innerHTML = '';
+            if (actualCount > 5) {
+                stageWrapper.classList.add('grid-layout');
+            } else {
+                stageWrapper.classList.remove('grid-layout');
+            }
+
+            for(let k = 0; k < actualCount; k++) {
+                const row = document.createElement('div');
+                row.className = `slot-row ${actualCount > 1 ? 'multi-mode' : ''}`;
+                row.id = `slot-row-${k}`;
+                row.innerHTML = `
+                    <div class="slot-reel" id="r-${k}-0"><div class="slot-reel-text" id="rt-${k}-0">Spin...</div></div>
+                    <div class="slot-reel" id="r-${k}-1"><div class="slot-reel-text" id="rt-${k}-1">Spin...</div></div>
+                    <div class="slot-reel" id="r-${k}-2"><div class="slot-reel-text" id="rt-${k}-2">Spin...</div></div>
+                `;
+                stageWrapper.appendChild(row);
+            }
+
+            for(let i = 0; i < actualCount; i++) {
+                const name = prizePool.pop();
+                results.push(name);
+                if(remainingPrizes[name] > 0) remainingPrizes[name]--;
+            }
+
+            const cardKeys = ['ggwang', 'maedo', 'aegyo', 'mingcaso', 'yeokfan', 'bangsel'];
+
+            const activeHighTierItems = [];
+            for (const [name, remainingCount] of Object.entries(remainingPrizes)) {
+                if (remainingCount > 0 && !name.includes('꽝')) {
+                    const cd = getCardData(name);
+                    if (cd.t >= 3) {
+                        activeHighTierItems.push(name);
+                    }
+                }
+            }
+
+            const intervalMap = {};
+            for(let k = 0; k < actualCount; k++) {
+                for(let r = 0; r < 3; r++) {
+                    intervalMap[`${k}-${r}`] = setInterval(() => {
+                        const rKey = cardKeys[Math.floor(Math.random() * cardKeys.length)];
+                        const el = document.getElementById(`r-${k}-${r}`);
+                        if(el) el.style.backgroundImage = `url('${rKey}.png')`;
+                    }, 200);
+                }
+            }
+
+            results.forEach((resName, k) => {
+                const resData = getCardData(resName);
+
+                let rData = [resData, resData, resData];
+                let rNames = [resName, resName, resName];
+
+                if (resData.t === 1 && activeHighTierItems.length > 0 && Math.random() < 0.7) {
+                    const baitItemName = activeHighTierItems[Math.floor(Math.random() * activeHighTierItems.length)];
+                    const baitData = getCardData(baitItemName);
+
+                    rData[0] = baitData; rNames[0] = baitItemName;
+                    rData[1] = baitData; rNames[1] = baitItemName;
+                }
+
+                /* 🔥 [릴 1번 정지] 다연차 시에도 대표로 첫 번째 행(k===0) 멈출 때만 1번 소리 재생 */
+                setTimeout(() => {
+                    clearInterval(intervalMap[`${k}-0`]);
+                    setReelCard(k, 0, rData[0], rNames[0]);
+                    if (k === 0) playStopSound();
+                }, 900 + (k * 150));
+
+                /* 🔥 [릴 2번 정지] */
+                setTimeout(() => {
+                    clearInterval(intervalMap[`${k}-1`]);
+                    setReelCard(k, 1, rData[1], rNames[1]);
+                    if (k === 0) playStopSound();
+                }, 1900 + (k * 150));
+
+                /* 🔥 [릴 3번 정지] */
+                setTimeout(() => {
+                    clearInterval(intervalMap[`${k}-2`]);
+                    setReelCard(k, 2, rData[2], rNames[2]);
+                    if (k === 0) playStopSound();
+
+                    if (k === actualCount - 1) {
+                        boardWrapper.classList.add('shaking');
+                        setTimeout(() => boardWrapper.classList.remove('shaking'), 300);
+                        renderStatus();
+
+                        setTimeout(() => {
+                            showOverlay(results, count === 11);
+                            setButtonsDisabled(false);
+                        }, 700);
+                    }
+                }, 3100 + (k * 150));
+            });
+        }
+
+        function setReelCard(rowIdx, reelIdx, d, name) {
+            const reel = document.getElementById(`r-${rowIdx}-${reelIdx}`);
+            const text = document.getElementById(`rt-${rowIdx}-${reelIdx}`);
+            if(!reel || !text) return;
+
+            reel.style.backgroundImage = `url('${d.id}.png')`;
+            const borderCol = d.t === 6 ? '#ff003c' : `var(--t${d.t}-color)`;
+            reel.style.borderColor = borderCol;
+            text.innerText = name.replace('일반(꽝)','꽝');
+            text.style.color = borderCol;
+            
+            if(d.t >= 4 && d.t < 6) reel.classList.add('active-glow');
+            if(d.t === 6) reel.classList.add('active-mythic');
+        }
+
+        function setButtonsDisabled(disable) {
+            document.getElementById('btn-draw-1').disabled = disable;
+            document.getElementById('btn-draw-5').disabled = disable;
+            document.getElementById('btn-draw-10').disabled = disable;
+        }
+
+        function showOverlay(results, isBonus) {
+            const grid = document.getElementById('multi-grid'); grid.innerHTML = '';
+            document.getElementById('multi-title').innerText = isBonus ? "🔥 10+1연차 스페셜 결과!" : "🎉 슬롯 개봉 결과";
+            
+            let maxTier = 1;
+            results.forEach(name => {
+                const d = getCardData(name);
+                if(d.t > maxTier) maxTier = d.t;
+                const card = document.createElement('div');
+                card.className = `res-card t-${d.t}`;
+                
+                const borderCol = d.t === 6 ? '#ffde00' : `var(--t${d.t}-color)`;
+                card.style.borderColor = borderCol;
+                card.style.backgroundImage = `url('${d.id}.png')`;
+                card.innerHTML = `<div style="background:rgba(0,0,0,0.85); padding:3px; color:${borderCol}; border-top:1.5px solid rgba(255,255,255,0.2);">${name.replace('일반(꽝)','꽝')}</div>`;
+                grid.appendChild(card);
+            });
+
+            if(maxTier === 6) {
+                document.body.classList.add('impact-6');
+                setTimeout(() => document.body.classList.remove('impact-6'), 1000);
+                confetti({ particleCount: 400, spread: 180, colors: ['#ff003c', '#ffea00', '#00ffff', '#ffffff', '#df40ff'], startVelocity: 75, scalar: 1.6 });
+            } else if(maxTier >= 4) {
+                document.body.classList.add('impact-6');
+                setTimeout(() => document.body.classList.remove('impact-6'), 800);
+                confetti({ particleCount: 280, spread: 150, colors: ['#ffde00', '#ffffff', '#ff003c'] });
+            }
+
+            document.getElementById('multi-overlay').classList.add('active');
+        }
+
+        function closeOverlay() { document.getElementById('multi-overlay').classList.remove('active'); }
+
+        function saveSettings() {
+            try {
+                const missions = []; 
+                document.querySelectorAll('#prize-list-body tr').forEach(row => { 
+                    missions.push({ name: row.querySelector('.p-name').value, count: parseInt(row.querySelector('.p-count').value)||0 }); 
+                });
+                localStorage.setItem('baumingSlotFinalV4', JSON.stringify({ s: sizeSelect.value, m: missions }));
+            } catch(e) {}
+        }
+
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('baumingSlotFinalV4'); prizeListBody.innerHTML = '';
+                if (saved) {
+                    const s = JSON.parse(saved);
+                    sizeSelect.value = s.s; 
+                    s.m.forEach(m => addPrizeRow(m.name, m.count));
+                } else { 
+                    addPrizeRow('조리돌림', 15); 
+                    addPrizeRow('애교', 15); 
+                    addPrizeRow('역팬(✨)', 5); 
+                    addPrizeRow('간단 프사(✨)', 4); 
+                    addPrizeRow('즉석방셀(✨)', 4); 
+                    addPrizeRow('니니바밍방셀', 1); 
+                    addPrizeRow('노래방셀', 1); 
+                    addPrizeRow('영상방셀2', 1); 
+                }
+            } catch(e) { 
+                prizeListBody.innerHTML = ''; 
+                addPrizeRow('조리돌림', 15); 
+                addPrizeRow('애교', 15); 
+                addPrizeRow('역팬(✨)', 5); 
+                addPrizeRow('간단 프사(✨)', 4); 
+                addPrizeRow('즉석방셀(✨)', 4); 
+                addPrizeRow('니니바밍방셀', 1); 
+                addPrizeRow('노래방셀', 1); 
+                addPrizeRow('영상방셀2', 1); 
+            }
+            updateKkwangCount();
+        }
+
+        window.onload = () => {
+            loadSettings();
+            initPool();
+        };
+    </script>
+</body>
+</html>

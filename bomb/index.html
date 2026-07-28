@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>바밍 폭탄 가챠</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root { 
+            --t1:#8c92ac; 
+            --t2:#df40ff; 
+            --t3:#ff3399; 
+            --t4:#ffde00; 
+            --t5:#ff003c; 
+        }
+        body { font-family:'Pretendard', -apple-system, sans-serif; background:#05050a; color:#fff; height:100vh; display:flex; overflow:hidden; }
+        
+        @keyframes mythicFlash6 {
+            0% { filter: brightness(5) sepia(1) hue-rotate(180deg) saturate(600%); }
+            15% { filter: brightness(2.5); }
+            100% { filter: brightness(1); }
+        }
+        body.impact-6 { animation: mythicFlash6 1s ease-out forwards; }
+
+        @keyframes shakeStage {
+            0%, 100% { transform: translate(0, 0); }
+            20% { transform: translate(-12px, 8px); }
+            40% { transform: translate(12px, -8px); }
+            60% { transform: translate(-8px, -12px); }
+            80% { transform: translate(8px, 12px); }
+        }
+        .board-wrapper.shaking { animation: shakeStage 0.35s ease-in-out; }
+
+        .app-container { display:flex; width:100%; height:100%; }
+        
+        .board-section { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; position:relative; }
+        
+        /* 🖼️ 배경 이미지(bg.png) 프레임 설정 */
+        .board-wrapper { 
+            width: 960px; 
+            height: 780px; 
+            background: url('bg.png') no-repeat center center / contain; 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            overflow: hidden; 
+        }
+
+        /* 상단 현황 정보 */
+        .hud-header {
+            position: absolute;
+            top: 135px;
+            width: 80%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .ammo-counter { color:#fff; font-weight:900; font-size:12px; background:rgba(0,0,0,0.85); border:1.5px solid #ff003c; padding:2px 14px; border-radius:14px; margin-bottom:4px; box-shadow:0 0 8px #ff003c; }
+        .prize-status-board { display:flex; flex-wrap:wrap; gap:3px; justify-content:center; width:100%; max-height:42px; overflow-y:auto; }
+        .prize-badge { background:rgba(0,0,0,0.9); border:1.5px solid; padding:1px 6px; border-radius:6px; font-weight:900; font-size:10px; display:flex; align-items:center; gap:3px; }
+        .prize-badge.sold-out { opacity:0.25; filter:grayscale(1); }
+
+        /* 💣 중앙 폭탄 무대 */
+        .bomb-stage-wrapper { 
+            position: absolute;
+            top: 195px;
+            left: 80px;
+            width: 800px;
+            height: 440px;
+            background: transparent;
+            border-radius: 20px;
+            padding: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .bomb-cell { display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; z-index:1; transition: all 0.3s; }
+        
+        /* 🔥 다연차 주인공 폭탄 중앙 우선순위 및 레이어 조정 */
+        .bomb-cell.is-main-hero { 
+            order: -1; 
+            z-index: 20; 
+            margin: 0 -15px; /* 주변 폭탄을 가리도록 네거티브 마진 지원 */
+        }
+
+        .bomb-icon { 
+            font-size:70px;
+            transition:all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.3); 
+            filter:drop-shadow(0 0 10px #777); 
+            cursor:pointer;
+        }
+
+        /* 서브 폭탄 크기 */
+        .bomb-cell.multi-sub .bomb-icon { font-size: 36px; opacity: 0.75; }
+
+        .bomb-icon.shaking { animation: bombShake 0.08s infinite alternate; }
+        @keyframes bombShake { from { transform:rotate(-8deg); } to { transform:rotate(8deg); } }
+
+        /* 💥 등급별 명확한 크기 & 오라 구분 (4성 황금 / 6성 초거대 무지개) */
+        .bomb-icon.tier-1 { font-size: 55px!important; filter: drop-shadow(0 0 5px #555)!important; }
+        .bomb-icon.tier-2 { font-size: 70px!important; filter: drop-shadow(0 0 15px #df40ff)!important; }
+        .bomb-icon.tier-3 { font-size: 90px!important; filter: drop-shadow(0 0 25px #ff3399)!important; }
+        .bomb-icon.tier-4 { font-size: 130px!important; filter: drop-shadow(0 0 40px #ffea00) hue-rotate(40deg)!important; } /* 5~10개 수량: 4성 황금색 */
+        .bomb-icon.tier-5 { font-size: 175px!important; filter: drop-shadow(0 0 60px #ff003c) hue-rotate(-20deg)!important; animation: mythicShake 0.04s infinite alternate!important; }
+        .bomb-icon.tier-6 { font-size: 260px!important; filter: drop-shadow(0 0 100px #00ffff) hue-rotate(180deg)!important; animation: urShake 0.03s infinite alternate!important; } /* 2개 이하 수량: 6성 화면 도배 */
+
+        /* 다연차시 주인공(Hero) 스케일 (6성일 때 주변을 사정없이 가려버림) */
+        .bomb-cell.is-main-hero .bomb-icon.tier-1 { font-size: 80px!important; }
+        .bomb-cell.is-main-hero .bomb-icon.tier-2 { font-size: 95px!important; }
+        .bomb-cell.is-main-hero .bomb-icon.tier-3 { font-size: 110px!important; }
+        .bomb-cell.is-main-hero .bomb-icon.tier-4 { font-size: 145px!important; filter: drop-shadow(0 0 50px #ffea00)!important; }
+        .bomb-cell.is-main-hero .bomb-icon.tier-5 { font-size: 190px!important; }
+        .bomb-cell.is-main-hero .bomb-icon.tier-6 { font-size: 280px!important; filter: drop-shadow(0 0 120px #00ffff) hue-rotate(180deg)!important; } /* 🔥 다른 폭탄 완전 차단 */
+
+        @keyframes mythicShake { from { transform:scale(1.03) rotate(-8deg); } to { transform:scale(1.1) rotate(8deg); } }
+        @keyframes urShake { from { transform:scale(1.08) rotate(-12deg); } to { transform:scale(1.18) rotate(12deg); } }
+
+        /* 🎁 대형 결과 오버레이 */
+        .multi-result-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(5,5,10,0.97); z-index:100; display:none; flex-direction:column; align-items:center; justify-content:space-between; padding:25px; border-radius:28px; }
+        .multi-result-overlay.active { display:flex; }
+        
+        .multi-grid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center; width:100%; overflow-y:auto; padding:6px 0; }
+        .res-card { width:100px; height:135px; border-radius:12px; border:3px solid; background-size:cover; background-position:center; display:flex; flex-direction:column; justify-content:flex-end; padding:4px; text-align:center; font-size:11px; font-weight:900; background-color:#000; box-shadow:0 0 15px rgba(255,255,255,0.25); animation:popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn { from { transform:scale(0.2); opacity:0; } to { transform:scale(1); opacity:1; } }
+
+        .res-card.t-4 { border-color:#ffea00!important; box-shadow:0 0 25px #ffea00; }
+        .res-card.t-5 { border-color:#ff003c!important; box-shadow:0 0 25px #ff003c; }
+        .res-card.t-6 { border-color:#00ffff!important; box-shadow:0 0 40px #00ffff, 0 0 20px #ff007f; animation:popIn 0.3s, mythicGlow 0.3s infinite alternate; }
+        @keyframes mythicGlow { from { box-shadow:0 0 20px #ff003c; } to { box-shadow:0 0 50px #ffea00, 0 0 20px #00ffff; } }
+
+        .confirm-btn-wrap { width:100%; display:flex; justify-content:center; padding-top:4px; flex-shrink:0; }
+
+        /* 🔘 bg.png 투명 터치 영역 */
+        .hud-controls-invisible { 
+            position: absolute;
+            bottom: 25px;
+            left: 35px;
+            width: 890px;
+            height: 70px;
+            display: flex; 
+            gap: 20px; 
+            z-index: 10;
+        }
+        .btn-touch-area { 
+            flex: 1; 
+            height: 100%; 
+            background: transparent; 
+            border: none; 
+            cursor: pointer; 
+            outline: none;
+            border-radius: 18px;
+        }
+        .btn-touch-area:active { 
+            background: rgba(255, 255, 255, 0.15); 
+        }
+
+        /* ⚙️ 제어판 */
+        .control-section { width:360px; background:#121420; border-left:1px solid #2a2d3d; padding:18px; display:flex; flex-direction:column; gap:12px; overflow-y:auto; z-index:20; }
+        .form-group { display:flex; flex-direction:column; gap:6px; }
+        .form-group label { font-size:12px; color:#a0a5b5; font-weight:700; }
+        .form-group select { background:#222533; border:1px solid #33374a; border-radius:6px; padding:8px; color:#fff; font-size:13px; outline:none; }
+        .prize-table { width:100%; font-size:12px; border-collapse:collapse; margin-top:4px; }
+        .prize-table th { color:#a0a5b5; text-align:left; padding-bottom:6px; }
+        .prize-table input { background:#222533; border:1px solid #33374a; color:#fff; border-radius:4px; padding:6px; width:100%; }
+        .btn-del { background:none; border:none; color:#ff4757; font-size:14px; cursor:pointer; font-weight:bold; }
+        .btn-add { background:#3b82f6; border:none; color:white; border-radius:6px; padding:8px; font-size:12px; margin-top:4px; cursor:pointer; font-weight:bold; }
+        .kkwang-info { font-size:12px; color:#fff; padding:4px 0; font-weight:bold; }
+        .reset-btn-wrap { margin-top:8px; display:flex; gap:8px; }
+        .btn-obs { background:#2a2d3d; border:none; color:#a0a5b5; flex:1; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; }
+        .btn-reset-main { background:#ff4757; border:none; color:white; flex:1; padding:10px; border-radius:6px; cursor:pointer; font-weight:bold; }
+        .btn-restore { position:absolute; top:15px; right:15px; background:rgba(0,0,0,0.8); color:white; border:2px solid #3b82f6; padding:8px 14px; border-radius:8px; display:none; z-index:10000; }
+        body.obs-mode .control-section { display:none!important; }
+        body.obs-mode .btn-restore { display:block; }
+    </style>
+</head>
+<body>
+    <button id="obs-restore-btn" class="btn-restore" onclick="document.body.classList.remove('obs-mode')">⚙️ 설정</button>
+    <div class="app-container">
+        <div class="board-section">
+            <div class="board-wrapper" id="board-wrapper">
+                
+                <div class="hud-header">
+                    <div class="ammo-counter" id="hud-ammo">남은 횟수: 100 / 100</div>
+                    <div class="prize-status-board" id="prize-status-board"></div>
+                </div>
+
+                <div class="bomb-stage-wrapper" id="bomb-stage-wrapper"></div>
+
+                <div class="multi-result-overlay" id="multi-overlay">
+                    <div style="font-size:26px; font-weight:900; color:#ffde00; text-shadow:0 0 15px #ffde00;" id="multi-title">🎉 결과 확인</div>
+                    <div class="multi-grid" id="multi-grid"></div>
+                    <div class="confirm-btn-wrap">
+                        <button style="padding:10px 40px; background:linear-gradient(135deg,#ff007f,#ff003c); border:3px solid #ffde00; color:#fff; border-radius:12px; font-size:18px; font-weight:900; cursor:pointer; box-shadow:0 0 20px #ff007f;" onclick="closeOverlay()">확인 (닫기)</button>
+                    </div>
+                </div>
+
+                <div class="hud-controls-invisible">
+                    <button class="btn-touch-area" id="btn-draw-1" onclick="openBombMulti(1)"></button>
+                    <button class="btn-touch-area" id="btn-draw-5" onclick="openBombMulti(5)"></button>
+                    <button class="btn-touch-area" id="btn-draw-10" onclick="openBombMulti(11)"></button>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="control-section">
+            <div style="font-size:16px; font-weight:800; border-bottom:2px solid #2a2d3d; padding-bottom:8px; color:#fff;">⚙️ 설정판</div>
+            
+            <div class="form-group">
+                <label>📦 전체 수량</label>
+                <select id="board-size-select" onchange="updateKkwangCount(); saveSettings();">
+                    <option value="100" selected>100개</option>
+                    <option value="300">300개</option>
+                    <option value="500">500개</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>🎁 당첨 목록 (나머지는 자동 꽝)</label>
+                <table class="prize-table">
+                    <thead><tr><th>이름</th><th style="width:55px;">수량</th><th style="width:30px;">삭제</th></tr></thead>
+                    <tbody id="prize-list-body"></tbody>
+                </table>
+                <button class="btn-add" id="add-prize-btn">+ 항목 추가</button>
+                <div class="kkwang-info" id="kkwang-count-display">자동 꽝: 54개 (미션: 46/100개)</div>
+            </div>
+
+            <div class="reset-btn-wrap">
+                <button class="btn-obs" onclick="document.body.classList.add('obs-mode')">📺 OBS 모드</button>
+                <button class="btn-reset-main" onclick="if(confirm('초기화하시겠습니까?')) initPool();">🔄 초기화</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let prizePool = [], remainingPrizes = {}, initialPrizes = {}, totalCount = 100;
+        const boardWrapper = document.getElementById('board-wrapper');
+        const stageWrapper = document.getElementById('bomb-stage-wrapper');
+        const sizeSelect = document.getElementById('board-size-select');
+        const prizeListBody = document.getElementById('prize-list-body');
+        const kkwangDisplay = document.getElementById('kkwang-count-display');
+
+        const sparkAudio = new Audio('spark.mp3');   
+        const spark2Audio = new Audio('spark2.mp3'); 
+        const boomAudio = new Audio('boom.mp3');     
+
+        let spark2Instance = null;
+
+        /* 🔥 [핵심 요청 반영] 수량 기반 명확한 4성/5성/6성 등급 산정 */
+        function getCardData(name) {
+            if (name.includes('꽝')) return { t: 1, id: 'ggwang' };
+            
+            const initCount = initialPrizes[name] || 999;
+            
+            // 1. 수량 2개 이하 ➔ 6성 (UR 무지개/초거대)
+            if (initCount <= 2) {
+                return { t: 6, id: 'bangsel' };
+            }
+            
+            // 2. 수량 3~4개 이하 ➔ 5성 (SSR 레드)
+            if (initCount <= 4) {
+                return { t: 5, id: 'bangsel' };
+            }
+
+            // 3. 수량 5~10개 이하 ➔ 4성 (SR 골드/황금색)
+            if (initCount <= 10 || name.includes('프사') || name.includes('역팬')) {
+                return { t: 4, id: 'yeokfan' };
+            }
+
+            // 4. 수량 11~15개 이하 ➔ 3성 (핑크)
+            if (initCount <= 15 || name.includes('애교') || name.includes('노래')) {
+                return { t: 3, id: 'aegyo' };
+            }
+
+            // 5. 수량 16개 이상 ➔ 2성 (보라 / 매도·조리돌림)
+            return { t: 2, id: 'maedo' };
+        }
+
+        function updateKkwangCount() {
+            totalCount = parseInt(sizeSelect.value); let sum = 0;
+            document.querySelectorAll('.p-count').forEach(i => sum += parseInt(i.value)||0);
+            const kkw = Math.max(0, totalCount - sum);
+            kkwangDisplay.innerText = `자동 꽝: ${kkw}개 (미션: ${sum}/${totalCount}개)`;
+            return { totalCount, kkw };
+        }
+
+        function addPrizeRow(n, c) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><input type="text" class="p-name" value="${n}"></td><td><input type="number" class="p-count" value="${c}"></td><td><button class="btn-del">❌</button></td>`;
+            prizeListBody.appendChild(tr);
+            tr.querySelector('.btn-del').addEventListener('click', (e)=>{ e.target.closest('tr').remove(); updateKkwangCount(); saveSettings(); });
+            tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', ()=>{ updateKkwangCount(); saveSettings(); }));
+        }
+        document.getElementById('add-prize-btn').addEventListener('click', ()=>{ addPrizeRow('새 미션', 1); updateKkwangCount(); saveSettings(); });
+
+        function initPool() {
+            const { totalCount, kkw } = updateKkwangCount();
+            prizePool = []; remainingPrizes = {}; initialPrizes = {};
+            document.querySelectorAll('#prize-list-body tr').forEach(row => {
+                const n = row.querySelector('.p-name').value.trim(), c = parseInt(row.querySelector('.p-count').value)||0;
+                if (n && c > 0) { 
+                    remainingPrizes[n] = c; 
+                    initialPrizes[n] = c;
+                    for (let i=0; i<c; i++) prizePool.push(n); 
+                }
+            });
+            if (kkw > 0) { remainingPrizes['일반(꽝)'] = kkw; initialPrizes['일반(꽝)'] = kkw; for(let i=0; i<kkw; i++) prizePool.push('일반(꽝)'); }
+            prizePool = prizePool.slice(0, totalCount);
+            
+            for (let i = prizePool.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [prizePool[i], prizePool[j]] = [prizePool[j], prizePool[i]]; }
+            renderStatus();
+            renderInitialBomb();
+        }
+
+        function renderStatus() {
+            const board = document.getElementById('prize-status-board'); board.innerHTML = '';
+            for(const [n, c] of Object.entries(remainingPrizes)) {
+                if(n.includes('꽝')) continue;
+                const d = getCardData(n);
+                const col = d.t === 6 ? '#00ffff' : (d.t === 5 ? '#ff003c' : (d.t === 4 ? '#ffea00' : `var(--t${d.t}-color)`));
+                board.innerHTML += `<div class="prize-badge ${c<=0?'sold-out':''}" style="border-color:${col}; color:${col};">${n} <span style="background:#fff; color:#000; padding:1px 5px; border-radius:4px;">${c}</span></div>`;
+            }
+            document.getElementById('hud-ammo').innerText = `남은 횟수: ${prizePool.length} / ${totalCount}`;
+        }
+
+        function renderInitialBomb() {
+            stageWrapper.innerHTML = `
+                <div class="bomb-cell" id="b-cell-0">
+                    <div class="bomb-icon" id="b-icon-0">💣</div>
+                </div>
+            `;
+        }
+
+        function openBombMulti(count) {
+            if(prizePool.length < 1) return alert("모든 수량이 소진되었습니다!");
+
+            try {
+                let s = sparkAudio.cloneNode();
+                s.play().catch(()=>{});
+            } catch(e) {}
+
+            const actualCount = Math.min(count, prizePool.length);
+            const results = [];
+
+            setButtonsDisabled(true);
+            stageWrapper.innerHTML = '';
+
+            let maxTier = 1;
+            let maxTierIdx = 0;
+
+            for(let i = 0; i < actualCount; i++) {
+                const name = prizePool.pop();
+                results.push(name);
+                const d = getCardData(name);
+                
+                if(d.t > maxTier) {
+                    maxTier = d.t;
+                    maxTierIdx = i;
+                }
+                if(remainingPrizes[name] > 0) remainingPrizes[name]--;
+            }
+
+            // 다연차 시 최고 등급 폭탄을 중앙 주인공 셀(is-main-hero)로 오버레이 배치
+            results.forEach((resName, k) => {
+                const cell = document.createElement('div');
+                const isHero = (actualCount > 1 && k === maxTierIdx);
+                cell.className = `bomb-cell ${actualCount > 1 ? (isHero ? 'is-main-hero' : 'multi-sub') : ''}`;
+                cell.id = `b-cell-${k}`;
+                cell.innerHTML = `<div class="bomb-icon" id="b-icon-${k}">💣</div>`;
+                stageWrapper.appendChild(cell);
+            });
+
+            // 1단계: 진동
+            for(let k = 0; k < actualCount; k++) {
+                const el = document.getElementById(`b-icon-${k}`);
+                if(el) el.classList.add('shaking');
+            }
+
+            // 2단계: 불 타들어가며 부풀어 오름
+            setTimeout(() => {
+                try {
+                    spark2Instance = spark2Audio.cloneNode();
+                    spark2Instance.loop = true;
+                    spark2Instance.play().catch(()=>{});
+                } catch(e) {}
+
+                results.forEach((resName, k) => {
+                    const d = getCardData(resName);
+                    const el = document.getElementById(`b-icon-${k}`);
+                    if(el) {
+                        el.classList.add(`tier-${d.t}`);
+                    }
+                });
+
+                // 3단계: 폭발 & 결과 오버레이 (폭발음 볼륨 0.5 축소 반영)
+                setTimeout(() => {
+                    if(spark2Instance) {
+                        spark2Instance.pause();
+                        spark2Instance = null;
+                    }
+
+                    try {
+                        let b = boomAudio.cloneNode();
+                        b.volume = 0.5; // 🔥 폭발음 볼륨 절반으로 감소!
+                        b.play().catch(()=>{});
+                    } catch(e) {}
+
+                    boardWrapper.classList.add('shaking');
+                    setTimeout(() => boardWrapper.classList.remove('shaking'), 350);
+
+                    renderStatus();
+
+                    showOverlay(results, count === 11, maxTier);
+                    setButtonsDisabled(false);
+
+                }, 1500);
+            }, 300);
+        }
+
+        function setButtonsDisabled(disable) {
+            document.getElementById('btn-draw-1').disabled = disable;
+            document.getElementById('btn-draw-5').disabled = disable;
+            document.getElementById('btn-draw-10').disabled = disable;
+        }
+
+        function showOverlay(results, isBonus, maxTier) {
+            const grid = document.getElementById('multi-grid'); grid.innerHTML = '';
+            document.getElementById('multi-title').innerText = isBonus ? "🔥 10+1연차 대폭발 결과!" : "💥 폭탄 개봉 결과";
+            
+            results.forEach(name => {
+                const d = getCardData(name);
+                const card = document.createElement('div');
+                card.className = `res-card t-${d.t}`;
+                
+                const borderCol = d.t === 6 ? '#00ffff' : (d.t === 5 ? '#ff003c' : (d.t === 4 ? '#ffea00' : `var(--t${d.t}-color)`));
+                card.style.borderColor = borderCol;
+                card.style.backgroundImage = `url('${d.id}.png')`;
+                card.innerHTML = `<div style="background:rgba(0,0,0,0.85); padding:3px; color:${borderCol}; border-top:1.5px solid rgba(255,255,255,0.2);">${name.replace('일반(꽝)','꽝')}</div>`;
+                grid.appendChild(card);
+            });
+
+            if(maxTier === 6) {
+                document.body.classList.add('impact-6');
+                setTimeout(() => document.body.classList.remove('impact-6'), 1000);
+                confetti({ particleCount: 400, spread: 180, colors: ['#ff003c', '#ffea00', '#00ffff', '#ffffff', '#df40ff'], startVelocity: 85, scalar: 1.6 });
+            } else if(maxTier >= 4) {
+                document.body.classList.add('impact-6');
+                setTimeout(() => document.body.classList.remove('impact-6'), 800);
+                confetti({ particleCount: 280, spread: 150, colors: ['#ffde00', '#ffffff', '#ff003c'] });
+            }
+
+            document.getElementById('multi-overlay').classList.add('active');
+        }
+
+        function closeOverlay() { document.getElementById('multi-overlay').classList.remove('active'); }
+
+        function saveSettings() {
+            try {
+                const missions = []; 
+                document.querySelectorAll('#prize-list-body tr').forEach(row => { 
+                    missions.push({ name: row.querySelector('.p-name').value, count: parseInt(row.querySelector('.p-count').value)||0 }); 
+                });
+                localStorage.setItem('baumingBombFinalV6', JSON.stringify({ s: sizeSelect.value, m: missions }));
+            } catch(e) {}
+        }
+
+        function loadSettings() {
+            try {
+                const saved = localStorage.getItem('baumingBombFinalV6'); prizeListBody.innerHTML = '';
+                if (saved) {
+                    const s = JSON.parse(saved);
+                    sizeSelect.value = s.s; 
+                    s.m.forEach(m => addPrizeRow(m.name, m.count));
+                } else { 
+                    addPrizeRow('조리돌림', 15); 
+                    addPrizeRow('애교', 15); 
+                    addPrizeRow('역팬(✨)', 5); 
+                    addPrizeRow('간단 프사(✨)', 4); 
+                    addPrizeRow('즉석방셀(✨)', 4); 
+                    addPrizeRow('니니바밍방셀', 1); 
+                    addPrizeRow('노래방셀', 1); 
+                    addPrizeRow('영상방셀2', 1); 
+                }
+            } catch(e) { 
+                prizeListBody.innerHTML = ''; 
+                addPrizeRow('조리돌림', 15); 
+                addPrizeRow('애교', 15); 
+                addPrizeRow('역팬(✨)', 5); 
+                addPrizeRow('간단 프사(✨)', 4); 
+                addPrizeRow('즉석방셀(✨)', 4); 
+                addPrizeRow('니니바밍방셀', 1); 
+                addPrizeRow('노래방셀', 1); 
+                addPrizeRow('영상방셀2', 1); 
+            }
+            updateKkwangCount();
+        }
+
+        window.onload = () => {
+            loadSettings();
+            initPool();
+        };
+    </script>
+</body>
+</html>
