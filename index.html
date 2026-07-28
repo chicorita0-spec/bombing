@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>바밍 미니게임</title>
 <style>
+*{box-sizing:border-box}
 body{margin:0;font-family:Pretendard,'Noto Sans KR',sans-serif;background:#0d0716;color:#fff;
 background-image:radial-gradient(circle at top,#ff3ea533,transparent 35%),linear-gradient(#12071e,#09040f);}
 .wrap{max-width:1200px;margin:auto;padding:30px 18px;}
@@ -19,9 +20,78 @@ h2{margin:15px 0 8px}
 .desc{color:#ceb8d8;min-height:44px}
 .go{margin-top:18px;font-weight:bold;color:#ff87d2}
 footer{text-align:center;color:#8d7b97;margin:35px 0 10px}
+
+/* 비밀번호 잠금 화면 */
+.lock-screen{
+position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;
+padding:20px;background:
+radial-gradient(circle at 50% 25%,#ff3ea536,transparent 38%),
+linear-gradient(145deg,#12051d 0%,#09030f 100%);
+}
+.lock-screen.hidden{display:none}
+.lock-box{
+width:min(430px,100%);padding:34px 28px 28px;text-align:center;
+background:rgba(28,12,40,.94);border:1px solid #ff62c67d;border-radius:26px;
+box-shadow:0 0 40px #ff3ba83d,0 18px 60px #0009;
+}
+.lock-icon{font-size:46px;filter:drop-shadow(0 0 12px #ff58bf)}
+.lock-title{font-size:30px;margin:13px 0 8px;text-shadow:0 0 14px #ff4fbf}
+.lock-desc{margin:0 0 22px;color:#d7bfd8;font-size:14px;line-height:1.6}
+.password-wrap{position:relative}
+#passwordInput{
+width:100%;height:58px;padding:0 54px 0 18px;border-radius:16px;border:1px solid #ff68c780;
+outline:none;background:#10091b;color:#fff;font-size:22px;letter-spacing:.15em;
+box-shadow:inset 0 0 20px #0006;transition:.2s;
+}
+#passwordInput:focus{border-color:#ff70cd;box-shadow:0 0 20px #ff42b647,inset 0 0 20px #0006}
+#passwordInput::placeholder{font-size:15px;letter-spacing:0;color:#9f8aa6}
+#loginButton{
+width:100%;height:54px;margin-top:14px;border:0;border-radius:16px;cursor:pointer;
+color:#fff;font-size:17px;font-weight:900;background:linear-gradient(135deg,#ff248d,#b348ff);
+box-shadow:0 0 22px #ff39955c;transition:.2s;
+}
+#loginButton:hover{transform:translateY(-2px);box-shadow:0 0 30px #ff39958c}
+.lock-hint{margin:13px 0 0;color:#9d87a5;font-size:12px}
+#errorMessage{min-height:22px;margin:11px 0 0;color:#ff7e9e;font-size:14px;font-weight:800}
+.shake{animation:shake .38s linear}
+@keyframes shake{
+0%,100%{transform:translateX(0)}
+20%{transform:translateX(-10px)}
+40%{transform:translateX(9px)}
+60%{transform:translateX(-6px)}
+80%{transform:translateX(5px)}
+}
+@media(max-width:560px){
+h1{font-size:38px}
+.lock-box{padding:30px 20px 24px}
+}
 </style>
 </head>
 <body>
+
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box" id="lockBox">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">BOMBING PRIVATE</div>
+    <p class="lock-desc">비밀번호를 입력하면 바밍 미니게임에 입장할 수 있어요.</p>
+
+    <div class="password-wrap">
+      <input
+        id="passwordInput"
+        type="password"
+        inputmode="text"
+        autocomplete="off"
+        placeholder="키보드로 비밀번호 입력"
+        aria-label="사이트 비밀번호"
+      >
+    </div>
+
+    <button id="loginButton" type="button">입장하기</button>
+    <div id="errorMessage"></div>
+    <p class="lock-hint">비밀번호 입력 후 Enter 키를 눌러도 됩니다.</p>
+  </div>
+</div>
+
 <div class="wrap">
 <h1>🎮 바밍 미니게임</h1>
 <p class="sub">원하는 게임을 선택하세요!</p>
@@ -80,5 +150,48 @@ footer{text-align:center;color:#8d7b97;margin:35px 0 10px}
 </div>
 <footer>© Bombing Mini Game</footer>
 </div>
+
+<script>
+/* 아래 따옴표 안의 값을 원하는 비밀번호로 변경하세요. */
+const SITE_PASSWORD = "0222";
+
+const lockScreen = document.getElementById("lockScreen");
+const lockBox = document.getElementById("lockBox");
+const passwordInput = document.getElementById("passwordInput");
+const loginButton = document.getElementById("loginButton");
+const errorMessage = document.getElementById("errorMessage");
+
+function tryLogin(){
+  if(passwordInput.value === SITE_PASSWORD){
+    sessionStorage.setItem("bombingUnlocked","yes");
+    lockScreen.classList.add("hidden");
+    document.body.style.overflow = "";
+  }else{
+    errorMessage.textContent = "비밀번호가 올바르지 않습니다.";
+    passwordInput.value = "";
+    passwordInput.focus();
+    lockBox.classList.remove("shake");
+    void lockBox.offsetWidth;
+    lockBox.classList.add("shake");
+  }
+}
+
+loginButton.addEventListener("click", tryLogin);
+
+passwordInput.addEventListener("keydown", function(event){
+  if(event.key === "Enter"){
+    event.preventDefault();
+    tryLogin();
+  }
+});
+
+if(sessionStorage.getItem("bombingUnlocked") === "yes"){
+  lockScreen.classList.add("hidden");
+}else{
+  document.body.style.overflow = "hidden";
+  window.addEventListener("load", () => passwordInput.focus());
+}
+</script>
+
 </body>
 </html>
