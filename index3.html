@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>바밍 미니게임</title>
+<style>
+body{margin:0;font-family:Pretendard,'Noto Sans KR',sans-serif;background:#0d0716;color:#fff;
+background-image:radial-gradient(circle at top,#ff3ea533,transparent 35%),linear-gradient(#12071e,#09040f);}
+.wrap{max-width:1200px;margin:auto;padding:30px 18px;}
+h1{text-align:center;font-size:52px;margin:10px 0;color:#fff;text-shadow:0 0 15px #ff4fbf;}
+p.sub{text-align:center;color:#d9bfd7;margin-bottom:35px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.card{display:block;text-decoration:none;color:#fff;background:#1b1028;border:1px solid #ff5fc466;
+border-radius:22px;padding:22px;transition:.25s;box-shadow:0 0 20px #0005}
+.card:hover{transform:translateY(-6px);box-shadow:0 0 30px #ff4fbf55}
+.icon{font-size:44px}
+h2{margin:15px 0 8px}
+.desc{color:#ceb8d8;min-height:44px}
+.go{margin-top:18px;font-weight:bold;color:#ff87d2}
+footer{text-align:center;color:#8d7b97;margin:35px 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>🎮 바밍 미니게임</h1>
+<p class="sub">원하는 게임을 선택하세요!</p>
+
+<div class="grid">
+
+<a class="card" href="./photocard/">
+<div class="icon">🎴</div>
+<h2>포토카드깡</h2>
+<div class="desc">랜덤 포토카드를 뽑아보세요.</div>
+<div class="go">입장하기 →</div>
+</a>
+
+<a class="card" href="./dance/">
+<div class="icon">💃</div>
+<h2>랜덤 댄스</h2>
+<div class="desc">랜덤 플레이 댄스용 음악 플레이어.</div>
+<div class="go">입장하기 →</div>
+</a>
+
+<a class="card" href="./slot/">
+<div class="icon">🎰</div>
+<h2>가챠 슬롯</h2>
+<div class="desc">레버를 당겨 행운을 확인!</div>
+<div class="go">입장하기 →</div>
+</a>
+
+<a class="card" href="./bomb/">
+<div class="icon">💣</div>
+<h2>폭탄 가챠</h2>
+<div class="desc">폭탄이 터지면 상품이 공개됩니다.</div>
+<div class="go">입장하기 →</div>
+</a>
+
+<a class="card" href="./gacha/">
+<div class="icon">🎡</div>
+<h2>뽑기</h2>
+<div class="desc">행운의 뽑기에 도전하세요.</div>
+<div class="go">입장하기 →</div>
+</a>
+
+<a class="card" href="./lottery/">
+<div class="icon">🎫</div>
+<h2>즉석복권</h2>
+<div class="desc">은박을 긁고 바로 결과 확인!</div>
+<div class="go">입장하기 →</div>
+</a>
+
+<a class="card" href="./dollgacha/">
+<div class="icon">🧸</div>
+<h2>바밍 인형뽑기</h2>
+<div class="desc">공을 뽑고 숨겨진 결과를 확인하세요.</div>
+<div class="go">입장하기 →</div>
+</a>
+
+</div>
+<footer>© Bombing Mini Game</footer>
+</div>
+</body>
+</html>

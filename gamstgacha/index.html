@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>감스트 검술 베기장</title>
+    <!-- 폭죽 효과 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0f1015;
+            color: #ffffff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #bg-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            background-repeat: no-repeat; background-color: #121218;
+            background-image: url('gamst.png'); z-index: 1;
+        }
+        #bg-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.25); z-index: 2;
+        }
+
+        .app-container {
+            position: relative; z-index: 10; display: flex;
+            width: 100%; height: 100%;
+        }
+
+        .board-section {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: flex-start; 
+            justify-content: center; padding: 40px;
+            transition: align-items 0.3s ease;
+        }
+
+        .board-wrapper {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; max-width: 620px;
+        }
+
+        .board-title {
+            font-size: 32px; font-weight: 900; margin-bottom: 16px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.8); color: #ffffff;
+            letter-spacing: -0.5px; text-align: center;
+        }
+
+        /* 📍 과녁판 테두리 프레임 (칼 커서 적용) */
+        .target-board-frame {
+            position: relative;
+            width: 100%;
+            background: rgba(20, 15, 10, 0.3);
+            backdrop-filter: blur(8px); 
+            border: 4px solid #ffd700;
+            box-shadow: 0 0 0 4px #b8860b, 0 0 0 8px #ffd700, 0 15px 35px 12px rgba(0,0,0,0.6); 
+            border-radius: 24px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: opacity 0.3s ease;
+            opacity: 0.85; 
+            /* 칼 커서 SVG 적용 */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><text x="0" y="24" font-size="24">🗡️</text></svg>') 4 28, crosshair;
+        }
+
+        /* 프레임 내부 상단 투명 HUD */
+        .board-hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            z-index: 2; 
+            padding: 0 4px;
+        }
+
+        .prize-status-board {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            justify-content: flex-start; flex: 1;
+        }
+
+        .prize-badge {
+            background: rgba(0, 0, 0, 0.65); 
+            border: 1px solid rgba(255, 215, 0, 0.4); 
+            color: #ffffff;
+            padding: 4px 10px; border-radius: 16px; font-weight: 800;
+            font-size: 13px; display: flex; align-items: center; gap: 6px;
+            backdrop-filter: blur(4px); text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            transition: all 0.2s;
+        }
+        .prize-badge .badge-count {
+            background: #d4af37; color: black; padding: 2px 6px;
+            border-radius: 10px; font-size: 12px; font-weight: 900;
+        }
+        .prize-badge.sold-out { opacity: 0.4; background: rgba(0,0,0,0.3); border-color: transparent; }
+        .prize-badge.sold-out .badge-count { background: #666; color: #fff; }
+
+        /* 🎲 베기 버튼 및 탄약 래퍼 */
+        .hud-controls {
+            display: flex; gap: 8px; align-items: center;
+        }
+        .btn-draw {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffd700;
+            color: #ffd700;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 14px;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        .btn-draw.btn-11 {
+            border-color: #ff007f;
+            color: #ff007f;
+        }
+        .btn-draw:hover {
+            background: #ffd700;
+            color: #000000;
+            transform: translateY(-2px);
+        }
+
+        .ammo-counter {
+            color: #ffd700; font-weight: 900; font-size: 15px;
+            background: rgba(0, 0, 0, 0.65); border: 2px solid rgba(255, 215, 0, 0.8);
+            padding: 6px 14px; border-radius: 20px; backdrop-filter: blur(4px);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8); white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        /* 메인 그리드 */
+        .board-grid {
+            display: grid; gap: 8px; width: 100%; z-index: 2;
+        }
+
+        /* 칼질 화면 흔들림 효과 */
+        @keyframes slashRecoil {
+            0% { transform: scale(1) rotate(0deg); }
+            20% { transform: scale(1.02) rotate(-1deg) translateY(-2px); }
+            40% { transform: scale(0.99) rotate(1deg) translateY(2px); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+        .recoil-active { animation: slashRecoil 0.25s ease-out; }
+
+        .cell { position: relative; perspective: 800px; aspect-ratio: 1; user-select: none; z-index: 1; }
+
+        .target-back {
+            position: absolute; inset: 4px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 14px; color: #fff;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.5);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8); z-index: 1; word-break: keep-all;
+            text-align: center; padding: 2px; opacity: 0; transform: scale(0.5); 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+
+        .cell.shot .target-back { opacity: 1; transform: scale(1); }
+
+        .target-back.win { background: linear-gradient(135deg, #ff4757, #ff6b81); border: 2px solid #ff4757; }
+        .target-back.song { background: linear-gradient(135deg, #48dbfb, #0abde3); border: 2px solid #0abde3; }
+        .target-back.aegyo { background: linear-gradient(135deg, #ff9ff3, #f368e0); border: 2px solid #f368e0; }
+        .target-back.bangcel { background: linear-gradient(135deg, #feca57, #ff9f43); border: 2px solid #ff9f43; }
+        .target-back.maedo { background: linear-gradient(135deg, #6c5ce7, #4834d4); border: 2px solid #4834d4; }
+        .target-back.kkwang { background: linear-gradient(135deg, #2f3542, #1e272e); color: #747d8c; border: 2px solid #1e272e; text-shadow: none; }
+        .target-back.custom-win { box-shadow: inset 0 3px 6px rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
+        /* 베기 전 타겟 블록 */
+        .block-front {
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, #2c251e 0%, #15100c 100%);
+            border: 2px solid #b8860b; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 20px; color: #ffd700;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9); box-shadow: 0 4px 0 #4a3507;
+            transform-origin: center; transition: all 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53); z-index: 2;
+        }
+
+        .block-front:hover { filter: brightness(1.2); border-color: #ffd700; }
+        
+        /* 📍 베어졌을 때 두 동강 나는 연출 */
+        .cell.shot .block-front { 
+            transform: scale(0.6) rotate(-20deg) translateY(-20px); 
+            opacity: 0; 
+        }
+
+        /* 📍 칼로 밸 때 스쳐 지나가는 검기 선 효과 */
+        .slash-effect {
+            position: absolute;
+            top: -20%; left: -20%; width: 140%; height: 140%;
+            background: linear-gradient(45deg, transparent 45%, #ffffff 50%, #00e5ff 55%, transparent 60%);
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.8) rotate(-30deg);
+        }
+        .slash-effect.active {
+            animation: slashAnim 0.25s ease-out forwards;
+        }
+
+        @keyframes slashAnim {
+            0% { opacity: 1; transform: scale(0.5) rotate(-45deg) translate(-20px, -20px); }
+            50% { opacity: 1; transform: scale(1.2) rotate(-35deg) translate(0, 0); }
+            100% { opacity: 0; transform: scale(1.5) rotate(-25deg) translate(20px, 20px); }
+        }
+
+        /* 팝업창 */
+        .popup-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent; z-index: 10000; display: flex; 
+            align-items: flex-start; justify-content: center;
+            padding-top: 15%; border-radius: 20px; 
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+        }
+        .popup-overlay.active { opacity: 1; pointer-events: auto; }
+        .popup-content {
+            background: rgba(20, 18, 15, 0.95); backdrop-filter: blur(12px);
+            border: 3px solid #ffd700; padding: 24px 40px; border-radius: 20px; text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 20px rgba(255, 215, 0, 0.4);
+            transform: scale(0.7) translateY(-20px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;
+        }
+        .popup-overlay.active .popup-content { transform: scale(1) translateY(0); }
+        .popup-close { position: absolute; top: 8px; right: 12px; background: none; border: none; font-size: 18px; cursor: pointer; color: #a4b0be; transition: color 0.2s, transform 0.2s; }
+        .popup-close:hover { color: #ffffff; transform: scale(1.2); }
+        
+        .popup-title { font-size: 18px; color: #ffd700; font-weight: 800; margin-bottom: 12px; letter-spacing: 2px; }
+        .popup-prize-name { font-size: 40px; color: #ffffff; font-weight: 900; text-shadow: 0 4px 15px rgba(255, 215, 0, 0.6); word-break: keep-all; }
+
+        .control-section {
+            width: 360px; background: rgba(20, 20, 28, 0.98); border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px; display: flex; flex-direction: column; gap: 18px; overflow-y: auto;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5); cursor: default; 
+        }
+
+        .control-title { font-size: 18px; font-weight: 800; color: #ffd700; border-bottom: 2px solid rgba(255, 215, 0, 0.3); padding-bottom: 10px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .sound-toggle-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 4px 8px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+        .sound-toggle-btn.off { color: #a1a1aa; text-decoration: line-through; }
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-group label { font-size: 13px; color: #e4e4e7; font-weight: 700; }
+        .form-group input[type="text"], .form-group select { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none; }
+        .form-group input:focus, .form-group select:focus { border-color: #ffd700; }
+        .form-group select option { background-color: #1e1e24; color: #ffffff; }
+        input[type="range"] { accent-color: #ffd700; cursor: pointer; }
+        .prize-table { width: 100%; border-collapse: collapse; }
+        .prize-table th { font-size: 12px; color: #a1a1aa; text-align: left; padding-bottom: 8px; }
+        .prize-table td { padding: 4px 0; }
+        .prize-table input[type="text"], .prize-table input[type="number"] { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color:#fff; border-radius: 4px; padding: 6px; }
+        .prize-table input[type="text"] { width: 95%; }
+        .prize-table input[type="number"] { width: 60px; text-align: center; }
+        .btn-del { background: none; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 4px; transition: transform 0.2s; }
+        .btn-del:hover { transform: scale(1.2); }
+        .kkwang-info { font-size: 13px; font-weight: 700; color: #ffd700; background: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; text-align: center; }
+        .btn { background: #b8860b; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; text-align: center; font-size: 14px; transition: background 0.2s; }
+        .btn:hover { background: #ffd700; color: #000; }
+        .btn-add { background: #2563eb; margin-top: 8px; padding: 8px; font-size: 12px; }
+        .btn-sec { background: rgba(255, 255, 255, 0.1); color: #ccc; }
+        .file-btn { background: #3b82f6; color: white; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 700; }
+
+        .btn-restore { position: absolute; top: 24px; right: 24px; background: rgba(0, 0, 0, 0.6); color: #ffd700; border: 1px solid #b8860b; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; z-index: 100; display: none; backdrop-filter: blur(4px); }
+        .btn-restore:hover { background: rgba(0, 0, 0, 0.8); }
+
+        body.obs-mode .control-section, body.obs-mode #bg-overlay { display: none; }
+        body.obs-mode #bg-container { background-color: transparent !important; }
+        body.obs-mode .btn-restore { display: block; }
+    </style>
+</head>
+<body>
+    <div id="bg-container"></div>
+    <div id="bg-overlay"></div>
+    <button id="obs-restore-btn" class="btn-restore">⚙️ 설정창 열기</button>
+
+    <div class="app-container">
+        <div class="board-section" id="board-section">
+            <div class="board-wrapper">
+                <div class="board-title" id="display-title">감스트 검술 베기장</div>
+                
+                <div class="target-board-frame" id="target-board-frame">
+                    
+                    <!-- ⚔️ 프레임 안쪽 HUD -->
+                    <div class="board-hud">
+                        <div class="prize-status-board" id="prize-status-board"></div>
+                        
+                        <div class="hud-controls">
+                            <button class="btn-draw" id="btn-draw-1">⚔️ 1회</button>
+                            <button class="btn-draw btn-11" id="btn-draw-11">🎰 11회</button>
+                            <div class="ammo-counter" id="hud-ammo">🗡️ 100</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 🎯 메인 그리드 -->
+                    <div class="board-grid" id="board"></div>
+
+                    <!-- 🏆 공용 팝업창 -->
+                    <div id="prize-popup" class="popup-overlay">
+                        <div class="popup-content">
+                            <button id="popup-close-btn" class="popup-close">❌</button>
+                            <div class="popup-title" id="popup-title">🎉 전설의 명검 당첨! 🎉</div>
+                            <div id="popup-prize-name" class="popup-prize-name">움짤방셀</div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+        <div class="control-section">
+            <div class="control-title">
+                ⚙️ 베기장 설정
+                <button id="sound-toggle" class="sound-toggle-btn">🔊 사운드 ON</button>
+            </div>
+            <div class="form-group"><label>방송 타이틀 / 스트리머명</label><input type="text" id="title-input" value="감스트 검술 베기장"></div>
+            <div class="form-group">
+                <label>📐 타겟 크기 선택</label>
+                <select id="board-size-select">
+                    <option value="100" selected>100칸 (10x10)</option>
+                    <option value="50">50칸 (10x5)</option>
+                    <option value="25">25칸 (5x5)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>↔️ 덩어리 가로 위치</label>
+                <select id="position-select">
+                    <option value="flex-start" selected>왼쪽</option>
+                    <option value="center">가운데</option>
+                    <option value="flex-end">오른쪽</option>
+                </select>
+            </div>
+            <div class="form-group"><label>🔊 베기 효과음 볼륨 조절</label><input type="range" id="shoot-volume-slider" min="0" max="1" step="0.05" value="0.3"></div>
+            <div class="form-group"><label>🎛️ 베기장 투명도 조절</label><input type="range" id="opacity-slider" min="0.3" max="1" step="0.05" value="0.85"></div>
+            <div class="form-group"><label>🖼️ 배경 이미지 변경</label><label for="bg-file" class="file-btn">컴퓨터에서 배경 이미지 선택</label><input type="file" id="bg-file" accept="image/*" style="display: none;"></div>
+            <div class="form-group">
+                <label>🎁 당첨 미션 및 개수 설정</label>
+                <table class="prize-table">
+                    <thead><tr><th>미션 이름</th><th style="width: 70px;">수량</th><th style="width: 30px;">삭제</th></tr></thead>
+                    <tbody id="prize-list-body"></tbody>
+                </table>
+                <button class="btn btn-add" id="add-prize-btn">+ 항목 추가</button>
+                <div class="kkwang-info" id="kkwang-count-display">자동 적용 꽝: 62개</div>
+            </div>
+            <button class="btn" id="reset-btn">🔄 타겟 초기화 & 재장전</button>
+            <button class="btn btn-sec" id="obs-toggle-btn">📺 OBS 모드 전환 (설정창 숨기기)</button>
+        </div>
+    </div>
+
+    <script>
+        const boardEl = document.getElementById('board');
+        const targetBoardFrame = document.getElementById('target-board-frame');
+        const boardSection = document.getElementById('board-section');
+        const titleInput = document.getElementById('title-input');
+        const displayTitle = document.getElementById('display-title');
+        const sizeSelect = document.getElementById('board-size-select');
+        const positionSelect = document.getElementById('position-select');
+        const opacitySlider = document.getElementById('opacity-slider');
+        const shootVolumeSlider = document.getElementById('shoot-volume-slider');
+        const resetBtn = document.getElementById('reset-btn');
+        const bgFileInput = document.getElementById('bg-file');
+        const bgContainer = document.getElementById('bg-container');
+        const obsToggleBtn = document.getElementById('obs-toggle-btn');
+        const obsRestoreBtn = document.getElementById('obs-restore-btn'); 
+        const prizeListBody = document.getElementById('prize-list-body');
+        const addPrizeBtn = document.getElementById('add-prize-btn');
+        const kkwangDisplay = document.getElementById('kkwang-count-display');
+        const statusBoard = document.getElementById('prize-status-board');
+        const hudAmmo = document.getElementById('hud-ammo');
+
+        const btnDraw1 = document.getElementById('btn-draw-1');
+        const btnDraw11 = document.getElementById('btn-draw-11');
+
+        let totalTargets = 100;
+        let shotTargets = 0;
+        let isRandomDraw = false;
+
+        const popupOverlay = document.getElementById('prize-popup');
+        const popupTitle = document.getElementById('popup-title');
+        const popupPrizeName = document.getElementById('popup-prize-name');
+        const popupCloseBtn = document.getElementById('popup-close-btn');
+        popupCloseBtn.addEventListener('click', () => { popupOverlay.classList.remove('active'); });
+
+        let remainingPrizes = {}; 
+        let initialPrizes = {}; 
+        let isSoundOn = true;
+        const soundToggleBtn = document.getElementById('sound-toggle');
+        
+        /* 📍 사격음 -> 검술 베기음 매칭 */
+        const audioFiles = {
+            shoot: new Audio('slash.mp3'), win: new Audio('draw_legend.mp3'),
+            bangcel: new Audio('draw_legend.mp3'), maedo: new Audio('tick.mp3'), kkwang: new Audio('kkwang.mp3')
+        };
+
+        function playSound(type) {
+            if (!isSoundOn) return;
+            try {
+                let snd = audioFiles[type] ? audioFiles[type].cloneNode() : audioFiles['shoot'].cloneNode();
+                snd.volume = (type === 'shoot') ? parseFloat(shootVolumeSlider.value) : 0.6;
+                snd.play().catch(e => {});
+            } catch (e) {}
+        }
+
+        soundToggleBtn.addEventListener('click', () => {
+            isSoundOn = !isSoundOn;
+            if (isSoundOn) { soundToggleBtn.innerText = '🔊 사운드 ON'; soundToggleBtn.classList.remove('off'); } 
+            else { soundToggleBtn.innerText = '🔇 사운드 OFF'; soundToggleBtn.classList.add('off'); }
+        });
+
+        function showPopup(title, contentHTML) {
+            popupTitle.innerHTML = title;
+            popupPrizeName.innerHTML = contentHTML;
+            popupOverlay.classList.add('active');
+        }
+
+        function saveSettings() {
+            const missions = [];
+            document.querySelectorAll('#prize-list-body tr').forEach(row => {
+                missions.push({ name: row.querySelector('.p-name').value, count: row.querySelector('.p-count').value });
+            });
+            const settings = {
+                title: titleInput.value, size: sizeSelect.value, position: positionSelect.value,
+                volume: shootVolumeSlider.value, opacity: opacitySlider.value, missions: missions
+            };
+            localStorage.setItem('gamstSwordSettingsV1', JSON.stringify(settings));
+        }
+
+        function isRarePrize(prize) {
+            if (prize === '쌍욕' || prize === '꽝') return false;
+            if (prize.includes('방셀') || prize.includes('움짤')) return true;
+            const initCount = initialPrizes[prize] || 999;
+            return initCount <= 2;
+        }
+
+        function loadSettings() {
+            const saved = localStorage.getItem('gamstSwordSettingsV1');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                titleInput.value = settings.title; displayTitle.innerText = settings.title;
+                sizeSelect.value = settings.size; positionSelect.value = settings.position;
+                boardSection.style.alignItems = settings.position;
+                shootVolumeSlider.value = settings.volume || 0.3;
+                opacitySlider.value = settings.opacity || 0.85;
+                targetBoardFrame.style.opacity = settings.opacity; 
+
+                prizeListBody.innerHTML = '';
+                settings.missions.forEach(m => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><input type="text" class="p-name" value="${m.name}"></td><td><input type="number" class="p-count" value="${m.count}" min="0"></td><td><button class="btn-del">❌</button></td>`;
+                    prizeListBody.appendChild(tr);
+                });
+            } else {
+                const defaultMissions = [ 
+                    {name:'움짤방셀', count:1}, {name:'방셀', count:5}, {name:'프사', count:1}, 
+                    {name:'거북알', count:30}, {name:'데스윙크', count:10}, {name:'쌍욕', count:54} 
+                ];
+                prizeListBody.innerHTML = '';
+                defaultMissions.forEach(m => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><input type="text" class="p-name" value="${m.name}"></td><td><input type="number" class="p-count" value="${m.count}" min="0"></td><td><button class="btn-del">❌</button></td>`;
+                    prizeListBody.appendChild(tr);
+                });
+            }
+            document.querySelectorAll('.btn-del').forEach(attachDeleteEvent);
+            bindInputEvents();
+        }
+
+        titleInput.addEventListener('input', (e) => { displayTitle.innerText = e.target.value; saveSettings(); });
+        positionSelect.addEventListener('change', (e) => { boardSection.style.alignItems = e.target.value; saveSettings(); });
+        opacitySlider.addEventListener('input', (e) => { targetBoardFrame.style.opacity = e.target.value; saveSettings(); });
+        shootVolumeSlider.addEventListener('input', saveSettings);
+
+        bgFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => bgContainer.style.backgroundImage = `url('${event.target.result}')`;
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function attachDeleteEvent(btn) {
+            btn.addEventListener('click', (e) => { e.target.closest('tr').remove(); updateKkwangCount(); saveSettings(); });
+        }
+
+        addPrizeBtn.addEventListener('click', () => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><input type="text" class="p-name" value="새 항목"></td><td><input type="number" class="p-count" value="1" min="0"></td><td><button class="btn-del">❌</button></td>`;
+            prizeListBody.appendChild(tr);
+            attachDeleteEvent(tr.querySelector('.btn-del'));
+            updateKkwangCount(); saveSettings(); bindInputEvents();
+        });
+
+        function updateKkwangCount() {
+            const total = parseInt(sizeSelect.value);
+            let prizeSum = 0;
+            document.querySelectorAll('.p-count').forEach(input => prizeSum += parseInt(input.value) || 0);
+            const kkwang = Math.max(0, total - prizeSum);
+            
+            const rows = document.querySelectorAll('#prize-list-body tr');
+            const lastPrizeName = rows.length > 0 ? rows[rows.length - 1].querySelector('.p-name').value : '쌍욕';
+            kkwangDisplay.innerText = `자동 적용 최하위(${lastPrizeName}): ${kkwang}개 (설정 항목: ${prizeSum}/${total}개)`;
+            return { total, kkwang, lastPrizeName };
+        }
+
+        function bindInputEvents() { document.querySelectorAll('.p-count, .p-name').forEach(input => { input.oninput = () => { updateKkwangCount(); saveSettings(); }; }); }
+        sizeSelect.addEventListener('change', () => { updateKkwangCount(); saveSettings(); initBoard(); });
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function renderStatusBoard() {
+            statusBoard.innerHTML = '';
+            for (const [name, count] of Object.entries(remainingPrizes)) {
+                const badge = document.createElement('div');
+                badge.className = 'prize-badge';
+                
+                if (isRarePrize(name)) {
+                    badge.style.borderColor = '#ffd700';
+                    badge.style.boxShadow = '0 0 8px #ffd700';
+                }
+
+                if (count <= 0) badge.classList.add('sold-out');
+                badge.innerHTML = `<span>${name}</span><span class="badge-count">${count}</span>`;
+                statusBoard.appendChild(badge);
+            }
+        }
+
+        function updateRemainingDisplay() {
+            const left = totalTargets - shotTargets;
+            hudAmmo.innerText = `🗡️ ${left}`; 
+        }
+
+        function getEmojiShape(emojiText) {
+            try { if (typeof confetti.shapeFromText === 'function') return confetti.shapeFromText({ text: emojiText, scalar: 3 }); } catch (e) { }
+            return 'circle'; 
+        }
+
+        const swordEmoji = getEmojiShape('⚔️');
+
+        function getPrizeColor(prize) {
+            if(prize === '쌍욕' || prize === '꽝') return '#747d8c';
+            if(isRarePrize(prize)) return '#ffd700';
+            if(prize.includes('방셀')) return '#ff9f43';
+            if(prize.includes('거북')) return '#ff4757';
+            if(prize.includes('데스')) return '#00e5ff';
+            
+            const palette = ['#00b894', '#0984e3', '#e17055', '#e84393', '#f39c12'];
+            let hash = 0; for(let i=0; i<prize.length; i++) hash += prize.charCodeAt(i);
+            return palette[hash % palette.length];
+        }
+
+        function applyCustomStyle(element, prizeName) {
+            const color = getPrizeColor(prizeName);
+            element.style.background = `linear-gradient(135deg, ${color} 0%, #ffffff 150%)`;
+            element.style.border = `2px solid ${color}`;
+            return {c1: color, c2: '#ffffff'}; 
+        }
+
+        /* 📍 칼로 밸 때 터지는 검기 이펙트 */
+        function triggerSlashParticle(x, y) {
+            confetti({ zIndex: 9999, particleCount: 40, spread: 100, origin: { x, y }, colors: ['#ffffff', '#00e5ff', '#ffd700'], shapes: [swordEmoji, 'square'], scalar: 1.2, startVelocity: 25, gravity: 1.5, ticks: 50 });
+        }
+
+        function triggerSpecialFirework(x, y) {
+            confetti({ zIndex: 10001, particleCount: 150, spread: 120, origin: { x: 0.5, y: 0.5 }, colors: ['#ffd700', '#00e5ff', '#ff007f', '#ffffff'], startVelocity: 45, scalar: 1.2 });
+            playSound('win');
+        }
+
+        /* 🎲 랜덤 베기 기능 */
+        function doRandomDraw(count) {
+            const unshotCells = Array.from(document.querySelectorAll('.cell:not(.shot)'));
+            if (unshotCells.length === 0) return alert("남은 과녁이 없습니다!");
+            
+            const drawCount = Math.min(count, unshotCells.length);
+            shuffle(unshotCells);
+            const targets = unshotCells.slice(0, drawCount);
+
+            isRandomDraw = true; 
+            boardEl.style.pointerEvents = 'none';
+
+            let results = [];
+            
+            targets.forEach((cell, idx) => {
+                setTimeout(() => {
+                    const num = cell.dataset.number;
+                    const prize = cell.dataset.prize;
+                    results.push({ num, prize });
+                    
+                    cell.click();
+
+                    if (idx === targets.length - 1) {
+                        setTimeout(() => {
+                            if (drawCount === 1) {
+                                let color = getPrizeColor(prize);
+                                showPopup("⚔️ 랜덤 1회 베기 결과", `<div style="font-size:24px; color:#a1a1aa; margin-bottom:10px;">🎯 ${num}번 명중!</div><div style="font-size:52px; color:${color}; text-shadow: 0 4px 10px rgba(0,0,0,0.8);">${prize}</div>`);
+                            } else {
+                                let html = `<div class="gacha-result-list" style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; margin-top:16px; max-height:300px; overflow-y:auto; padding: 10px;">`;
+                                results.forEach(r => {
+                                    let color = getPrizeColor(r.prize);
+                                    html += `<div style="background:rgba(0,0,0,0.6); padding:10px 18px; border-radius:16px; border:2px solid ${color}; display:flex; flex-direction:column; min-width: 90px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                                        <span style="font-size:14px; color:#ccc; margin-bottom:4px;">🎯 ${r.num}번</span>
+                                        <span style="font-size:20px; font-weight:bold; color:${color};">${r.prize}</span>
+                                    </div>`;
+                                });
+                                html += `</div>`;
+                                showPopup(`🎰 랜덤 ${drawCount}연참 결과`, html);
+                                
+                                if(results.some(r => isRarePrize(r.prize))) {
+                                    triggerSpecialFirework(0.5, 0.5);
+                                }
+                            }
+                            isRandomDraw = false;
+                            boardEl.style.pointerEvents = 'auto';
+                        }, 800);
+                    }
+                }, idx * 200);
+            });
+        }
+
+        btnDraw1.addEventListener('click', () => doRandomDraw(1));
+        btnDraw11.addEventListener('click', () => doRandomDraw(11));
+
+        function initBoard() {
+            boardEl.innerHTML = '';
+
+            const { total, kkwang, lastPrizeName } = updateKkwangCount();
+            remainingPrizes = {}; initialPrizes = {};
+            totalTargets = total; shotTargets = 0;
+            updateRemainingDisplay();
+
+            if (total === 25) boardEl.style.gridTemplateColumns = 'repeat(5, 1fr)';
+            else boardEl.style.gridTemplateColumns = 'repeat(10, 1fr)';
+
+            let prizePool = [];
+            document.querySelectorAll('#prize-list-body tr').forEach(row => {
+                const name = row.querySelector('.p-name').value.trim();
+                const count = parseInt(row.querySelector('.p-count').value) || 0;
+                if (name && count > 0) {
+                    remainingPrizes[name] = count; 
+                    initialPrizes[name] = count;
+                    for (let i = 0; i < count; i++) prizePool.push(name);
+                }
+            });
+
+            if (kkwang > 0) {
+                const defaultLastName = lastPrizeName || '쌍욕';
+                remainingPrizes[defaultLastName] = (remainingPrizes[defaultLastName] || 0) + kkwang;
+                initialPrizes[defaultLastName] = (initialPrizes[defaultLastName] || 0) + kkwang;
+                for (let i = 0; i < kkwang; i++) prizePool.push(defaultLastName);
+            }
+
+            prizePool = prizePool.slice(0, total);
+            shuffle(prizePool);
+            renderStatusBoard();
+
+            for (let i = 0; i < total; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                
+                cell.dataset.number = i + 1;
+                cell.dataset.prize = prizePool[i];
+
+                const targetBack = document.createElement('div');
+                targetBack.className = 'target-back';
+                targetBack.innerText = prizePool[i];
+
+                const blockFront = document.createElement('div');
+                blockFront.className = 'block-front';
+                blockFront.innerText = i + 1;
+
+                const slashEffect = document.createElement('div');
+                slashEffect.className = 'slash-effect';
+
+                cell.appendChild(targetBack);
+                cell.appendChild(blockFront);
+                cell.appendChild(slashEffect);
+
+                cell.addEventListener('click', (e) => {
+                    if (!cell.classList.contains('shot')) {
+                        cell.classList.add('shot');
+                        
+                        shotTargets++;
+                        updateRemainingDisplay();
+                        
+                        const rect = cell.getBoundingClientRect();
+                        const originX = (rect.left + rect.width / 2) / window.innerWidth;
+                        const originY = (rect.top + rect.height / 2) / window.innerHeight;
+
+                        /* 📍 검기 애니메이션 및 효과음 실행 */
+                        slashEffect.classList.add('active');
+                        playSound('shoot');
+                        targetBoardFrame.classList.remove('recoil-active'); void targetBoardFrame.offsetWidth; targetBoardFrame.classList.add('recoil-active');
+                        
+                        triggerSlashParticle(originX, originY);
+
+                        const prize = prizePool[i];
+                        let assignedCustomColor = null;
+
+                        if (prize === '쌍욕' || prize === '꽝') targetBack.classList.add('kkwang');
+                        else if (isRarePrize(prize)) targetBack.classList.add('bangcel'); 
+                        else {
+                            targetBack.classList.add('custom-win');
+                            assignedCustomColor = applyCustomStyle(targetBack, prize);
+                        }
+
+                        setTimeout(() => {
+                            if (isRarePrize(prize)) {
+                                if(!isRandomDraw) showPopup("🎉 스페셜 대박 당첨! 🎉", prize);
+                                triggerSpecialFirework(originX, originY);
+                            }
+
+                            if (remainingPrizes[prize] > 0) {
+                                remainingPrizes[prize]--; renderStatusBoard();
+                            }
+                        }, 250); 
+                    }
+                });
+                boardEl.appendChild(cell);
+            }
+        }
+
+        resetBtn.addEventListener('click', initBoard);
+        obsToggleBtn.addEventListener('click', () => { document.body.classList.add('obs-mode'); });
+        obsRestoreBtn.addEventListener('click', () => { document.body.classList.remove('obs-mode'); });
+
+        loadSettings();
+        initBoard();
+    </script>
+</body>
+</html>
