@@ -162,17 +162,17 @@ td input{padding:4px;font-size:12px;text-align:center}
       <div class="stat">
         <div class="multiplier-box">
           <div>
-            <label for="multiplierInput">도전 배율 / 총 강화 시도 횟수</label>
+            <label for="multiplierInput">도전 코인 수 (실패 가능 횟수)</label>
             <input id="multiplierInput" type="number" min="1" max="100" step="1" value="3">
           </div>
           <button id="applyMultiplier" class="btn btn-sub">X3 적용</button>
         </div>
-        <div id="multiplierPreview" class="multiplier-preview">X3 · 총 비용 300개 별풍선</div>
+        <div id="multiplierPreview" class="multiplier-preview">X3 코인 · 실패 3번까지 계속 강화 · 총 비용 300개 별풍선</div>
       </div>
 
       <div class="grid2">
         <button id="enhance1" class="btn btn-primary">🔨 기본 1회 (실패할 때까지)</button>
-        <button id="enhanceMulti" class="btn btn-primary" style="background:linear-gradient(180deg,#2e8fff,#004ab7);border-color:#6baeff;">⚡ X3 배율 도전 (실패 시 유지)</button>
+        <button id="enhanceMulti" class="btn btn-primary" style="background:linear-gradient(180deg,#2e8fff,#004ab7);border-color:#6baeff;">⚡ X3 코인 도전 (실패 시 1코인 소모)</button>
       </div>
       <div id="result" class="result">강화 버튼을 눌러 시작하세요!</div>
 
@@ -367,10 +367,10 @@ function updateMultiplierUI(){
   const multi=getMultiplier();
   const cost=Math.max(0,Number(el('costInput').value)||0);
   el('multiplierInput').value=multi;
-  el('enhanceMulti').textContent=`⚡ X${multi} 배율 도전 (실패 시 유지)`;
+  el('enhanceMulti').textContent=`⚡ X${multi} 코인 도전 (실패 시 1코인 소모)`;
   el('applyMultiplier').textContent=`X${multi} 적용`;
   el('multiplierPreview').textContent=
-    `X${multi} · 총 ${multi}번 강화 판정 · 총 비용 ${(cost*multi).toLocaleString('ko-KR')}개 별풍선`;
+    `X${multi} 코인 · 실패 ${multi}번까지 계속 강화 · 총 비용 ${(cost*multi).toLocaleString('ko-KR')}개 별풍선`;
 }
 
 function refreshUI(){
@@ -577,41 +577,54 @@ el('enhanceMulti').addEventListener('click',async()=>{
 
   const multiplier=getMultiplier();
 
-  // 배율 도전은 전체가 하나의 강화 진행입니다.
-  // 실패해도 단계가 유지되고, 남은 시도 횟수로 같은 단계에 다시 도전합니다.
+  // X배율은 총 판정 횟수가 아니라 실패를 버틸 수 있는 코인 수입니다.
+  // 성공은 코인을 소모하지 않으며 계속 진행합니다.
+  // 실패할 때만 코인 1개가 줄고 현재 강화 단계는 유지됩니다.
   level=0;
   inventory=[];
   historyLog=[];
   refreshUI();
 
-  let usedAttempts=0;
+  let remainingCoins=multiplier;
+  let totalRolls=0;
+  let successCount=0;
+  let failCount=0;
 
-  for(let attempt=1;attempt<=multiplier;attempt++){
-    if(level>=stageConfigs.length)break;
+  addHistory(true,`━━ X${multiplier} 코인 도전 시작 · 실패 ${multiplier}번까지 유지 ━━`);
 
-    usedAttempts=attempt;
-    addHistory(true,`━━ ${attempt}/${multiplier}번째 강화 시도 · 현재 +${level} ━━`);
+  while(remainingCoins>0 && level<stageConfigs.length){
+    totalRolls++;
+    addHistory(true,`━━ ${totalRolls}번째 강화 판정 · 현재 +${level} · 남은 코인 ${remainingCoins}/${multiplier} ━━`);
 
     const beforeLevel=level;
     const res=await executeStep(true);
 
-    if(res.reachedMax||level>=stageConfigs.length){
+    if(res.reachedMax || level>=stageConfigs.length){
       addHistory(true,'최대 강화 단계에 도달하여 자동 종료');
       break;
     }
 
-    if(!res.success){
-      addHistory(false,`실패했지만 +${beforeLevel} 유지 · 남은 횟수로 같은 단계 재도전`);
+    if(res.success){
+      successCount++;
+      addHistory(true,`성공 · 코인 유지 ${remainingCoins}/${multiplier}`);
+    }else{
+      failCount++;
+      remainingCoins--;
+      addHistory(false,`실패 · +${beforeLevel} 유지 · 코인 1개 소모 · 남은 코인 ${remainingCoins}/${multiplier}`);
+
+      if(remainingCoins<=0){
+        addHistory(false,'모든 코인을 소모하여 도전 종료');
+        break;
+      }
     }
 
     await wait(700);
   }
 
-  // 배율 수만큼 상품을 주는 것이 아니라, 모든 시도 종료 후 최종 단계 상품 하나만 지급
   grantFinalReward(level,1);
   refreshUI();
   showRewardModal(
-    `X${multiplier} 배율 도전 · 총 ${usedAttempts}회 시도 완료 · 최종 +${level} 보상만 지급되었습니다.`
+    `X${multiplier} 코인 도전 종료 · 총 ${totalRolls}회 판정 (${successCount}성공 / ${failCount}실패) · 최종 +${level} 보상만 지급되었습니다.`
   );
   busy=false;
 });
@@ -624,7 +637,7 @@ el('applyMultiplier').addEventListener('click',()=>{
   updateMultiplierUI();
   saveAll();
   el('result').className='result';
-  el('result').textContent=`X${getMultiplier()} 배율이 적용되었습니다.`;
+  el('result').textContent=`X${getMultiplier()} 코인이 적용되었습니다.`;
 });
 
 el('resetDefaults').addEventListener('click',()=>{
