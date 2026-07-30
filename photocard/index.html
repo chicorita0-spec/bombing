@@ -11,11 +11,11 @@
         :root {
             --bg-color: #050507;
             --t1-color: #ffffff; 
-            --t2-color: #9b59b6; /* 2성 매도 - 딥 퍼플 */
-            --t3-color: #ff007f; /* 3성 애교/노래 - 핫핑크 */
-            --t4-color: #ffea00; /* 4성 역팬/프사 - 황금색 */
-            --t5-color: #ff003c; /* 5성 방셀 - 레이저 레드 */
-            --t6-color: #00ffff; /* 6성 UR - 사이언 & 무지개 */
+            --t2-color: #a855f7; /* 딥 퍼플 */
+            --t3-color: #ec4899; /* 핫핑크 */
+            --t4-color: #eab308; /* 황금색 */
+            --t5-color: #ef4444; /* 레드 */
+            --t6-color: #06b6d4; /* 사이언/무지개 */
         }
 
         body {
@@ -25,23 +25,22 @@
             display: flex;
             height: 100vh;
             overflow: hidden;
-            background: linear-gradient(135deg, #121420 0%, #050608 100%);
+            background: #050608;
         }
 
-        /* 임팩트 점멸 */
         @keyframes impactFlash {
-            0% { filter: brightness(2.5); }
-            10% { filter: brightness(1.5) sepia(1) hue-rotate(30deg) saturate(300%); }
+            0% { filter: brightness(3) drop-shadow(0 0 30px rgba(255,255,255,0.8)); }
+            10% { filter: brightness(1.8) sepia(1) hue-rotate(30deg) saturate(400%); }
             100% { filter: brightness(1); }
         }
         @keyframes mythicFlash {
-            0% { filter: brightness(3.5); }
-            10% { filter: brightness(2) sepia(1) hue-rotate(-50deg) saturate(400%); }
+            0% { filter: brightness(4) drop-shadow(0 0 50px rgba(239,68,68,0.9)); }
+            10% { filter: brightness(2.2) sepia(1) hue-rotate(-50deg) saturate(500%); }
             100% { filter: brightness(1); }
         }
         @keyframes urFlash6 {
-            0% { filter: brightness(5) sepia(1) hue-rotate(180deg) saturate(600%); }
-            15% { filter: brightness(2.5); }
+            0% { filter: brightness(6) sepia(1) hue-rotate(180deg) saturate(800%); }
+            15% { filter: brightness(3); }
             100% { filter: brightness(1); }
         }
         body.impact-4 { animation: impactFlash 0.5s ease-out forwards; }
@@ -56,222 +55,327 @@
             .control-section { width: 100% !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.1); flex: none; }
         }
 
-        /* 메인 보드 */
         .board-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; }
         
         .board-wrapper {
             position: relative;
-            width: 440px; 
-            height: 620px; 
+            width: 480px; 
+            height: 600px; 
             display: flex; flex-direction: column; align-items: center;
-            background-image: url('카드깡.png');
+            background-color: #0d0716;
+            background-image: url('bg.png'), url('카드깡.png'), url('bg_2.png');
             background-size: 100% 100%;
             background-position: center;
             background-repeat: no-repeat;
-            border-radius: 20px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(255, 51, 153, 0.3);
+            border-radius: 12px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
             overflow: hidden; 
         }
 
         .board-title { display: none; }
         
-        /* 남은 카드 카운터 */
         .ammo-counter { 
-            position: absolute; top: 110px; left: 50%; transform: translateX(-50%);
-            color: #fff; font-weight: 900; font-size: 13px; background: rgba(0,0,0,0.85); 
-            border: 2px solid #ff3399; padding: 3px 14px; border-radius: 12px; 
-            box-shadow: 0 0 10px rgba(255, 51, 153, 0.5); z-index: 15; 
+            position: absolute !important; 
+            top: 62px !important; 
+            right: 25px !important;
+            color: #ffb8ec; font-weight: 900; font-size: 11px; 
+            background: rgba(15, 5, 25, 0.85); 
+            border: 1px solid #ff5fc4; padding: 2px 8px; border-radius: 6px; 
+            box-shadow: 0 0 8px rgba(255, 95, 196, 0.4); z-index: 25; 
         }
 
-        /* 당첨 현황 목록 */
         .prize-status-board { 
-            position: absolute; top: 145px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; width: 90%; max-height: 48px; overflow-y: auto; z-index: 15; 
+            position: absolute !important; 
+            top: 143px !important; 
+            right: 18px !important; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 4px; 
+            align-items: center; 
+            width: 128px !important; 
+            max-height: 250px !important; 
+            overflow-y: auto; 
+            z-index: 50; 
+            background: rgba(12, 5, 20, 0.92); 
+            border: 2px solid #ff3399; 
+            border-radius: 10px;
+            padding: 8px 5px;
+            box-shadow: 0 0 15px rgba(255, 51, 153, 0.5), inset 0 0 10px rgba(255, 51, 153, 0.2);
+            scrollbar-width: none;
         }
-        .prize-badge { background: rgba(0,0,0,0.85); border: 1.5px solid; padding: 2px 8px; border-radius: 8px; font-weight: 900; font-size: 11px; display: flex; align-items: center; gap: 4px; }
-        .prize-badge .badge-count { background: #fff; color: #000; padding: 1px 5px; border-radius: 6px; font-size: 10px; }
-        .prize-badge.sold-out { opacity: 0.2; filter: grayscale(1); box-shadow: none !important; border-color: #555 !important; }
-        .prize-badge.sold-out span { color: #888 !important; text-shadow: none !important; }
+        .prize-status-board::-webkit-scrollbar { display: none; }
+
+        .prize-badge { 
+            background: rgba(22, 10, 35, 0.95); 
+            border: 1.5px solid; 
+            padding: 3px 6px; 
+            border-radius: 6px; 
+            font-weight: 800; 
+            font-size: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            width: 100%; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .prize-badge .badge-count { 
+            background: #ff5fc4; 
+            color: #fff; 
+            padding: 1px 4px; 
+            border-radius: 4px; 
+            font-size: 9px; 
+            font-weight: 900; 
+        }
+        .prize-badge.sold-out { opacity: 0.25; filter: grayscale(1); border-color: #444 !important; }
 
         .card-stage { 
-            position: absolute; top: 195px; left: 50%; transform: translateX(-50%);
-            display: flex; justify-content: center; align-items: center; width: 192px; height: 285px; perspective: 1200px; z-index: 10; 
+            position: absolute !important; 
+            top: 105px !important; 
+            left: 47.8% !important; 
+            transform: translateX(-50%) !important;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            width: 150px !important; 
+            height: 310px !important; 
+            perspective: 1200px; 
+            z-index: 10; 
         }
         
-        .stage-backlight { position: absolute; width: 220px; height: 220px; border-radius: 50%; opacity: 0; transition: opacity 0.5s, background 0.3s; z-index: 1; filter: blur(30px); }
-        .card-stage.show-backlight .stage-backlight { opacity: 1; }
+        .stage-backlight { position: absolute; width: 220px; height: 220px; border-radius: 50%; opacity: 0; transition: opacity 0.5s, background 0.3s; z-index: 1; filter: blur(40px); }
+        .card-stage.show-backlight .stage-backlight { opacity: 1; animation: backlightPulse 2s infinite alternate; }
+        @keyframes backlightPulse { 0% { transform: scale(0.9); opacity: 0.7; } 100% { transform: scale(1.15); opacity: 1; } }
 
         .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 2; }
         
         @keyframes pack-hum { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-        @keyframes pack-shake { 0%, 100% { transform: translate(1px, 1px) scale(1.03); } 25% { transform: translate(-2px, -3px) scale(1.03) rotate(-1deg); } 50% { transform: translate(3px, -1px) scale(1.03) rotate(1deg); } 75% { transform: translate(-1px, 2px) scale(1.03); } }
-        @keyframes pack-extreme { 0%, 100% { transform: translate(3px, 3px) scale(1.05); } 25% { transform: translate(-4px, -5px) scale(1.05) rotate(-3deg); } 50% { transform: translate(5px, -2px) scale(1.05) rotate(3deg); } 75% { transform: translate(-3px, 4px) scale(1.05); } }
+        @keyframes pack-shake { 0%, 100% { transform: translate(1px, 1px) scale(1.03); } 25% { transform: translate(-2px, -3px) rotate(-1deg); } 50% { transform: translate(3px, -1px) rotate(1deg); } }
+        @keyframes pack-extreme { 0%, 100% { transform: translate(3px, 3px) scale(1.05); } 25% { transform: translate(-4px, -5px) rotate(-3deg); } 50% { transform: translate(5px, -2px) rotate(3deg); } }
 
         .card.humming { animation: pack-hum 0.1s infinite; }
         .card.shaking { animation: pack-shake 0.05s infinite; }
         .card.extreme { animation: pack-extreme 0.04s infinite; }
-        .card.flipped { transform: rotateY(180deg) scale(1.08) translateY(-2px); animation: none !important; }
+        
+        .card.flipped { transform: rotateY(180deg) scale(1.18) translateY(-5px); animation: none !important; }
 
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; overflow: hidden; }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 12px; overflow: hidden; }
         
         .card-back { 
-            background: rgba(10, 5, 20, 0.1); 
-            border: 3px solid transparent; 
-            display: flex; justify-content: center; align-items: center; 
-            transition: all 0.25s ease-in-out;
-            border-radius: 16px;
+            background: transparent !important; 
+            border: 3px solid transparent !important; 
+            box-shadow: none !important;
+            transition: all 0.3s ease;
         }
 
-        .card.glow-1 .card-back { 
-            border-color: #ffffff; 
-            box-shadow: 0 0 30px #ffffff, inset 0 0 20px #ffffff; 
-            background: rgba(255, 255, 255, 0.25); 
-        }
-        .card.glow-2 .card-back { 
-            border-color: #00ffff; 
-            box-shadow: 0 0 40px #00ffff, 0 0 15px #8e44ad, inset 0 0 30px #00ffff; 
-            background: rgba(142, 68, 173, 0.45); 
-        }
-        .card.glow-3 .card-back { 
-            border-color: #ff007f; 
-            box-shadow: 0 0 45px #ff007f, 0 0 20px #ffffff, inset 0 0 35px #ff007f; 
-            background: rgba(255, 0, 127, 0.4); 
-        }
-        .card.glow-4 .card-back { 
-            border-color: #ffea00; 
-            box-shadow: 0 0 60px #ffea00, 0 0 25px #ff9900, inset 0 0 45px #ffea00; 
-            background: rgba(255, 234, 0, 0.45); 
-        }
-        .card.glow-5 .card-back { 
-            border-color: #ff003c; 
-            box-shadow: 0 0 80px #ff003c, 0 0 40px #ffffff, inset 0 0 60px #ff003c; 
-            background: rgba(255, 0, 60, 0.5); 
-            animation: rainbowGlow 0.25s infinite alternate; 
-        }
-        /* 🔥 6성 전용 무지개 오라 이펙트 */
-        .card.glow-6 .card-back { 
-            border-color: #00ffff; 
-            box-shadow: 0 0 100px #00ffff, 0 0 60px #ff007f, 0 0 30px #ffea00, inset 0 0 70px #00ffff; 
-            background: rgba(0, 255, 255, 0.5); 
-            animation: urRainbowGlow 0.15s infinite alternate; 
-        }
+        /* 🌟 반짝임과 글로우를 강화한 등급별 백 디자인 */
+        .card.glow-1 .card-back { border-color: rgba(255, 255, 255, 0.6) !important; box-shadow: 0 0 20px rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.1) !important; }
+        .card.glow-2 .card-back { border-color: var(--t2-color) !important; box-shadow: 0 0 35px var(--t2-color), inset 0 0 15px var(--t2-color); background: rgba(168, 85, 247, 0.45) !important; }
+        .card.glow-3 .card-back { border-color: var(--t3-color) !important; box-shadow: 0 0 45px var(--t3-color), inset 0 0 20px var(--t3-color); background: rgba(236, 72, 153, 0.45) !important; }
+        .card.glow-4 .card-back { border-color: var(--t4-color) !important; box-shadow: 0 0 60px var(--t4-color), inset 0 0 25px var(--t4-color); background: rgba(234, 179, 8, 0.5) !important; }
+        .card.glow-5 .card-back { border-color: var(--t5-color) !important; box-shadow: 0 0 80px var(--t5-color), inset 0 0 30px var(--t5-color); background: rgba(239, 68, 68, 0.55) !important; }
+        .card.glow-6 .card-back { border-color: var(--t6-color) !important; box-shadow: 0 0 100px var(--t6-color), inset 0 0 40px var(--t6-color); background: rgba(6, 182, 212, 0.6) !important; animation: borderRainbow 1.5s infinite linear; }
 
-        @keyframes rainbowGlow { 
-            from { box-shadow: 0 0 50px #ff003c, inset 0 0 30px #ff003c; } 
-            to { box-shadow: 0 0 100px #ffffff, 0 0 60px #ffea00, inset 0 0 70px #ff003c; } 
-        }
-
-        @keyframes urRainbowGlow { 
-            0% { box-shadow: 0 0 80px #00ffff, 0 0 40px #ff007f, inset 0 0 50px #00ffff; border-color: #00ffff; } 
-            50% { box-shadow: 0 0 120px #ffea00, 0 0 60px #ff003c, inset 0 0 70px #ffea00; border-color: #ffea00; } 
-            100% { box-shadow: 0 0 100px #ff007f, 0 0 50px #ffffff, inset 0 0 60px #ff007f; border-color: #ff007f; } 
-        }
-
-        /* 카드 앞면 */
-        .card-front { transform: rotateY(180deg); background: #000; border: 3px solid; display: flex; flex-direction: column; }
+        .card-front { transform: rotateY(180deg); background: #000; border: 2px solid; display: flex; flex-direction: column; }
         
-        .card-image { flex: 1; background-size: cover; background-position: center; background-color: #2c3e50; position: relative; }
-        .holo-overlay { position: absolute; top: -100%; left: -100%; width: 300%; height: 300%; background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.2) 30%, rgba(255,255,255,0.6) 40%, rgba(255,255,255,0.2) 50%, transparent 60%); mix-blend-mode: overlay; pointer-events: none; opacity: 0; transition: opacity 0.3s; }
-        .card.flipped .holo-overlay { opacity: 1; animation: holoSlide 2.5s infinite linear; }
-        @keyframes holoSlide { 0% { transform: translate(0, 0); } 100% { transform: translate(30%, 30%); } }
-
-        .card-info { position: absolute; bottom: 0; width: 100%; padding: 25px 8px 10px 8px; background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.8) 40%, transparent 100%); text-align: center; }
-        .card-stars { font-size: 13px; letter-spacing: 1px; margin-bottom: 2px; text-shadow: 0 2px 4px #000; }
-        .card-title { font-size: 20px; font-weight: 900; letter-spacing: -1px; }
-
-        /* 티어별 스타일상세 */
-        .t-1 { border-color: var(--t1-color); box-shadow: 0 0 15px rgba(255,255,255,0.3); } .t-1 .card-stars { color: var(--t1-color); } .t-1 .card-title { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.8); } .t-1 .holo-overlay { display: none; }
-        .t-2 { border-color: var(--t2-color); box-shadow: 0 0 25px rgba(155,89,182,0.8); } .t-2 .card-stars { color: #f1c40f; } .t-2 .card-title { color: #d288f9; text-shadow: 0 0 15px var(--t2-color); }
-        .t-3 { border-color: var(--t3-color); box-shadow: 0 0 30px rgba(255,0,127,0.8); } .t-3 .card-stars { color: #f1c40f; } .t-3 .card-title { color: var(--t3-color); text-shadow: 0 0 15px var(--t3-color); }
-        .t-4 { border-color: var(--t4-color); box-shadow: 0 0 40px rgba(255,234,0,0.9); } .t-4 .card-stars { color: var(--t4-color); } .t-4 .card-title { color: #fff; text-shadow: 0 0 20px var(--t4-color); }
-        .t-5 { border-color: var(--t5-color); box-shadow: 0 0 50px rgba(255,0,60,1); } .t-5 .card-stars { color: var(--t5-color); } .t-5 .card-title { color: #fff; text-shadow: 0 0 25px var(--t5-color); }
-        
-        /* 🔥 6성 전용 독보적인 무지개 홀로그램 테두리 */
-        .t-6 { 
-            border: 4px solid #00ffff; 
-            box-shadow: 0 0 60px #00ffff, 0 0 30px #ff007f, 0 0 15px #ffea00; 
-            animation: borderRainbow 2s infinite linear;
-        } 
-        @keyframes borderRainbow {
-            0% { border-color: #00ffff; box-shadow: 0 0 60px #00ffff, 0 0 30px #ff007f; }
-            33% { border-color: #ffea00; box-shadow: 0 0 60px #ffea00, 0 0 30px #00ffff; }
-            66% { border-color: #ff007f; box-shadow: 0 0 60px #ff007f, 0 0 30px #ffea00; }
-            100% { border-color: #00ffff; box-shadow: 0 0 60px #00ffff, 0 0 30px #ff007f; }
+        .card-image { 
+            flex: 1; 
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            position: relative; 
         }
-        .t-6 .card-stars { color: #ffea00; text-shadow: 0 0 10px #ffea00; } 
-        .t-6 .card-title { color: #00ffff; text-shadow: 0 0 20px #00ffff, 0 0 10px #ff007f; }
+
+        /* 🌈 초화려 홀로그램 및 무지개빛 글레이즈 효과 */
+        .holo-overlay { 
+            position: absolute; 
+            top: -150%; left: -150%; 
+            width: 400%; height: 400%; 
+            background: linear-gradient(
+                120deg, 
+                transparent 20%, 
+                rgba(255, 255, 255, 0.1) 35%, 
+                rgba(255, 0, 127, 0.3) 45%, 
+                rgba(0, 255, 255, 0.35) 50%, 
+                rgba(255, 255, 0, 0.3) 55%, 
+                rgba(255, 255, 255, 0.1) 65%, 
+                transparent 80%
+            ); 
+            mix-blend-mode: color-dodge; 
+            pointer-events: none; 
+            opacity: 0; 
+        }
+        .card.flipped .holo-overlay { opacity: 0.85; animation: holoSlide 2.2s infinite linear; }
+        @keyframes holoSlide { 
+            0% { transform: translate(-20%, -20%) rotate(0deg); } 
+            50% { transform: translate(20%, 20%) rotate(0deg); } 
+            100% { transform: translate(-20%, -20%) rotate(0deg); } 
+        }
+
+        .card-info { position: absolute; bottom: 0; width: 100%; padding: 12px 4px 6px 4px; background: linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.7) 70%, transparent 100%); text-align: center; }
+        .card-stars { font-size: 11px; font-weight: bold; margin-bottom: 2px; filter: drop-shadow(0 0 4px #ff3399); }
+        .card-title { font-size: 13px; font-weight: 900; letter-spacing: -0.5px; }
+
+        /* 티어별 앞면 테두리 및 입체 네온효과 */
+        .t-1 { border-color: var(--t1-color); } .t-1 .card-title { color: var(--t1-color); text-shadow: 0 0 8px var(--t1-color); }
+        .t-2 { border-color: var(--t2-color); box-shadow: 0 0 20px var(--t2-color); } .t-2 .card-title { color: var(--t2-color); text-shadow: 0 0 12px var(--t2-color); }
+        .t-3 { border-color: var(--t3-color); box-shadow: 0 0 25px var(--t3-color); } .t-3 .card-title { color: var(--t3-color); text-shadow: 0 0 12px var(--t3-color); }
+        .t-4 { border-color: var(--t4-color); box-shadow: 0 0 35px var(--t4-color); } .t-4 .card-title { color: var(--t4-color); text-shadow: 0 0 15px var(--t4-color); }
+        .t-5 { border-color: var(--t5-color); box-shadow: 0 0 45px var(--t5-color); } .t-5 .card-title { color: var(--t5-color); text-shadow: 0 0 15px var(--t5-color); }
+        .t-6 { border: 3px solid var(--t6-color); box-shadow: 0 0 70px var(--t6-color), 0 0 30px #ff007f; animation: borderRainbow 1.5s infinite linear; } 
+        .t-6 .card-title { color: var(--t6-color); text-shadow: 0 0 15px var(--t6-color); }
+
+        @keyframes borderRainbow { 0% { border-color: #06b6d4; filter: hue-rotate(0deg); } 50% { border-color: #ec4899; filter: hue-rotate(180deg); } 100% { border-color: #06b6d4; filter: hue-rotate(360deg); } }
 
         .hud-controls { 
-            position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 15px; width: 88%; max-width: 380px; z-index: 15; height: 50px;
+            position: absolute !important; 
+            bottom: 42px !important; 
+            left: 48% !important; 
+            transform: translateX(-50%) !important;
+            display: flex; 
+            gap: 12px; 
+            width: 305px; 
+            z-index: 15; 
+            height: 52px;
         }
         .btn-draw { 
-            flex: 1; height: 100%; border: none; border-radius: 12px; 
-            font-size: 16px; font-weight: 900; color: white; cursor: pointer; 
-            transition: all 0.1s; opacity: 0; 
+            flex: 1; height: 100%; border: none; background: transparent; cursor: pointer; 
+            border-radius: 8px;
+            position: relative;
+            overflow: visible;
         }
-        .btn-draw:active { transform: translateY(2px) scale(0.98); }
+        .btn-draw:active { transform: scale(0.96); background: rgba(255,255,255,0.1); }
 
-        /* 11연차 팝업 */
+        .draw-cost-label {
+            position: absolute;
+            left: 70%;
+            bottom: 11px;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1;
+            text-shadow: 0 1px 3px #000, 0 0 5px rgba(255,51,153,0.8);
+            pointer-events: none;
+            z-index: 5;
+            background: rgba(18, 8, 28, 0.92);
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        .draw-x-label {
+            position: absolute;
+            left: 88%;            
+            top: -32px;            
+            transform: translateX(-50%);
+            min-width: 55px;
+            height: 18px;
+            padding: 0 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Pretendard', -apple-system, sans-serif; 
+            color: #ffffff;         
+            font-size: 13px;
+            font-weight: 900;
+            text-shadow: 0 0 3px #ffffff, 0 0 6px #ff5fc4, 0 0 10px #ff3399;
+            pointer-events: none;
+            z-index: 6;
+            white-space: nowrap;
+        }
+
+        .quick-x-controller {
+            position: absolute;
+            bottom: 140px;
+            left: 47%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(18, 10, 28, 0.95);
+            border: 1px solid #ff3399;
+            border-radius: 20px;
+            padding: 3px 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8), 0 0 10px rgba(255,51,153,0.4);
+            z-index: 30;
+        }
+        .quick-x-title { font-size: 10px; font-weight: 900; color: #ff99cc; white-space: nowrap; }
+        .quick-x-input { width: 40px; height: 20px; background: #000; border: 1px solid #ff3399; border-radius: 4px; color: #fff; text-align: center; font-weight: 900; font-size: 11px; outline: none; }
+        .quick-x-btn { background: #ff3399; border: none; color: #fff; width: 18px; height: 18px; border-radius: 50%; font-weight: bold; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
         .popup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,10,0.98); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px; }
         .popup-overlay.active { opacity: 1; pointer-events: auto; }
-        .popup-title { font-size: 26px; color: #fff; font-weight: 900; margin-bottom: 20px; text-shadow: 0 5px 20px rgba(0,0,0,1); letter-spacing: -1px;}
+        .popup-title { font-size: 22px; color: #fff; font-weight: 900; margin-bottom: 15px; text-shadow: 0 0 15px rgba(255,51,153,0.9); }
         
-        .gacha-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 380px; margin-bottom: 20px; }
-        @media (max-width: 500px) { .gacha-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; } }
+        .gacha-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); 
+            gap: 8px; 
+            width: 100%; 
+            max-width: 400px; 
+            max-height: 380px; 
+            overflow-y: auto; 
+            margin-bottom: 15px; 
+            padding: 5px; 
+        }
 
         .gacha-item {
             background-color: #111; background-size: cover; background-position: center;
-            border: 3px solid #333; border-radius: 10px; position: relative;
-            display: flex; align-items: flex-end; justify-content: center; min-height: 100px;
+            border: 2px solid #333; border-radius: 8px; position: relative;
+            display: flex; align-items: flex-end; justify-content: center; min-height: 95px;
             opacity: 0; transform: scale(0.5); transition: all 0.3s; overflow: hidden;
             box-shadow: 0 5px 15px rgba(0,0,0,0.9);
         }
         .gacha-item.show { opacity: 1; transform: scale(1); }
         .gacha-item-info { 
             width: 100%; background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.7) 100%); 
-            padding: 5px 2px; text-align: center; font-size: 11px; font-weight: 900; color: #fff; 
+            padding: 4px 2px; text-align: center; font-size: 10px; font-weight: 900; color: #fff; 
         }
 
-        @keyframes gachaImpact { 
-            0% { transform: scale(3); filter: brightness(5) blur(10px); opacity: 0; } 
-            10% { opacity: 1; filter: brightness(2) blur(0); } 
-            100% { transform: scale(1); filter: brightness(1); opacity: 1; } 
-        }
-        
         .gacha-item.t-1 { border-color: var(--t1-color); }
         .gacha-item.t-2 { border-color: var(--t2-color); box-shadow: 0 0 20px var(--t2-color); } 
         .gacha-item.t-3 { border-color: var(--t3-color); box-shadow: 0 0 25px var(--t3-color); } 
-        .gacha-item.t-4 { border-color: var(--t4-color); box-shadow: 0 0 35px var(--t4-color); } 
-        .gacha-item.t-5 { border-color: var(--t5-color); box-shadow: 0 0 45px var(--t5-color); } 
-        .gacha-item.t-6 { border-color: #00ffff; box-shadow: 0 0 50px #00ffff, 0 0 25px #ff007f; animation: borderRainbow 1.5s infinite linear; }
+        .gacha-item.t-4 { border-color: var(--t4-color); box-shadow: 0 0 30px var(--t4-color); } 
+        .gacha-item.t-5 { border-color: var(--t5-color); box-shadow: 0 0 40px var(--t5-color); } 
+        .gacha-item.t-6 { border-color: var(--t6-color); box-shadow: 0 0 50px var(--t6-color), 0 0 25px #ff007f; animation: borderRainbow 1.5s infinite linear; }
 
-        .btn-close { background: #fff; color: #000; padding: 12px 35px; border-radius: 25px; font-size: 16px; font-weight: 900; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(255,255,255,0.4); opacity: 0; transition: opacity 0.5s; }
-        .btn-close:active { transform: scale(0.95); }
+        .btn-close { background: #fff; color: #000; padding: 10px 30px; border-radius: 20px; font-size: 15px; font-weight: 900; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(255,255,255,0.6); opacity: 0; transition: opacity 0.5s; }
 
-        /* 제어판 */
-        .control-section { width: 380px; background: #161821; border-left: 1px solid #2a2d3d; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 20; }
-        .control-title { font-size: 16px; font-weight: 800; color: #fff; border-bottom: 2px solid #2a2d3d; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        .sound-toggle-btn { background: #2a2d3d; border: none; color: white; padding: 6px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        .control-section { width: 360px; background: #161821; border-left: 1px solid #2a2d3d; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 20; }
+        .control-title { font-size: 16px; font-weight: 800; color: #fff; border-bottom: 2px solid #2a2d3d; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .sound-toggle-btn { background: #2a2d3d; border: none; color: white; padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; }
         .sound-toggle-btn.off { color: #888; }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 12px; color: #a0a5b5; font-weight: 700; }
-        .form-group input[type="text"], .form-group select { background: #222533; border: 1px solid #33374a; border-radius: 6px; padding: 10px; color: #fff; font-size: 13px; outline: none; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group select { background: #222533; border: 1px solid #33374a; border-radius: 6px; padding: 8px; color: #fff; font-size: 13px; outline: none; }
+        
+        .highlight-form-group {
+            background: rgba(255,51,153,0.1);
+            border: 1px solid #ff3399;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
         .prize-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 5px;}
-        .prize-table th { color: #a0a5b5; text-align: left; padding-bottom: 8px; }
-        .prize-table input { background: #222533; border: 1px solid #33374a; color:#fff; border-radius: 4px; padding: 8px; width: 100%; }
+        .prize-table th { color: #a0a5b5; text-align: left; padding-bottom: 6px; }
+        .prize-table input { background: #222533; border: 1px solid #33374a; color:#fff; border-radius: 4px; padding: 6px; width: 100%; }
         .btn-del { background: none; border: none; color: #ff4757; font-size: 14px; cursor: pointer; font-weight: bold; }
         
-        .btn-add { background: #3b82f6; border: none; color: white; border-radius: 6px; padding: 12px; font-size: 13px; margin-top: 5px; cursor: pointer; font-weight: bold; transition: background 0.2s;}
+        .btn-add { background: #3b82f6; border: none; color: white; border-radius: 6px; padding: 10px; font-size: 12px; margin-top: 5px; cursor: pointer; font-weight: bold; }
         .btn-add:hover { background: #2563eb; }
         
-        .kkwang-info { font-size: 13px; color: #fff; padding: 5px 0; font-weight: bold; }
+        .kkwang-info { font-size: 12px; color: #fff; padding: 4px 0; font-weight: bold; }
         .reset-btn-wrap { margin-top: 10px; display: flex; gap: 10px; }
-        .btn-obs { background: #2a2d3d; border: none; border-radius: 6px; color: #a0a5b5; flex: 1; padding: 12px; font-size: 13px; cursor: pointer; font-weight: bold;}
-        .btn-reset-main { background: #ff4757; border: none; border-radius: 6px; color: white; flex: 1; padding: 12px; font-size: 13px; cursor: pointer; font-weight: bold;}
+        .btn-obs { background: #2a2d3d; border: none; border-radius: 6px; color: #a0a5b5; flex: 1; padding: 10px; font-size: 13px; cursor: pointer; font-weight: bold;}
+        .btn-reset-main { background: #ff4757; border: none; border-radius: 6px; color: white; flex: 1; padding: 10px; font-size: 13px; cursor: pointer; font-weight: bold;}
 
-        .btn-restore { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); color: white; border: 2px solid #3b82f6; padding: 10px 15px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; z-index: 10000; display: none; }
+        .btn-restore { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); color: white; border: 2px solid #3b82f6; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; z-index: 10000; display: none; }
         body.obs-mode .control-section { display: none !important; }
+        body.obs-mode .quick-x-controller { display: none !important; }
         body.obs-mode .btn-restore { display: block; }
     </style>
 </head>
@@ -301,13 +405,26 @@
                     </div>
                 </div>
 
+                <div class="quick-x-controller">
+                    <span class="quick-x-title">⚡ 1회당 배율:</span>
+                    <button class="quick-x-btn" id="btn-x-minus">-</button>
+                    <input type="number" class="quick-x-input" id="quick-x-input" min="1" step="1" value="1">
+                    <button class="quick-x-btn" id="btn-x-plus">+</button>
+                    <span class="quick-x-title">개</span>
+                </div>
+
                 <div class="hud-controls">
-                    <button class="btn-draw btn-draw-1" id="btn-draw-1">1회 뽑기</button>
-                    <button class="btn-draw btn-draw-11" id="btn-draw-11">11연차</button>
+                    <button class="btn-draw btn-draw-1" id="btn-draw-1">
+                        <span class="draw-x-label" id="draw-x-1-label">★ X 1개 ★</span>
+                        <span class="draw-cost-label" id="draw-cost-1-label">100개</span>
+                    </button>
+                    <button class="btn-draw btn-draw-11" id="btn-draw-11">
+                        <span class="draw-cost-label" id="draw-cost-11-label">1000개</span>
+                    </button>
                 </div>
 
                 <div class="popup-overlay" id="popup-11">
-                    <div class="popup-title">🎰 11연차 포토카드 결과</div>
+                    <div class="popup-title" id="popup-results-title">🎰 11연차 포토카드 결과</div>
                     <div class="gacha-grid" id="gacha-grid"></div>
                     <button class="btn-close" id="btn-popup-close">확인</button>
                 </div>
@@ -320,11 +437,27 @@
                 <button id="sound-toggle" class="sound-toggle-btn">🔊 ON</button>
             </div>
             <div class="form-group" style="display:none;"><input type="text" id="title-input" value="📸 바밍 포토카드깡"></div>
+            
             <div class="form-group">
                 <label>📦 전체 수량</label>
                 <select id="board-size-select">
                     <option value="100" selected>100개</option><option value="300">300개</option><option value="500">500개</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label>💰 1회 뽑기 별풍선 개수</label>
+                <input id="draw-cost-1-input" type="number" min="0" step="1" value="100">
+            </div>
+
+            <div class="form-group">
+                <label>💰 11연차 별풍선 개수</label>
+                <input id="draw-cost-11-input" type="number" min="0" step="1" value="1000">
+            </div>
+
+            <div class="form-group highlight-form-group">
+                <label style="color:#ff80df;">✖️ 1회 뽑기 옆 X개 연사 수량</label>
+                <input id="draw-x-1-input" type="number" min="1" step="1" value="1" style="border-color:#ff3399;">
             </div>
             
             <div class="form-group">
@@ -334,7 +467,7 @@
                     <tbody id="prize-list-body"></tbody>
                 </table>
                 <button class="btn btn-add" id="add-prize-btn">+ 항목 추가</button>
-                <div class="kkwang-info" id="kkwang-count-display">자동 꽝: 54개 (미션: 46/100개)</div>
+                <div class="kkwang-info" id="kkwang-count-display">자동 꽝: 0개</div>
             </div>
             <div class="reset-btn-wrap">
                 <button class="btn btn-obs" id="obs-toggle-btn">📺 OBS 모드</button>
@@ -351,8 +484,8 @@
             hum: new Audio('pack_hum.mp3'), 
             tick: new Audio('tick.mp3'),
             draw_normal: new Audio('draw_normal.mp3'),   
-            draw_legend: new Audio('draw_legend.mp3'), 
-            legend_wait: new Audio('legend_wait.mp3'), 
+            draw_legend: new Audio('draw_legend.mp3'),  
+            legend_wait: new Audio('legend_wait.mp3'),  
             gacha_pop: new Audio('gacha_pop.mp3')        
         };
         
@@ -362,7 +495,6 @@
         function stopLoopSnd() { if(loopSnd) { loopSnd.pause(); loopSnd=null; } }
         document.getElementById('sound-toggle').addEventListener('click', function() { isSoundOn=!isSoundOn; this.innerText=isSoundOn?'🔊 ON':'🔇 OFF'; this.classList.toggle('off',!isSoundOn); stopLoopSnd(); });
 
-        /* 🔥 [개선] 수량이 2개 이하인 항목은 6성 UR 레전드로 무지개 테두리 판정 */
         function getCardData(name) {
             if (name.includes('꽝')) return { t: 1, stars: '⭐', id: 'ggwang', cls: 't-1' };
             
@@ -382,6 +514,51 @@
         }
 
         const sizeSelect = document.getElementById('board-size-select'), prizeListBody = document.getElementById('prize-list-body');
+        const drawCost1Input = document.getElementById('draw-cost-1-input');
+        const drawCost11Input = document.getElementById('draw-cost-11-input');
+        const drawCost1Label = document.getElementById('draw-cost-1-label');
+        const drawCost11Label = document.getElementById('draw-cost-11-label');
+        const drawX1Input = document.getElementById('draw-x-1-input');
+        const drawX1Label = document.getElementById('draw-x-1-label');
+        const quickXInput = document.getElementById('quick-x-input');
+
+        function syncXValue(val) {
+            const num = Math.max(1, parseInt(val) || 1);
+            drawX1Input.value = num;
+            quickXInput.value = num;
+            updateDrawCostLabels();
+            saveSettings();
+        }
+
+        function updateDrawCostLabels() {
+            const cost1 = Math.max(0, parseInt(drawCost1Input.value) || 0);
+            const cost11 = Math.max(0, parseInt(drawCost11Input.value) || 0);
+            drawCost1Label.innerText = `${cost1.toLocaleString('ko-KR')}개`;
+            drawCost11Label.innerText = `${cost11.toLocaleString('ko-KR')}개`;
+            
+            const x1 = Math.max(1, parseInt(drawX1Input.value) || 1);
+            drawX1Label.innerText = `★ X ${x1.toLocaleString('ko-KR')}개 ★`;
+            
+            document.getElementById('btn-draw-1').title = `${x1}회 뽑기 (${cost1.toLocaleString('ko-KR')}개)`;
+            document.getElementById('btn-draw-11').title = `11연차 (${cost11.toLocaleString('ko-KR')}개)`;
+        }
+
+        ['input', 'keyup', 'change'].forEach(evtType => {
+            drawCost1Input.addEventListener(evtType, () => { updateDrawCostLabels(); saveSettings(); });
+            drawCost11Input.addEventListener(evtType, () => { updateDrawCostLabels(); saveSettings(); });
+            drawX1Input.addEventListener(evtType, () => syncXValue(drawX1Input.value));
+            quickXInput.addEventListener(evtType, () => syncXValue(quickXInput.value));
+        });
+
+        document.getElementById('btn-x-minus').addEventListener('click', () => {
+            playSnd('click');
+            syncXValue(parseInt(quickXInput.value || 1) - 1);
+        });
+        document.getElementById('btn-x-plus').addEventListener('click', () => {
+            playSnd('click');
+            syncXValue(parseInt(quickXInput.value || 1) + 1);
+        });
+
         const kkwangDisplay = document.getElementById('kkwang-count-display'), statusBoard = document.getElementById('prize-status-board');
         const mainCard = document.getElementById('main-card'), cardFront = document.getElementById('card-front');
         const cardImg = document.getElementById('card-img'), cStars = document.getElementById('c-stars'), cTitle = document.getElementById('c-title');
@@ -400,7 +577,7 @@
             tr.innerHTML = `<td><input type="text" class="p-name" value="${n}"></td><td><input type="number" class="p-count" value="${c}"></td><td><button class="btn-del">❌</button></td>`;
             prizeListBody.appendChild(tr);
             tr.querySelector('.btn-del').addEventListener('click', (e)=>{ e.target.closest('tr').remove(); updateKkwangCount(); saveSettings(); });
-            tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', ()=>{ updateKkwangCount(); saveSettings(); }));
+            tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', ()=>{ updateKkwangCount(); saveSettings(); renderStatusBoard(); }));
         }
         document.getElementById('add-prize-btn').addEventListener('click', ()=>{ addPrizeRow('새 미션', 1); updateKkwangCount(); saveSettings(); });
 
@@ -415,7 +592,11 @@
                     for (let i=0; i<c; i++) prizePool.push(n); 
                 }
             });
-            if (kkw > 0) { remainingPrizes['일반(꽝)'] = kkw; initialPrizes['일반(꽝)'] = kkw; for(let i=0; i<kkw; i++) prizePool.push('일반(꽝)'); }
+            if (kkw > 0) { 
+                remainingPrizes['일반(꽝)'] = kkw; 
+                initialPrizes['일반(꽝)'] = kkw; 
+                for(let i=0; i<kkw; i++) prizePool.push('일반(꽝)'); 
+            }
             prizePool = prizePool.slice(0, totalCount);
             
             for (let i = prizePool.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [prizePool[i], prizePool[j]] = [prizePool[j], prizePool[i]]; }
@@ -427,13 +608,19 @@
 
         function renderStatusBoard() {
             statusBoard.innerHTML = '';
-            for (const [name, count] of Object.entries(remainingPrizes)) {
-                if (name.includes('꽝')) continue; 
+            const entries = Object.entries(remainingPrizes).filter(([name]) => !name.includes('꽝'));
+            entries.sort((a, b) => {
+                const tierA = getCardData(a[0]).t;
+                const tierB = getCardData(b[0]).t;
+                return tierB - tierA;
+            });
+
+            for (const [name, count] of entries) {
                 const d = getCardData(name);
                 const badge = document.createElement('div'); 
                 badge.className = 'prize-badge';
                 
-                const col = d.t === 6 ? '#00ffff' : `var(--t${d.t}-color)`;
+                const col = d.t === 6 ? 'var(--t6-color)' : `var(--t${d.t}-color)`;
                 badge.style.borderColor = col;
                 badge.style.boxShadow = `0 0 8px ${col}`;
                 
@@ -451,11 +638,11 @@
         function fireConfetti(tier) {
             try {
                 if(typeof confetti !== 'function') return;
-                if(tier === 6) confetti({ zIndex: 9999, particleCount: 400, spread: 180, colors: ['#ff003c', '#ffea00', '#00ffff', '#ffffff', '#df40ff'], startVelocity: 75, scalar: 1.6 });
-                else if(tier === 5) confetti({ zIndex: 9999, particleCount: 250, spread: 150, colors: ['#ff003c', '#ffffff', '#ffde00'], startVelocity: 65, scalar: 1.4 });
-                else if(tier === 4) confetti({ zIndex: 9999, particleCount: 180, spread: 120, colors: ['#ffde00', '#ffffff'], startVelocity: 55 });
-                else if(tier === 3) confetti({ zIndex: 9999, particleCount: 100, spread: 100, colors: ['#ff3399', '#fff'], startVelocity: 45 });
-                else if(tier === 2) confetti({ zIndex: 9999, particleCount: 60, spread: 70, colors: ['#df40ff', '#fff'] });
+                if(tier === 6) confetti({ zIndex: 9999, particleCount: 450, spread: 180, colors: ['#ff003c', '#ffea00', '#00ffff', '#ffffff', '#df40ff'], startVelocity: 80, scalar: 1.7 });
+                else if(tier === 5) confetti({ zIndex: 9999, particleCount: 280, spread: 150, colors: ['#ff003c', '#ffffff', '#ffde00'], startVelocity: 70, scalar: 1.5 });
+                else if(tier === 4) confetti({ zIndex: 9999, particleCount: 190, spread: 120, colors: ['#ffde00', '#ffffff'], startVelocity: 60 });
+                else if(tier === 3) confetti({ zIndex: 9999, particleCount: 110, spread: 100, colors: ['#ff3399', '#fff'], startVelocity: 50 });
+                else if(tier === 2) confetti({ zIndex: 9999, particleCount: 70, spread: 70, colors: ['#df40ff', '#fff'] });
             } catch(e) {}
         }
 
@@ -479,47 +666,17 @@
             setTimeout(nextGlow, 600);
         }
 
-        // --- 1회 뽑기 ---
-        document.getElementById('btn-draw-1').addEventListener('click', () => {
-            playSnd('click');
-            if(isDrawing || prizePool.length < 1) return;
-            isDrawing = true; document.getElementById('card-stage').classList.remove('show-backlight');
-            
-            const result = prizePool.pop(); const d = getCardData(result);
-
-            runColorBuildup(d.t, () => {
-                stopLoopSnd();
-                
-                if(remainingPrizes[result]>0) remainingPrizes[result]--; 
-                currentAmmo--;
-                renderStatusBoard();
-
-                mainCard.className = 'card';
-                if(d.t >= 4) {
-                    const impactCls = d.t === 6 ? 'impact-6' : `impact-${d.t}`;
-                    document.body.classList.add(impactCls); setTimeout(()=>document.body.classList.remove(impactCls), 800);
-                    document.getElementById('card-stage').classList.add('show-backlight');
-                    stageBl.style.background = `radial-gradient(circle, ${d.t===6?'#00ffff':`var(--t${d.t}-color)`} 0%, transparent 70%)`;
-                    playSnd('draw_legend');
-                } else playSnd('draw_normal');
-
-                cardFront.className = `card-face card-front ${d.cls}`;
-                cardImg.style.backgroundImage = `url('${d.id}.png')`;
-                cStars.innerText = d.stars; cTitle.innerText = result.replace('일반(꽝)','꽝').replace(/\(.*\)/,'');
-                
-                mainCard.classList.add('flipped');
-                setTimeout(()=>{ fireConfetti(d.t); isDrawing=false; }, 300);
-            });
-        });
-
-        // --- 11연차 ---
-        document.getElementById('btn-draw-11').addEventListener('click', () => {
-            playSnd('click'); 
-            if(isDrawing || prizePool.length < 11) { if(prizePool.length<11) alert("카드가 부족합니다!"); return; }
-            isDrawing = true; gachaGrid.innerHTML = '';
+        function executeMultiDraw(count, titleText) {
+            if (isDrawing || prizePool.length < count) {
+                if (prizePool.length < count) alert(`카드가 부족합니다! (남은 카드: ${prizePool.length}개)`);
+                return;
+            }
+            isDrawing = true; 
+            gachaGrid.innerHTML = '';
+            document.getElementById('popup-results-title').innerText = titleText;
 
             const results = []; let maxT = 1;
-            for(let i=0; i<11; i++) {
+            for(let i=0; i<count; i++) {
                 const res = prizePool.pop(); const d = getCardData(res);
                 results.push({ res: res, d: d });
                 if(d.t > maxT) maxT = d.t;
@@ -532,7 +689,15 @@
                 
                 let current = 0;
                 function popNext() {
-                    if (current >= 11) { setTimeout(() => { stopLoopSnd(); fireConfetti(maxT); document.getElementById('btn-popup-close').style.opacity = 1; isDrawing = false; }, 500); return; }
+                    if (current >= count) { 
+                        setTimeout(() => { 
+                            stopLoopSnd(); 
+                            fireConfetti(maxT); 
+                            document.getElementById('btn-popup-close').style.opacity = 1; 
+                            isDrawing = false; 
+                        }, 500); 
+                        return; 
+                    }
 
                     const itemData = results[current]; const d = itemData.d;
                     
@@ -565,35 +730,91 @@
                 document.getElementById('btn-popup-close').style.opacity = 0;
                 setTimeout(popNext, 600); 
             });
+        }
+
+        document.getElementById('btn-draw-1').addEventListener('click', () => {
+            playSnd('click');
+            const xCount = Math.max(1, parseInt(drawX1Input.value) || 1);
+            
+            if (xCount === 1) {
+                if(isDrawing || prizePool.length < 1) return;
+                isDrawing = true; document.getElementById('card-stage').classList.remove('show-backlight');
+                
+                const result = prizePool.pop(); const d = getCardData(result);
+
+                runColorBuildup(d.t, () => {
+                    stopLoopSnd();
+                    
+                    if(remainingPrizes[result]>0) remainingPrizes[result]--; 
+                    currentAmmo--;
+                    renderStatusBoard();
+
+                    mainCard.className = 'card';
+                    if(d.t >= 4) {
+                        const impactCls = d.t === 6 ? 'impact-6' : `impact-${d.t}`;
+                        document.body.classList.add(impactCls); setTimeout(()=>document.body.classList.remove(impactCls), 800);
+                        document.getElementById('card-stage').classList.add('show-backlight');
+                        stageBl.style.background = `radial-gradient(circle, ${d.t===6?'#06b6d4':`var(--t${d.t}-color)`} 0%, transparent 70%)`;
+                        playSnd('draw_legend');
+                    } else playSnd('draw_normal');
+
+                    cardFront.className = `card-face card-front ${d.cls}`;
+                    cardImg.style.backgroundImage = `url('${d.id}.png')`;
+                    cStars.innerText = d.stars; cTitle.innerText = result.replace('일반(꽝)','꽝').replace(/\(.*\)/,'');
+                    
+                    mainCard.classList.add('flipped');
+                    setTimeout(()=>{ fireConfetti(d.t); isDrawing=false; }, 300);
+                });
+            } else {
+                executeMultiDraw(xCount, `🎰 ${xCount}회 연속 포토카드 결과`);
+            }
+        });
+
+        document.getElementById('btn-draw-11').addEventListener('click', () => {
+            playSnd('click'); 
+            executeMultiDraw(11, `🎰 11연차 포토카드 결과`);
         });
 
         document.getElementById('btn-popup-close').addEventListener('click', () => { popup11.classList.remove('active'); stopLoopSnd(); isDrawing = false; mainCard.className='card'; });
 
-        // --- 제어판 로직 ---
         function saveSettings() {
             try {
                 const missions = []; document.querySelectorAll('#prize-list-body tr').forEach(row => { missions.push({ name: row.querySelector('.p-name').value, count: parseInt(row.querySelector('.p-count').value)||0 }); });
-                localStorage.setItem('baumingCardsFinalV3', JSON.stringify({ t: document.getElementById('title-input').value, s: sizeSelect.value, m: missions }));
+                localStorage.setItem('baumingCardsFinalV6', JSON.stringify({ 
+                    t: document.getElementById('title-input').value, 
+                    s: sizeSelect.value, 
+                    m: missions,
+                    c1: Math.max(0, parseInt(drawCost1Input.value) || 0),
+                    c11: Math.max(0, parseInt(drawCost11Input.value) || 0),
+                    x1: Math.max(1, parseInt(drawX1Input.value) || 1)
+                }));
             } catch(e) {}
         }
 
         function loadSettings() {
             try {
-                const saved = localStorage.getItem('baumingCardsFinalV3'); prizeListBody.innerHTML = '';
+                prizeListBody.innerHTML = '';
+                addPrizeRow('조리돌림', 15); 
+                addPrizeRow('애교', 15); 
+                addPrizeRow('역팬(✨)', 5); 
+                addPrizeRow('간단 프사(✨)', 4); 
+                addPrizeRow('즉석방셀(✨)', 4); 
+                addPrizeRow('니니바밍방셀', 1); 
+                addPrizeRow('노래방셀', 1); 
+                addPrizeRow('영상방셀2', 1);
+
+                const saved = localStorage.getItem('baumingCardsFinalV6');
                 if (saved) {
                     const s = JSON.parse(saved);
                     document.getElementById('title-input').value = s.t; document.getElementById('display-title').innerText = s.t;
                     sizeSelect.value = s.s; 
-                    s.m.forEach(m => addPrizeRow(m.name, m.count));
-                } else { 
-                    addPrizeRow('조리돌림', 15); 
-                    addPrizeRow('애교', 15); 
-                    addPrizeRow('역팬(✨)', 5); 
-                    addPrizeRow('간단 프사(✨)', 4); 
-                    addPrizeRow('즉석방셀(✨)', 4); 
-                    addPrizeRow('니니바밍방셀', 1); 
-                    addPrizeRow('노래방셀', 1); 
-                    addPrizeRow('영상방셀2', 1); 
+                    drawCost1Input.value = s.c1 ?? 100;
+                    drawCost11Input.value = s.c11 ?? 1000;
+                    syncXValue(s.x1 ?? 1);
+                    if (s.m && s.m.length > 0) {
+                        prizeListBody.innerHTML = '';
+                        s.m.forEach(m => addPrizeRow(m.name, m.count));
+                    }
                 }
             } catch(e) { 
                 prizeListBody.innerHTML = ''; 
@@ -603,17 +824,18 @@
                 addPrizeRow('간단 프사(✨)', 4); 
                 addPrizeRow('즉석방셀(✨)', 4); 
                 addPrizeRow('니니바밍방셀', 1); 
-                addPrizeRow('노래방셀', 1); 
+                addPrizoRow('노래방셀', 1); 
                 addPrizeRow('영상방셀2', 1); 
             }
             updateKkwangCount();
+            updateDrawCostLabels();
         }
 
         document.getElementById('title-input').addEventListener('input', (e) => document.getElementById('display-title').innerText = e.target.value);
         document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("진행 중인 카드를 모두 버리고 새 팩을 가져오시겠습니까?")) initPool(); });
         document.getElementById('obs-toggle-btn').addEventListener('click', () => document.body.classList.add('obs-mode'));
         document.getElementById('obs-restore-btn').addEventListener('click', () => document.body.classList.remove('obs-mode'));
-        document.querySelectorAll('.control-section input, .control-section select').forEach(i => i.addEventListener('change', saveSettings));
+        document.querySelectorAll('.control-section input, .control-section select').forEach(i => i.addEventListener('change', () => { saveSettings(); renderStatusBoard(); }));
 
         loadSettings(); initPool();
     </script>
