@@ -231,9 +231,13 @@
         #btn-draw-11 .draw-cost-label {
             background: linear-gradient(90deg, rgba(55,15,10,0), rgba(55,15,10,.98) 18%, rgba(55,15,10,.98) 82%, rgba(55,15,10,0));
         }
-        .draw-cost-icon {
-            color: #d9a91e;
-            font-size: 15px;
+        
+        /* 📍 버튼 아이콘에 직접 만드신 sword.png 적용 */
+        .ui-sword-icon {
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+            vertical-align: middle;
             filter: drop-shadow(0 0 2px #000);
         }
 
@@ -263,7 +267,6 @@
             white-space: nowrap;
         }
 
-        /* 📍 메인 화면 뽑기 버튼 바로 위에 직관적으로 배치된 X개 배율 미니 조절기 */
         .quick-x-controller {
             position: absolute;
             bottom: 185px;
@@ -348,14 +351,6 @@
             padding: 3px 2px; text-align: center; font-size: 10px; font-weight: 900; color: #fff; 
         }
 
-        .gacha-item.t-1 { border-color: var(--t-n); }
-        .gacha-item.t-2 { border-color: var(--t-r); } 
-        .gacha-item.t-3 { border-color: var(--t-sr); } 
-        .gacha-item.t-4 { border-color: var(--t-ssr); box-shadow: 0 0 15px var(--t-ssr); } 
-        .gacha-item.t-5 { border-color: var(--t-ur); box-shadow: 0 0 20px var(--t-ur); } 
-        .gacha-item.t-6 { border-color: var(--t-lr); box-shadow: 0 0 25px var(--t-lr); } 
-        .gacha-item.t-7 { border-color: #00e5ff; box-shadow: 0 0 30px #00e5ff; }
-
         .btn-close { background: #d4af37; color: #000; padding: 10px 30px; border-radius: 20px; font-size: 15px; font-weight: 900; border: none; cursor: pointer; opacity: 0; transition: opacity 0.5s; }
 
         .control-section { width: 360px; background: #121318; border-left: 1px solid #222530; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 20; }
@@ -417,7 +412,6 @@
                     </div>
                 </div>
 
-                <!-- 📍 메인 화면에 전면 배치된 배율(X N개) 퀵 조절 패널 -->
                 <div class="quick-x-controller">
                     <span class="quick-x-title">⚡ 1회당 배율:</span>
                     <button class="quick-x-btn" id="btn-x-minus">-</button>
@@ -428,11 +422,11 @@
 
                 <div class="hud-controls">
                     <button class="btn-draw" id="btn-draw-1" title="1회 뽑기">
-                        <span class="draw-cost-label"><span class="draw-cost-icon">●</span><span id="draw-cost-1-label">100개</span></span>
+                        <span class="draw-cost-label"><img src="sword.png" class="ui-sword-icon" alt=""> <span id="draw-cost-1-label">100개</span></span>
                         <span class="draw-x-label" id="draw-x-1-label">X 1개</span>
                     </button>
                     <button class="btn-draw" id="btn-draw-11" title="11연차 뽑기">
-                        <span class="draw-cost-label"><span class="draw-cost-icon">●</span><span id="draw-cost-11-label">1000개</span></span>
+                        <span class="draw-cost-label"><img src="sword.png" class="ui-sword-icon" alt=""> <span id="draw-cost-11-label">1000개</span></span>
                     </button>
                 </div>
 
@@ -469,7 +463,6 @@
                 <input id="draw-cost-11-input" type="number" min="0" step="1" value="1000">
             </div>
 
-            <!-- 📍 강조된 1회 뽑기 옆 X개 연사 수량 설정 -->
             <div class="form-group highlight-form-group">
                 <label style="color:#ffd700;">✖️ 1회 뽑기 옆 X개 연사 수량</label>
                 <input id="draw-x-1-input" type="number" min="1" step="1" value="1" style="border-color:#ffd700;">
@@ -501,8 +494,8 @@
             hum: new Audio('pack_hum.mp3'), 
             tick: new Audio('tick.mp3'),
             draw_normal: new Audio('draw_normal.mp3'),   
-            draw_legend: new Audio('draw_legend.mp3'), 
-            legend_wait: new Audio('legend_wait.mp3'), 
+            draw_legend: new Audio('draw_legend.mp3'),  
+            legend_wait: new Audio('legend_wait.mp3'),  
             gacha_pop: new Audio('gacha_pop.mp3')        
         };
         
@@ -512,7 +505,6 @@
         function stopLoopSnd() { if(loopSnd) { loopSnd.pause(); loopSnd=null; } }
         document.getElementById('sound-toggle').addEventListener('click', function() { isSoundOn=!isSoundOn; this.innerText=isSoundOn?'🔊 ON':'🔇 OFF'; this.classList.toggle('off',!isSoundOn); stopLoopSnd(); });
 
-        /* 📍 키워드별 이미지 자동 매칭 로직 */
         function getCardDataByName(name) {
             const rows = Array.from(document.querySelectorAll('#prize-list-body tr'));
             let index = rows.findIndex(row => row.querySelector('.p-name').value.trim() === name);
@@ -565,7 +557,6 @@
         const drawX1Label = document.getElementById('draw-x-1-label');
         const quickXInput = document.getElementById('quick-x-input');
 
-        /* 📍 실시간 수량 동기화 함수 */
         function syncXValue(val) {
             const num = Math.max(1, parseInt(val) || 1);
             drawX1Input.value = num;
@@ -621,10 +612,26 @@
             const tr = document.createElement('tr');
             tr.innerHTML = `<td><input type="text" class="p-name" value="${n}"></td><td><input type="number" class="p-count" value="${c}"></td><td><button class="btn-del">❌</button></td>`;
             prizeListBody.appendChild(tr);
-            tr.querySelector('.btn-del').addEventListener('click', (e)=>{ e.target.closest('tr').remove(); updateKkwangCount(); saveSettings(); });
-            tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', ()=>{ updateKkwangCount(); saveSettings(); }));
+            
+            tr.querySelector('.btn-del').addEventListener('click', (e)=>{ 
+                e.target.closest('tr').remove(); 
+                updateKkwangCount(); 
+                saveSettings(); 
+            });
+            
+            tr.querySelectorAll('input').forEach(i => {
+                i.addEventListener('input', () => { 
+                    updateKkwangCount(); 
+                    saveSettings(); 
+                });
+            });
         }
-        document.getElementById('add-prize-btn').addEventListener('click', ()=>{ addPrizeRow('새 항목', 1); updateKkwangCount(); saveSettings(); });
+        
+        document.getElementById('add-prize-btn').addEventListener('click', () => { 
+            addPrizeRow('새 항목', 1); 
+            updateKkwangCount(); 
+            saveSettings(); 
+        });
 
         function initPool() {
             const { totalCount, kkw } = updateKkwangCount();
@@ -822,7 +829,14 @@
 
         function saveSettings() {
             try {
-                const missions = []; document.querySelectorAll('#prize-list-body tr').forEach(row => { missions.push({ name: row.querySelector('.p-name').value, count: parseInt(row.querySelector('.p-count').value)||0 }); });
+                const missions = []; 
+                document.querySelectorAll('#prize-list-body tr').forEach(row => { 
+                    missions.push({ 
+                        name: row.querySelector('.p-name').value, 
+                        count: parseInt(row.querySelector('.p-count').value)||0 
+                    }); 
+                });
+                
                 localStorage.setItem('gamstCardsSettingsV3', JSON.stringify({
                     s: sizeSelect.value,
                     m: missions,
@@ -835,39 +849,52 @@
 
         function loadSettings() {
             try {
-                const saved = localStorage.getItem('gamstCardsSettingsV3'); prizeListBody.innerHTML = '';
+                const saved = localStorage.getItem('gamstCardsSettingsV3'); 
+                prizeListBody.innerHTML = '';
+                
                 if (saved) {
                     const s = JSON.parse(saved);
                     sizeSelect.value = s.s;
                     drawCost1Input.value = s.c1 ?? 100;
                     drawCost11Input.value = s.c11 ?? 1000;
                     syncXValue(s.x1 ?? 1);
-                    s.m.forEach(m => addPrizeRow(m.name, m.count));
+                    
+                    if (s.m && s.m.length > 0) {
+                        s.m.forEach(m => addPrizeRow(m.name, m.count));
+                    } else {
+                        addDefaultMissions();
+                    }
                 } else { 
-                    addPrizeRow('움짤방셀', 1);   
-                    addPrizeRow('방셀', 5);       
-                    addPrizeRow('프사', 1);       
-                    addPrizeRow('거북알', 30);    
-                    addPrizeRow('데스윙크', 10);  
+                    addDefaultMissions();
                 }
             } catch(e) { 
                 prizeListBody.innerHTML = ''; 
-                addPrizeRow('움짤방셀', 1);
-                addPrizeRow('방셀', 5);
-                addPrizeRow('프사', 1);
-                addPrizeRow('거북알', 30);
-                addPrizeRow('데스윙크', 10);
+                addDefaultMissions();
             }
             updateKkwangCount();
             updateDrawCostLabels();
         }
 
+        function addDefaultMissions() {
+            addPrizeRow('움짤방셀', 1);    
+            addPrizeRow('방셀', 5);        
+            addPrizeRow('프사', 1);        
+            addPrizeRow('거북알', 30);    
+            addPrizeRow('데스윙크', 10);  
+        }
+
         document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("진행 중인 카드를 모두 버리고 새 팩을 가져오시겠습니까?")) initPool(); });
         document.getElementById('obs-toggle-btn').addEventListener('click', () => document.body.classList.add('obs-mode'));
         document.getElementById('obs-restore-btn').addEventListener('click', () => document.body.classList.remove('obs-mode'));
-        document.querySelectorAll('.control-section input, .control-section select').forEach(i => i.addEventListener('change', saveSettings));
+        
+        // 설정 입력창에 변화가 생길 때 실시간으로 저장 및 풀 갱신
+        document.querySelectorAll('.control-section input, .control-section select').forEach(i => {
+            i.addEventListener('input', () => { saveSettings(); updateKkwangCount(); });
+            i.addEventListener('change', () => { saveSettings(); updateKkwangCount(); });
+        });
 
-        loadSettings(); initPool();
+        loadSettings(); 
+        initPool();
     </script>
 </body>
 </html>
