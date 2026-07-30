@@ -7,11 +7,14 @@ let dead = false;
 let shotQueue = Promise.resolve();
 let combo = 0;
 let comboTimer = null;
+let currentPhase = 1;
+let phaseNoticeTimer = null;
 
 const $ = s => document.querySelector(s);
 const game=$('#game'), hpFill=$('#hpFill'), hpLag=$('#hpLag'), currentHpEl=$('#currentHp'), maxHpEl=$('#maxHp'), hpPercent=$('#hpPercent');
 const boss=$('#boss'), bombing=$('#bombing'), muzzle=$('#muzzle'), fxLayer=$('#fxLayer'), dangerBanner=$('#dangerBanner');
 const attackBtn=$('#attackBtn'), multiBtn=$('#multiBtn'), lastAttack=$('#lastAttack'), winnerScreen=$('#winnerScreen');
+const armorStatus=$('#armorStatus'), phaseNotice=$('#phaseNotice'), phaseNoticeIcon=$('#phaseNoticeIcon'), phaseNoticeTitle=$('#phaseNoticeTitle'), phaseNoticeBossText=$('#phaseNoticeBossText'), phaseNoticeDefenseText=$('#phaseNoticeDefenseText');
 
 const SPRITES={ bombingIdle:'assets/bombing_idle.png', bombingAttack:'assets/bombing_attack.png', bombingShoot:'assets/bombing_shoot.png', bossIdle:'assets/pizzlybear_idle.png', bossHit:'assets/pizzlybear_hit.png', bossDead:'assets/pizzlybear_die.png' };
 function setSprite(el,src){ if(el.getAttribute('src')!==src) el.setAttribute('src',src); }
@@ -20,13 +23,109 @@ function loadSettings(){ try{ const saved=JSON.parse(localStorage.getItem('pizzl
 function syncInputs(){ $('#bossNameInput').value=config.bossName; $('#maxHpInput').value=config.maxHp; $('#minDamageInput').value=config.minDamage; $('#maxDamageInput').value=config.maxDamage; $('#multiCountInput').value=config.multiCount; $('#shotIntervalInput').value=config.shotInterval; $('#bossName').textContent=config.bossName; }
 function saveSettings(){ localStorage.setItem('pizzlyRaidConfig',JSON.stringify(config)); }
 
+
+function getPhaseByPercent(pct){
+  if(pct<=0) return 0;
+  if(pct<=30) return 3;
+  if(pct<=50) return 2;
+  return 1;
+}
+
+function getDefenseRate(){
+  const hpRatio=currentHp/config.maxHp;
+  if(hpRatio<=0.30) return 0.15;
+  if(hpRatio<=0.50) return 0.10;
+  return 0;
+}
+
+function applyBossDefense(damage){
+  const rate=getDefenseRate();
+  return Math.max(1,Math.floor(damage*(1-rate)));
+}
+
+function phaseAlertSound(finalPhase=false){
+  try{
+    const c=audio(),t=c.currentTime;
+    const osc=c.createOscillator(),gain=c.createGain();
+    osc.type=finalPhase?'sawtooth':'triangle';
+    osc.frequency.setValueAtTime(finalPhase?180:420,t);
+    osc.frequency.exponentialRampToValueAtTime(finalPhase?70:720,t+.28);
+    gain.gain.setValueAtTime(finalPhase?.15:.10,t);
+    gain.gain.exponentialRampToValueAtTime(.001,t+.42);
+    osc.connect(gain).connect(c.destination);
+    osc.start(t);osc.stop(t+.45);
+  }catch{}
+}
+
+function showPhaseNotice(phase){
+  clearTimeout(phaseNoticeTimer);
+
+  const finalPhase=phase===3;
+  phaseNoticeIcon.textContent=finalPhase?'☠':'⚠';
+  phaseNoticeTitle.textContent=finalPhase?'FINAL PHASE':'PHASE 2';
+  phaseNoticeBossText.textContent=finalPhase
+    ? `${config.bossName}가 광폭화했습니다.`
+    : `${config.bossName}가 분노했습니다.`;
+  phaseNoticeDefenseText.textContent=finalPhase
+    ? '방어력이 5% 더 증가합니다. (현재 총 +15%)'
+    : '방어력이 10% 증가합니다.';
+
+  phaseNotice.classList.remove('show','phase2','final');
+  phaseNotice.classList.add(finalPhase?'final':'phase2');
+  phaseNotice.setAttribute('aria-hidden','false');
+  void phaseNotice.offsetWidth;
+  phaseNotice.classList.add('show');
+
+  restartAnimation(game,'heavy-shake');
+  restartAnimation($('#phaseFlash'),'on');
+  phaseAlertSound(finalPhase);
+
+  phaseNoticeTimer=setTimeout(()=>{
+    phaseNotice.classList.remove('show');
+    phaseNotice.setAttribute('aria-hidden','true');
+  },2600);
+}
+
 function updateHp(next){
   currentHp=Math.max(0,Math.min(config.maxHp,Math.round(next)));
   const pct=currentHp/config.maxHp*100;
-  hpFill.style.width=`${pct}%`; hpLag.style.width=`${pct}%`;
-  currentHpEl.textContent=currentHp.toLocaleString(); maxHpEl.textContent=config.maxHp.toLocaleString(); hpPercent.textContent=`${pct.toFixed(pct<10?1:0)}%`;
-  hpFill.classList.toggle('low',pct<=20 && pct>0); dangerBanner.classList.toggle('show',pct<=20 && pct>0);
-  $('#phaseText').textContent=pct>66?'PHASE 1':pct>33?'PHASE 2':pct>0?'FINAL PHASE':'DEFEATED';
+  const nextPhase=getPhaseByPercent(pct);
+
+  hpFill.style.width=`${pct}%`;
+  hpLag.style.width=`${pct}%`;
+  currentHpEl.textContent=currentHp.toLocaleString();
+  maxHpEl.textContent=config.maxHp.toLocaleString();
+  hpPercent.textContent=`${pct.toFixed(pct<10?1:0)}%`;
+
+  hpFill.classList.toggle('low',pct<=20 && pct>0);
+  dangerBanner.classList.toggle('show',pct<=20 && pct>0);
+
+  $('#phaseText').textContent=
+    nextPhase===3?'FINAL PHASE':
+    nextPhase===2?'PHASE 2':
+    nextPhase===1?'PHASE 1':'DEFEATED';
+
+  armorStatus.classList.remove('active','final');
+  if(nextPhase===3){
+    armorStatus.textContent='🛡 DEF +15%';
+    armorStatus.classList.add('active','final');
+  }else if(nextPhase===2){
+    armorStatus.textContent='🛡 DEF +10%';
+    armorStatus.classList.add('active');
+  }else{
+    armorStatus.textContent='🛡 DEF +0%';
+  }
+
+  boss.classList.toggle('phase2',nextPhase===2);
+  boss.classList.toggle('final-phase',nextPhase===3);
+  game.classList.toggle('phase2-active',nextPhase===2);
+  game.classList.toggle('final-phase-active',nextPhase===3);
+
+  if(nextPhase>currentPhase && currentPhase>0){
+    showPhaseNotice(nextPhase);
+  }
+
+  currentPhase=nextPhase;
 }
 function randomInt(min,max){
   const low=Math.ceil(Math.min(min,max));
@@ -131,12 +230,13 @@ async function animateShot(result, attacker){
   await wait(110);
   if(!dead)setSprite(bombing,SPRITES.bombingIdle);
   bullet.remove(); if(dead)return;
-  const actual=Math.min(damage,currentHp);
+  const defendedDamage=applyBossDefense(damage);
+  const actual=Math.min(defendedDamage,currentHp);
   const isCritical=type==='critical';
   const isJackpot=type==='jackpot';
   const isMiss=type==='miss';
   const isBig=isCritical||isJackpot;
-  const isKill=damage>=currentHp;
+  const isKill=defendedDamage>=currentHp;
 
   const impact=document.createElement('div');
   impact.className=`impact${isJackpot?' jackpot-impact':''}${isMiss?' miss-impact':''}`;
@@ -158,7 +258,7 @@ async function animateShot(result, attacker){
   screenShake(isJackpot||isCritical);
   hitSound(isJackpot||isCritical);
   addCombo();
-  updateHp(currentHp-damage);lastAttack.textContent=`${attacker} · ${actual.toLocaleString()} DAMAGE`;
+  updateHp(currentHp-actual);lastAttack.textContent=`${attacker} · ${actual.toLocaleString()} DAMAGE`;
   setTimeout(()=>impact.remove(),420);setTimeout(()=>num.remove(),1150);
   if(currentHp<=0){defeatBoss(attacker,actual);return;}
   await wait(Math.max(80,config.shotInterval-150));
@@ -175,7 +275,7 @@ function defeatBoss(attacker,damage){
   $('#winnerName').textContent=attacker;$('#winnerDamage').textContent=`막타 데미지 ${damage.toLocaleString()}`;
   setTimeout(()=>{winnerScreen.classList.add('show');winnerScreen.setAttribute('aria-hidden','false')},1050);
 }
-function resetBoss(){dead=false;combo=0;setSprite(bombing,SPRITES.bombingIdle);setSprite(boss,SPRITES.bossIdle);boss.className='fighter boss';winnerScreen.classList.remove('show');winnerScreen.setAttribute('aria-hidden','true');attackBtn.disabled=false;multiBtn.disabled=false;$('#combo').classList.remove('show');updateHp(config.maxHp);lastAttack.textContent='대기 중';}
+function resetBoss(){dead=false;combo=0;currentPhase=1;clearTimeout(phaseNoticeTimer);phaseNotice.classList.remove('show');phaseNotice.setAttribute('aria-hidden','true');setSprite(bombing,SPRITES.bombingIdle);setSprite(boss,SPRITES.bossIdle);boss.className='fighter boss';winnerScreen.classList.remove('show');winnerScreen.setAttribute('aria-hidden','true');attackBtn.disabled=false;multiBtn.disabled=false;$('#combo').classList.remove('show');updateHp(config.maxHp);lastAttack.textContent='대기 중';}
 
 attackBtn.addEventListener('click',()=>queueAttack(nickname(),1));
 multiBtn.addEventListener('click',()=>queueAttack(nickname(),config.multiCount));

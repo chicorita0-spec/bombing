@@ -21,7 +21,7 @@
       <section class="boss-ui">
         <div class="boss-title-row"><span class="boss-tag">BOSS</span><h1 id="bossName">피즐리베어</h1><span id="phaseText">PHASE 1</span></div>
         <div class="hp-shell"><div id="hpLag" class="hp-lag"></div><div id="hpFill" class="hp-fill"></div><div class="hp-shine"></div></div>
-        <div class="hp-meta"><span id="currentHp">30,000</span><span class="slash">/</span><span id="maxHp">30,000</span><span id="hpPercent">100%</span></div>
+        <div class="hp-meta"><span id="currentHp">30,000</span><span class="slash">/</span><span id="maxHp">30,000</span><span id="hpPercent">100%</span><span id="armorStatus" class="armor-status">🛡 DEF +0%</span></div>
       </section>
     </header>
 
@@ -29,9 +29,12 @@
   <img src="assets/damage.png" alt="데미지 확률 안내">
 </div>
 
-<div id="dangerBanner" class="danger-banner">
-  DANGER · EXECUTION RANGE
-</div>
+    <div id="phaseNotice" class="phase-notice" aria-live="polite" aria-hidden="true">
+      <div id="phaseNoticeIcon" class="phase-notice-icon">⚠</div>
+      <strong id="phaseNoticeTitle">PHASE 2</strong>
+      <span id="phaseNoticeBossText">피즐리베어가 분노했습니다.</span>
+      <em id="phaseNoticeDefenseText">방어력이 10% 증가합니다.</em>
+    </div>
 
     <div id="dangerBanner" class="danger-banner">DANGER · EXECUTION RANGE</div>
     <div id="phaseFlash" class="phase-flash"></div>
@@ -77,8 +80,6 @@
     </section>
   </main>
   <script src="script.js"></script>
-
-<div class="boss-panel">
 
 </body>
 </html>

@@ -283,3 +283,109 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
   opacity:.96;
   filter:drop-shadow(0 8px 16px rgba(0,0,0,.75));
 }
+
+/* ===== Phase defense system ===== */
+.armor-status{
+  margin-left:.8em;
+  padding:.28em .75em;
+  border:1px solid #5b6472;
+  background:#0d1219dd;
+  color:#8a95a3;
+  font-size:clamp(9px,.72vw,13px);
+  font-weight:1000;
+  letter-spacing:.05em;
+  opacity:.72;
+  transition:.25s ease;
+  box-shadow:inset 0 0 10px #0008;
+}
+.armor-status.active{
+  opacity:1;
+  color:#bff4ff;
+  border-color:#63ddff;
+  background:linear-gradient(180deg,#123b50ee,#07141eee);
+  box-shadow:0 0 15px #38d5ff77,inset 0 0 12px #57dfff22;
+}
+.armor-status.final{
+  color:#ffe39b;
+  border-color:#ff9b43;
+  background:linear-gradient(180deg,#54200fee,#1b0906ee);
+  box-shadow:0 0 18px #ff5d2f88,inset 0 0 13px #ff5a2028;
+}
+
+.phase-notice{
+  position:absolute;
+  z-index:96;
+  left:50%;
+  top:42%;
+  min-width:min(640px,68vw);
+  padding:1.1em 2.4em 1.25em;
+  transform:translate(-50%,-50%) scale(.6);
+  opacity:0;
+  pointer-events:none;
+  text-align:center;
+  background:linear-gradient(90deg,transparent,#07161fee 12%,#10384af6 50%,#07161fee 88%,transparent);
+  border-top:2px solid #7beaff;
+  border-bottom:2px solid #7beaff;
+  box-shadow:0 0 34px #2bd3ff77;
+}
+.phase-notice-icon{
+  font-size:clamp(24px,2.2vw,42px);
+  line-height:1;
+  margin-bottom:.1em;
+  filter:drop-shadow(0 0 12px currentColor);
+}
+.phase-notice strong{
+  display:block;
+  font-size:clamp(32px,3.4vw,68px);
+  letter-spacing:.14em;
+  color:#e7fbff;
+  text-shadow:0 0 19px #3bdfff,0 5px #062631;
+}
+.phase-notice span{
+  display:block;
+  margin-top:.25em;
+  font-size:clamp(17px,1.45vw,28px);
+  font-weight:1000;
+  color:#c9f6ff;
+}
+.phase-notice em{
+  display:block;
+  margin-top:.38em;
+  font-size:clamp(14px,1.1vw,22px);
+  font-style:normal;
+  font-weight:1000;
+  color:#82e9ff;
+}
+.phase-notice.final{
+  background:linear-gradient(90deg,transparent,#250806ee 12%,#5b160af6 50%,#250806ee 88%,transparent);
+  border-color:#ff7f42;
+  box-shadow:0 0 40px #ff3d247f;
+}
+.phase-notice.final strong{
+  color:#fff1c4;
+  text-shadow:0 0 21px #ff4a24,0 5px #5c1007;
+}
+.phase-notice.final span{color:#ffd8b7}
+.phase-notice.final em{color:#ffb16f}
+.phase-notice.show{
+  animation:phaseNoticeIn 2.6s cubic-bezier(.18,.82,.2,1) forwards;
+}
+@keyframes phaseNoticeIn{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.55)}
+  11%{opacity:1;transform:translate(-50%,-50%) scale(1.13)}
+  22%,76%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-58%) scale(.95)}
+}
+
+.boss.phase2{
+  filter:drop-shadow(0 0 20px #38dcff) drop-shadow(0 0 48px #276eff88);
+}
+.boss.final-phase{
+  filter:drop-shadow(0 0 24px #ff572d) drop-shadow(0 0 60px #ff1900aa);
+}
+.game.phase2-active .hp-shell{
+  box-shadow:0 0 18px #35d9ff66;
+}
+.game.final-phase-active .hp-shell{
+  box-shadow:0 0 24px #ff4a2b88;
+}
