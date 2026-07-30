@@ -7,7 +7,7 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
 .boss-ui{flex:1;text-align:center}.boss-title-row{height:38%;display:flex;justify-content:center;align-items:center;gap:1.2%}.boss-title-row h1{margin:0;font-size:clamp(26px,3vw,56px);letter-spacing:.06em;text-shadow:0 0 18px #ad3cff,0 4px #2a0b3a}.boss-tag,#phaseText{font-size:clamp(9px,.85vw,15px);font-weight:1000;letter-spacing:.1em;padding:.35em .75em;border:1px solid #b849ff;background:#160b20cc}.boss-tag{color:#ff78d8}#phaseText{color:#8befff}
 .hp-shell{position:relative;width:100%;height:34%;padding:.35%;background:#050408;border:3px solid #26132f;outline:2px solid #b948ff;clip-path:polygon(1.4% 0,98.6% 0,100% 50%,98.6% 100%,1.4% 100%,0 50%);overflow:hidden}.hp-lag,.hp-fill{position:absolute;left:.35%;top:10%;height:80%;width:99.3%;transform-origin:left;transition:width .5s cubic-bezier(.2,.8,.2,1)}.hp-lag{background:#fff176;transition-duration:1.05s;transition-delay:.18s}.hp-fill{background:linear-gradient(90deg,#6d16b8,#bf2eff 58%,#ff54cb);box-shadow:0 0 25px #d145ff inset,0 0 22px #ab2cff}.hp-fill.low{background:linear-gradient(90deg,#b90035,#ff234f,#ff784f);animation:lowHp .5s ease-in-out infinite alternate}.hp-shine{position:absolute;left:2%;right:2%;top:15%;height:18%;background:#ffffff38;filter:blur(2px)}@keyframes lowHp{to{filter:brightness(1.45)}}
 .hp-meta{display:flex;justify-content:center;align-items:center;gap:.45em;font-size:clamp(13px,1.25vw,24px);font-weight:1000;text-shadow:0 2px 5px #000}.slash{opacity:.5}#hpPercent{margin-left:1em;color:#d995ff;font-size:.82em}
-.fighter{z-index:8;filter:drop-shadow(0 18px 20px #000)}.bombing{left:1%;bottom:-5%;height:72%;width:34%;object-fit:contain;object-position:left bottom;transform:scaleX(-1);transform-origin:45% 80%}.boss{right:-1%;bottom:-3%;height:76%;width:48%;object-fit:contain;object-position:right bottom;transform-origin:65% 85%}.boss-shadow{position:absolute;z-index:4;right:8%;bottom:4%;width:33%;height:8%;background:#000a;filter:blur(18px);border-radius:50%}
+.fighter{z-index:8;filter:drop-shadow(0 18px 20px #000)}.bombing{left:-15%;bottom:-5%;height:72%;width:34%;object-fit:contain;object-position:left bottom;transform:scaleX(-1);transform-origin:45% 80%}.boss{right:-1%;bottom:-3%;height:76%;width:48%;object-fit:contain;object-position:right bottom;transform-origin:65% 85%}.boss-shadow{position:absolute;z-index:4;right:8%;bottom:4%;width:33%;height:8%;background:#000a;filter:blur(18px);border-radius:50%}
 .bombing.fire{animation:recoil .16s ease}.boss.hit{animation:bossHit .22s ease}.boss.dying{animation:bossDeath 1.5s cubic-bezier(.2,.7,.2,1) forwards}.game.shake{animation:screenShake .23s linear}.game.heavy-shake{animation:heavyShake .7s linear}@keyframes recoil{50%{transform:scaleX(-1) translateX(2.5%) rotate(-1deg)}}@keyframes bossHit{45%{transform:translateX(1.2%) rotate(1deg);filter:brightness(2.3) drop-shadow(0 0 28px #ff54da)}}@keyframes bossDeath{0%{transform:translate(0) rotate(0);filter:brightness(2)}20%{transform:translateX(2%) rotate(3deg)}100%{transform:translate(8%,18%) rotate(18deg);filter:brightness(.25) grayscale(.7);opacity:.25}}@keyframes screenShake{0%,100%{transform:none}25%{transform:translate(-4px,2px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,-1px)}}@keyframes heavyShake{0%,100%{transform:none}10%{transform:translate(-12px,7px) rotate(-.25deg)}25%{transform:translate(10px,-5px)}40%{transform:translate(-8px,-2px)}60%{transform:translate(6px,4px)}80%{transform:translate(-3px,1px)}}
 .muzzle{position:absolute;z-index:20;left:27%;top:50%;width:5%;aspect-ratio:1;opacity:0;background:radial-gradient(circle,#fff 0 8%,#ffe85c 10% 25%,#ff6a00 30%,transparent 67%);clip-path:polygon(0 35%,42% 40%,60% 0,67% 40%,100% 50%,67% 60%,60% 100%,42% 60%);filter:drop-shadow(0 0 14px #ffb000)}.muzzle.on{animation:muzzle .13s ease-out}@keyframes muzzle{0%{opacity:1;transform:scale(.35) rotate(0)}100%{opacity:0;transform:scale(1.7) rotate(30deg)}}
 .fx-layer{position:absolute;inset:0;z-index:25;pointer-events:none;overflow:hidden}.bullet{position:absolute;height:5px;border-radius:999px;background:linear-gradient(90deg,transparent,#fff 25%,#65ecff 48%,#ff5dde 80%,transparent);box-shadow:0 0 8px #fff,0 0 18px #8b55ff;transform-origin:left center;animation:bulletFly .16s linear forwards}.bullet:after{content:"";position:absolute;right:-9px;top:-4px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 16px #fff,0 0 26px #ec54ff}@keyframes bulletFly{from{transform:translateX(0) scaleX(.2);opacity:.2}to{transform:translateX(var(--travel)) scaleX(1);opacity:1}}
@@ -28,8 +28,8 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
   filter:drop-shadow(0 6px 8px #000);
 }
 .bombing,.boss{object-fit:contain;object-position:center bottom}
-.bombing{left:-1%;bottom:-1%;height:58%;width:31%;transform:none;transition:filter .08s}
-.boss{right:-6%;bottom:2%;height:86%;width:53%}
+.bombing{left:-15%;bottom:-1%;height:58%;width:31%;transform:none;transition:filter .08s}
+.boss{right:-8%;bottom:2%;height:86%;width:53%}
 .boss-shadow{right:7%;bottom:5%;width:35%}
 .bombing.fire{animation:recoilV5 .20s ease}
 .boss.hit{animation:bossHitV5 .24s ease}
@@ -41,6 +41,19 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
 .winner-card{min-width:min(62vw,980px);overflow:visible}
 .winner-boss,.winner-bombing{position:absolute;pointer-events:none;object-fit:contain;filter:drop-shadow(0 15px 20px #000)}
 .winner-boss{width:35%;height:58%;right:4%;bottom:-2%}.winner-bombing{width:28%;height:65%;left:-2%;bottom:-3%}
+.winner-hit-count{
+    margin-top:.35em;
+    font-size:clamp(16px,1.5vw,28px);
+    font-weight:1000;
+    color:#d9d9ff;
+    text-shadow:0 0 10px #000;
+}
+
+#winnerHitCount{
+    color:#55e8ff;
+    font-size:1.15em;
+    text-shadow:0 0 10px #55e8ff;
+}
 
 /* ===== 최종 하단 UI 배치 ===== */
 
@@ -420,112 +433,251 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
 }
 
 
-/* ===== 실시간 시계 + 최근 데미지 15개 ===== */
-.lower-ui{align-items:stretch}
-.battle-history-panel{
-  width:28%;min-width:300px;padding:.72% .8%;
-  display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:.45em;
-  background:linear-gradient(145deg,rgba(7,4,13,.96),rgba(38,10,54,.93));
-  border:1px solid #c757ff;
-  box-shadow:0 0 25px #9d28ff35,inset 0 0 22px #000a;
-  overflow:hidden;
-}
-.live-clock-wrap{
-  display:grid;grid-template-columns:1fr auto;
-  grid-template-areas:"label time" "date time";align-items:center;
-  padding:.42em .65em;border-left:4px solid #55e8ff;
-  background:linear-gradient(90deg,#071a25db,#17091fbb);
-  box-shadow:inset 0 0 14px #0008;
-}
-.live-clock-label{
-  grid-area:label;color:#64eaff;font-size:clamp(8px,.65vw,12px);
-  font-weight:1000;letter-spacing:.18em;
-}
-#liveClock{
-  grid-area:time;font-variant-numeric:tabular-nums;
-  font-size:clamp(20px,2vw,38px);line-height:1;color:#fff;
-  letter-spacing:.04em;text-shadow:0 0 13px #55e8ff,0 3px #07141b;
-}
-#liveDate{
-  grid-area:date;color:#b9dce4;font-size:clamp(8px,.62vw,12px);font-weight:900;
-}
-.damage-log-head{
-  display:flex;justify-content:space-between;align-items:center;padding:0 .15em;
-  color:#fff;font-size:clamp(9px,.72vw,13px);font-weight:1000;letter-spacing:.08em;
-}
-.damage-log-head b{color:#ce83ff;font-size:.85em}
-.damage-log{
-  min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;
-  gap:3px;padding:.25em;background:#030207aa;border:1px solid #63307b;
-  box-shadow:inset 0 0 16px #000;
-}
-.damage-log-empty{
-  margin:auto;color:#786887;font-size:clamp(10px,.75vw,14px);font-weight:900;
-}
-.damage-log-row{
-  flex:0 0 auto;min-height:22px;
-  display:grid;grid-template-columns:2.1em 1fr auto;align-items:center;gap:.45em;
-  padding:.18em .48em;border-left:3px solid #a84cff;
-  background:linear-gradient(90deg,#2a0b38cc,#0b0610cc);
-  animation:damageLogIn .22s ease-out;font-variant-numeric:tabular-nums;
-}
-.damage-log-index{color:#806c8e;font-size:clamp(8px,.6vw,11px);font-weight:1000}
-.damage-log-value{
-  font-size:clamp(12px,.95vw,18px);line-height:1;color:#f4eaff;
-  text-shadow:0 0 8px currentColor;
-}
-.damage-log-badge{
-  padding:.12em .42em;border:1px solid currentColor;
-  font-size:clamp(7px,.5vw,10px);font-style:normal;font-weight:1000;letter-spacing:.05em;opacity:.9;
-}
-.damage-log-row.weak{border-color:#8e8e8e;background:linear-gradient(90deg,#252525dd,#080808cc)}
-.damage-log-row.weak .damage-log-value,.damage-log-row.weak .damage-log-badge{color:#d2d2d2}
-.damage-log-row.normal .damage-log-value,.damage-log-row.normal .damage-log-badge{color:#d58aff}
-.damage-log-row.critical{border-color:#ff9d22;background:linear-gradient(90deg,#4b2009e8,#130906d0)}
-.damage-log-row.critical .damage-log-value,.damage-log-row.critical .damage-log-badge{color:#ffd45b}
-.damage-log-row.jackpot{
-  border-color:#ff3030;background:linear-gradient(90deg,#650b0be8,#1a0303e0);
-  box-shadow:0 0 10px #ff292966,inset 0 0 10px #ff4b3522;
-}
-.damage-log-row.jackpot .damage-log-value,.damage-log-row.jackpot .damage-log-badge{color:#ff4848;font-weight:1000}
-.damage-log-row.miss{border-color:#8a9298;background:linear-gradient(90deg,#252b2fdb,#080a0bd0)}
-.damage-log-row.miss .damage-log-value,.damage-log-row.miss .damage-log-badge{color:#e9eef2}
-@keyframes damageLogIn{from{opacity:0;transform:translateX(-22px) scale(.96)}to{opacity:1;transform:none}}
-.battle-history-panel .last-attack{
-  min-height:auto;margin:0;padding:.32em .55em;text-align:center;
-  font-size:clamp(10px,.78vw,14px);font-weight:1000;color:#e9ccff;
-  background:#16091fb8;border:1px solid #64327c;
+/* ===== 방송용 최종 정렬 ===== */
+
+/* 원래 상단 프로필 디자인과 위치를 그대로 유지 */
+.topbar{
+  left:2.3%;
+  right:2.3%;
+  top:2.4%;
+  height:18%;
 }
 
-/* ===== JACKPOT 중앙 알림 ===== */
-.jackpot-notice{
-  position:absolute;z-index:102;left:50%;top:42%;width:min(760px,74vw);
-  padding:1em 2em 1.15em;transform:translate(-50%,-50%) scale(.25) rotate(-4deg);
-  opacity:0;pointer-events:none;text-align:center;
-  background:radial-gradient(circle at 50% 50%,#fff2a6 0 3%,#ff8a00 4% 13%,#c91414e8 28%,#3f0303e8 62%,transparent 74%);
-  border-top:4px solid #ffe15c;border-bottom:4px solid #ff3b1f;
-  box-shadow:0 0 28px #fff18a,0 0 70px #ff2a00,0 0 120px #ff000099;
+.topbar > .player-card{
+  width:18%;
+  display:flex;
+  align-items:center;
+  gap:5%;
+  padding:1%;
+
+  margin-left:-15px;
 }
-.jackpot-notice strong{
-  display:block;font-size:clamp(54px,6.8vw,132px);line-height:.88;
-  color:#fff7bb;letter-spacing:.06em;-webkit-text-stroke:3px #8b0800;
-  text-shadow:0 5px #a80b00,0 0 20px #fff,0 0 42px #ffb000,0 10px 22px #000;
+
+/* 프로필과 정확히 같은 왼쪽 선/폭으로 로그 배치 */
+.battle-history-panel{
+  position:absolute;
+  z-index:58;
+  left:1.3%;
+  top:20.4%;
+  width:17.2%;
+  height:25.2%;
+  min-width:0;
+  max-height:none;
+  box-sizing:border-box;
+  display:grid;
+  grid-template-rows:24px minmax(0,1fr) 26px;
+  gap:3px;
+  padding:7px;
+  overflow:hidden;
+  background:linear-gradient(145deg,rgba(7,4,13,.96),rgba(38,10,54,.93));
+  border:1px solid #c757ff;
+  box-shadow:0 0 18px #9d28ff35,inset 0 0 16px #000a;
 }
-.jackpot-notice em{
-  display:block;margin-top:.5em;color:#fff1bc;font-size:clamp(16px,1.45vw,28px);
-  font-style:normal;font-weight:1000;letter-spacing:.25em;
-  text-shadow:0 0 12px #ff3400,0 3px #650000;
+
+.damage-log-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:0;
+  padding:0 2px;
+  color:#fff;
+  font-size:11px;
+  font-weight:1000;
+  letter-spacing:.05em;
 }
-.jackpot-burst{
-  position:absolute;left:50%;top:50%;font-size:clamp(150px,22vw,420px);
-  line-height:1;color:#ffd75a;opacity:.2;transform:translate(-50%,-50%);
-  filter:drop-shadow(0 0 18px #ff2700);
+
+.damage-log-head b{
+  color:#d98aff;
+  font-size:10px;
 }
-.jackpot-notice.show{animation:jackpotNoticeShow 1.45s cubic-bezier(.15,.85,.2,1) forwards}
-@keyframes jackpotNoticeShow{
-  0%{opacity:0;transform:translate(-50%,-50%) scale(.15) rotate(-7deg)}
-  11%{opacity:1;transform:translate(-50%,-50%) scale(1.28) rotate(3deg)}
-  22%{opacity:1;transform:translate(-50%,-50%) scale(.96) rotate(-1deg)}
-  32%,70%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}
-  100%{opacity:0;transform:translate(-50%,-58%) scale(1.08)}
+
+.damage-log{
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+  gap:2px;
+  padding:3px;
+  background:#030207bb;
+  border:1px solid #63307b;
+  box-shadow:inset 0 0 12px #000;
+}
+
+.damage-log-empty{
+  margin:auto;
+  color:#8e7a9b;
+  font-size:11px;
+  font-weight:900;
+}
+
+.damage-log-row{
+  display:grid;
+  grid-template-columns:23px minmax(0,1fr) auto;
+  align-items:center;
+  gap:4px;
+  flex:0 0 16px;
+  min-height:16px;
+  height:16px;
+  padding:0 5px;
+  border-left:3px solid #a84cff;
+  background:linear-gradient(90deg,#2a0b38cc,#0b0610cc);
+  font-variant-numeric:tabular-nums;
+  animation:damageLogIn .18s ease-out;
+}
+
+.damage-log-index{
+  color:#8d779a;
+  font-size:8px;
+  font-weight:1000;
+}
+
+.damage-log-value{
+  overflow:hidden;
+  white-space:nowrap;
+  color:#d58aff;
+  font-size:11px;
+  line-height:16px;
+  font-weight:1000;
+  text-overflow:ellipsis;
+}
+
+.damage-log-badge{
+  padding:0 3px;
+  border:1px solid currentColor;
+  font-size:7px;
+  line-height:11px;
+  font-style:normal;
+  font-weight:1000;
+}
+
+.damage-log-row.weak{
+  border-color:#888;
+  background:linear-gradient(90deg,#252525dd,#080808cc);
+}
+.damage-log-row.weak .damage-log-value,
+.damage-log-row.weak .damage-log-badge{color:#d2d2d2}
+
+.damage-log-row.normal .damage-log-value,
+.damage-log-row.normal .damage-log-badge{color:#d58aff}
+
+.damage-log-row.critical{
+  border-color:#ff9d22;
+  background:linear-gradient(90deg,#4b2009e8,#130906d0);
+}
+.damage-log-row.critical .damage-log-value,
+.damage-log-row.critical .damage-log-badge{color:#ffd45b}
+
+.damage-log-row.jackpot{
+  border-color:#ff3030;
+  background:linear-gradient(90deg,#650b0be8,#1a0303e0);
+  box-shadow:0 0 8px #ff292955;
+}
+.damage-log-row.jackpot .damage-log-value,
+.damage-log-row.jackpot .damage-log-badge{color:#ff4848}
+
+.damage-log-row.miss{
+  border-color:#8a9298;
+  background:linear-gradient(90deg,#252b2fdb,#080a0bd0);
+}
+.damage-log-row.miss .damage-log-value,
+.damage-log-row.miss .damage-log-badge{color:#e9eef2}
+
+.battle-history-panel .last-attack{
+  min-height:0;
+  height:26px;
+  margin:0;
+  padding:0 5px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  color:#ead4f7;
+  background:#16091fbd;
+  border:1px solid #64327c;
+  font-size:10px;
+  font-weight:1000;
+  white-space:nowrap;
+}
+
+/* 확률 안내는 로그 오른쪽, 기존 위치 유지 */
+.damage-guide{
+  left:34%;
+  top:15.5%;
+}
+
+/* 바밍은 확률 안내 바로 아래 중앙에 배치 */
+#bombing{
+  left:4.5%;
+  bottom:1.2%;
+  transform:scale(.88);
+  transform-origin:bottom center;
+}
+
+/* 공격 버튼은 화면 하단 중앙 고정 */
+.lower-ui{
+  left:2.5%;
+  bottom:2.8%;
+  width:95%;
+  justify-content:center;
+  align-items:flex-end;
+  overflow:visible;
+}
+
+.controls{
+  margin-left:0;
+  transform:none;
+}
+
+/* 코드 기반 총 아이콘 */
+.attack-button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.attack-gun-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-right:.35em;
+  font-size:clamp(22px,2vw,38px);
+  line-height:1;
+  transform:rotate(-8deg);
+  filter:drop-shadow(0 0 7px #d83cff);
+}
+
+.attack-gun-icon.rapid{
+  filter:drop-shadow(0 0 8px #ff8a25);
+}
+
+/* 시계 요소는 사용하지 않음 */
+.live-clock-wrap,
+.live-clock-label,
+#liveClock,
+#liveDate{
+  display:none !important;
+}
+
+@keyframes damageLogIn{
+  from{opacity:0;transform:translateX(-12px)}
+  to{opacity:1;transform:none}
+}
+
+/* 900p 이하에서도 15줄이 유지되도록 행 높이 축소 */
+@media (max-height:900px){
+  .battle-history-panel{
+    top:20.2%;
+    height:27.6%;
+  }
+  .damage-log-row{
+    flex-basis:14px;
+    min-height:14px;
+    height:14px;
+  }
+  .damage-log-value{
+    line-height:14px;
+    font-size:10px;
+  }
 }

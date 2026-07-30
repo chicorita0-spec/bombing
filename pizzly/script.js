@@ -1,6 +1,6 @@
 'use strict';
 
-const CONFIG_DEFAULT = { bossName:'피즐리베어', maxHp:30000, minDamage:1, maxDamage:2000, multiCount:11, shotInterval:240 };
+const CONFIG_DEFAULT = { bossName:'피즐리베어', maxHp:33000, minDamage:1, maxDamage:2000, multiCount:11, shotInterval:240 };
 let config = {...CONFIG_DEFAULT};
 let currentHp = config.maxHp;
 let dead = false;
@@ -9,14 +9,15 @@ let combo = 0;
 let comboTimer = null;
 let currentPhase = 1;
 let phaseNoticeTimer = null;
+let totalHitCount = 0;
 
 const $ = s => document.querySelector(s);
 const game=$('#game'), hpFill=$('#hpFill'), hpLag=$('#hpLag'), currentHpEl=$('#currentHp'), maxHpEl=$('#maxHp'), hpPercent=$('#hpPercent');
 const boss=$('#boss'), bombing=$('#bombing'), muzzle=$('#muzzle'), fxLayer=$('#fxLayer'), dangerBanner=$('#dangerBanner');
 const attackBtn=$('#attackBtn'), multiBtn=$('#multiBtn'), lastAttack=$('#lastAttack'), winnerScreen=$('#winnerScreen');
 const armorStatus=$('#armorStatus'), phaseNotice=$('#phaseNotice'), phaseNoticeIcon=$('#phaseNoticeIcon'), phaseNoticeTitle=$('#phaseNoticeTitle'), phaseNoticeBossText=$('#phaseNoticeBossText'), phaseNoticeDefenseText=$('#phaseNoticeDefenseText');
-const liveClock=$('#liveClock'), liveDate=$('#liveDate'), damageLog=$('#damageLog'), jackpotNotice=$('#jackpotNotice');
-const MAX_DAMAGE_LOGS=15;
+const damageLog=$('#damageLog'), jackpotNotice=$('#jackpotNotice');
+const MAX_DAMAGE_LOGS=10;
 let damageLogSequence=0;
 let jackpotNoticeTimer=null;
 
@@ -180,15 +181,6 @@ function randomDamage(){
 function nickname(){ return '테스트 공격'; }
 
 
-function updateLiveClock(){
-  const now=new Date();
-  liveClock.textContent=new Intl.DateTimeFormat('ko-KR',{
-    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
-  }).format(now);
-  liveDate.textContent=new Intl.DateTimeFormat('ko-KR',{
-    year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'
-  }).format(now);
-}
 
 function clearDamageLog(){
   damageLogSequence=0;
@@ -230,6 +222,12 @@ function addDamageLog(type,damage=0){
   while(damageLog.children.length>MAX_DAMAGE_LOGS){
     damageLog.firstElementChild.remove();
   }
+
+  [...damageLog.querySelectorAll('.damage-log-row')].forEach((item,i)=>{
+    const visibleIndex=item.querySelector('.damage-log-index');
+    if(visibleIndex) visibleIndex.textContent=String(i+1).padStart(2,'0');
+  });
+
   damageLog.scrollTop=damageLog.scrollHeight;
 }
 
@@ -318,6 +316,8 @@ function wait(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
 async function animateShot(result, attacker){
   const {damage,type}=result;
   if(dead)return;
+
+totalHitCount++;
 
   const isMiss=type==='miss';
   const gw=game.clientWidth,gh=game.clientHeight;
@@ -430,10 +430,12 @@ function queueAttack(attacker,count){
 function defeatBoss(attacker,damage){
   if(dead)return; dead=true; attackBtn.disabled=true;multiBtn.disabled=true;dangerBanner.classList.remove('show');
   setSprite(boss,SPRITES.bossDead);restartAnimation(game,'heavy-shake');boss.classList.add('dying');hitSound(true);$('#phaseFlash').classList.add('on');
-  $('#winnerName').textContent=attacker;$('#winnerDamage').textContent=`막타 데미지 ${damage.toLocaleString()}`;
+  $('#winnerName').textContent = attacker;
+$('#winnerDamage').textContent = `막타 데미지 ${damage.toLocaleString()}`;
+$('#winnerHitCount').textContent = totalHitCount.toLocaleString();
   setTimeout(()=>{winnerScreen.classList.add('show');winnerScreen.setAttribute('aria-hidden','false')},1050);
 }
-function resetBoss(){dead=false;combo=0;currentPhase=1;clearTimeout(phaseNoticeTimer);clearTimeout(jackpotNoticeTimer);phaseNotice.classList.remove('show');phaseNotice.setAttribute('aria-hidden','true');jackpotNotice.classList.remove('show');jackpotNotice.setAttribute('aria-hidden','true');setSprite(bombing,SPRITES.bombingIdle);setSprite(boss,SPRITES.bossIdle);boss.className='fighter boss';winnerScreen.classList.remove('show');winnerScreen.setAttribute('aria-hidden','true');attackBtn.disabled=false;multiBtn.disabled=false;$('#combo').classList.remove('show');updateHp(config.maxHp);clearDamageLog();lastAttack.textContent='대기 중';}
+function resetBoss(){dead=false;totalHitCount=0;combo=0;currentPhase=1;clearTimeout(phaseNoticeTimer);clearTimeout(jackpotNoticeTimer);phaseNotice.classList.remove('show');phaseNotice.setAttribute('aria-hidden','true');jackpotNotice.classList.remove('show');jackpotNotice.setAttribute('aria-hidden','true');setSprite(bombing,SPRITES.bombingIdle);setSprite(boss,SPRITES.bossIdle);boss.className='fighter boss';winnerScreen.classList.remove('show');winnerScreen.setAttribute('aria-hidden','true');attackBtn.disabled=false;multiBtn.disabled=false;$('#combo').classList.remove('show');updateHp(config.maxHp);clearDamageLog();lastAttack.textContent='대기 중';}
 
 attackBtn.addEventListener('click',()=>queueAttack(nickname(),1));
 multiBtn.addEventListener('click',()=>queueAttack(nickname(),config.multiCount));
@@ -460,5 +462,3 @@ window.raidReset=resetBoss;
 loadSettings();
 updateHp(config.maxHp);
 clearDamageLog();
-updateLiveClock();
-setInterval(updateLiveClock,250);

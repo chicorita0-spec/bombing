@@ -25,6 +25,17 @@
       </section>
     </header>
 
+    <div class="attacker-panel battle-history-panel">
+        <div class="damage-log-head">
+          <span>RECENT DAMAGE</span>
+          <b>최근 10회</b>
+        </div>
+        <div id="damageLog" class="damage-log" aria-live="polite">
+          <div class="damage-log-empty">공격 대기 중</div>
+        </div>
+        <div id="lastAttack" class="last-attack">대기 중</div>
+      </div>
+
 <div class="damage-guide">
   <img src="assets/damage.png" alt="데미지 확률 안내">
 </div>
@@ -54,24 +65,9 @@
     <div id="combo" class="combo"><b id="comboCount">0</b><span>HIT COMBO</span></div>
 
     <section class="lower-ui">
-      <div class="attacker-panel battle-history-panel">
-        <div class="live-clock-wrap">
-          <span class="live-clock-label">LIVE TIME</span>
-          <strong id="liveClock">00:00:00</strong>
-          <small id="liveDate">0000. 00. 00.</small>
-        </div>
-        <div class="damage-log-head">
-          <span>RECENT DAMAGE</span>
-          <b>최근 15회</b>
-        </div>
-        <div id="damageLog" class="damage-log" aria-live="polite">
-          <div class="damage-log-empty">공격 대기 중</div>
-        </div>
-        <div id="lastAttack" class="last-attack">대기 중</div>
-      </div>
       <div class="controls">
-        <button id="attackBtn" class="attack-button single"><span class="cost">100</span><span><b>단발 공격</b><small>1 SHOT</small></span></button>
-        <button id="multiBtn" class="attack-button multi"><span class="cost">1000</span><span><b>11연속 사격</b><small>11 SHOTS</small></span></button>
+        <button id="attackBtn" class="attack-button single"><span class="attack-gun-icon" aria-hidden="true">🔫</span><span class="cost">100</span><span><b>단발 공격</b><small>1 SHOT</small></span></button>
+        <button id="multiBtn" class="attack-button multi"><span class="attack-gun-icon rapid" aria-hidden="true">🔫</span><span class="cost">1000</span><span><b>11연속 사격</b><small>11 SHOTS</small></span></button>
       </div>
     </section>
 
@@ -92,7 +88,26 @@
 
     <section id="winnerScreen" class="winner-screen" aria-hidden="true">
       <div class="winner-rays"></div>
-      <div class="winner-card"><img class="winner-boss" src="assets/pizzlybear_die.png" alt="쓰러진 피즐리베어"><img class="winner-bombing" src="assets/bombing_idle.png" alt="승리한 바밍"><span class="final-label">FINAL HIT</span><h2 id="winnerName">테스트 시청자</h2><p>피즐리베어 처치 성공</p><div id="winnerDamage" class="winner-damage"></div><button id="restartBtn">다음 보스 소환</button></div>
+      <div class="winner-card">
+    <img class="winner-boss" src="assets/pizzlybear_die.png" alt="쓰러진 피즐리베어">
+    <img class="winner-bombing" src="assets/bombing_idle.png" alt="승리한 바밍">
+
+    <span class="final-label">FINAL HIT</span>
+
+    <h2 id="winnerName">테스트 시청자</h2>
+
+    <p>피즐리베어 처치 성공</p>
+
+    <div id="winnerDamage" class="winner-damage"></div>
+
+    <!-- 추가 -->
+    <div class="winner-hit-count">
+        총 타격 횟수 :
+        <span id="winnerHitCount">0</span>회
+    </div>
+
+    <button id="restartBtn">다음 보스 소환</button>
+</div>
     </section>
   </main>
   <script src="script.js"></script>
