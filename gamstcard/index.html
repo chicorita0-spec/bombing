@@ -48,7 +48,6 @@
 
         .board-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; position: relative; }
         
-        /* 메인 보드 (480px x 600px 고정) */
         .board-wrapper {
             position: relative;
             width: 480px; 
@@ -63,7 +62,6 @@
             overflow: hidden; 
         }
 
-        /* 📍 1. 남은 카드 카운터 (오른쪽 위 구석으로 이동) */
         .ammo-counter { 
             position: absolute !important; 
             top: 15px !important; 
@@ -73,7 +71,6 @@
             box-shadow: 0 0 8px rgba(184, 134, 11, 0.4); z-index: 25; 
         }
 
-        /* 📍 2. 당첨 현황 목록 */
         .prize-status-board { 
             position: absolute !important; 
             top: 275px !important; 
@@ -113,7 +110,6 @@
         }
         .prize-badge.sold-out { opacity: 0.25; filter: grayscale(1); border-color: #444 !important; }
 
-        /* 📍 3. 사용자 수동 수정 위치 및 크기 반영 */
         .card-stage { 
             position: absolute !important; 
             top: 120px !important; 
@@ -184,13 +180,12 @@
         .t-3 { border-color: var(--t-sr); box-shadow: 0 0 20px var(--t-sr); } .t-3 .card-title { color: #64b5f6; }
         .t-4 { border-color: var(--t-ssr); box-shadow: 0 0 30px var(--t-ssr); } .t-4 .card-title { color: #ba68c8; }
         .t-5 { border-color: var(--t-ur); box-shadow: 0 0 40px var(--t-ur); } .t-5 .card-title { color: #ffd54f; }
-        .t-6 { border-color: var(--t-lr); box-shadow: 0 0 50px var(--t-lr); } .t-6 .card-title { color: #e57373; }
+        .t-6 { border-color: var(--t-lr); box-shadow: 0 0 80px var(--t-lr); } .t-6 .card-title { color: #e57373; }
         .t-7 { border: 3px solid #00e5ff; box-shadow: 0 0 60px #00e5ff; animation: borderRainbow 1.5s infinite linear; } 
         .t-7 .card-title { color: #00e5ff; text-shadow: 0 0 10px #00e5ff; }
 
         @keyframes borderRainbow { 0% { border-color: #00e5ff; } 50% { border-color: #ffea00; } 100% { border-color: #00e5ff; } }
 
-        /* 하단 1회 / 11연차 투명 뽑기 버튼 위치 */
         .hud-controls { 
             position: absolute !important; 
             bottom: 128px !important; 
@@ -205,15 +200,141 @@
         .btn-draw { 
             flex: 1; height: 100%; border: none; background: transparent; cursor: pointer; 
             border-radius: 8px;
+            position: relative;
+            overflow: visible;
         }
         .btn-draw:active { transform: scale(0.96); background: rgba(255,255,255,0.1); }
 
-        /* 11연차 팝업 */
+        .draw-cost-label {
+            position: absolute;
+            left: 50%;
+            bottom: 2px;
+            transform: translateX(-50%);
+            width: 112px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            color: #ead19a;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 1px 2px #000, 0 0 5px rgba(255,210,110,0.35);
+            pointer-events: none;
+            z-index: 5;
+        }
+        #btn-draw-1 .draw-cost-label {
+            background: linear-gradient(90deg, rgba(9,31,22,0), rgba(9,31,22,.98) 18%, rgba(9,31,22,.98) 82%, rgba(9,31,22,0));
+        }
+        #btn-draw-11 .draw-cost-label {
+            background: linear-gradient(90deg, rgba(55,15,10,0), rgba(55,15,10,.98) 18%, rgba(55,15,10,.98) 82%, rgba(55,15,10,0));
+        }
+        .draw-cost-icon {
+            color: #d9a91e;
+            font-size: 15px;
+            filter: drop-shadow(0 0 2px #000);
+        }
+
+        .draw-x-label {
+            position: absolute;
+            right: -21px;
+            top: 23%;
+            transform: translateY(-50%);
+            min-width: 44px;
+            height: 28px;
+            padding: 0 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(212,175,55,.85);
+            border-radius: 7px;
+            background: linear-gradient(180deg, rgba(24,57,39,.98), rgba(8,27,18,.98));
+            color: #ead19a;
+            font-family: Georgia, 'Times New Roman', serif;
+            font-size: 15px;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 1px 2px #000, 0 0 5px rgba(255,210,110,.35);
+            box-shadow: inset 0 0 8px rgba(255,215,100,.08), 0 2px 6px rgba(0,0,0,.65);
+            pointer-events: none;
+            z-index: 6;
+            white-space: nowrap;
+        }
+
+        /* 📍 메인 화면 뽑기 버튼 바로 위에 직관적으로 배치된 X개 배율 미니 조절기 */
+        .quick-x-controller {
+            position: absolute;
+            bottom: 185px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(12, 10, 8, 0.92);
+            border: 1px solid #d4af37;
+            border-radius: 20px;
+            padding: 4px 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.8), 0 0 8px rgba(212,175,55,0.3);
+            z-index: 30;
+        }
+        .quick-x-title {
+            font-size: 11px;
+            font-weight: 900;
+            color: #ffd700;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .quick-x-input {
+            width: 45px;
+            height: 22px;
+            background: #000;
+            border: 1px solid #b8860b;
+            border-radius: 4px;
+            color: #fff;
+            text-align: center;
+            font-weight: 900;
+            font-size: 12px;
+            outline: none;
+        }
+        .quick-x-btn {
+            background: #b8860b;
+            border: none;
+            color: #fff;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .quick-x-btn:hover {
+            background: #ffd700;
+            color: #000;
+        }
+
         .popup-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(5,5,10,0.96); backdrop-filter: blur(10px); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 20px; }
         .popup-overlay.active { opacity: 1; pointer-events: auto; }
         .popup-title { font-size: 22px; color: #ffd700; font-weight: 900; margin-bottom: 15px; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
         
-        .gacha-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 380px; margin-bottom: 15px; }
+        .gacha-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(75px, 1fr)); 
+            gap: 8px; 
+            width: 100%; 
+            max-width: 410px; 
+            max-height: 380px; 
+            overflow-y: auto; 
+            margin-bottom: 15px; 
+            padding: 5px; 
+        }
 
         .gacha-item {
             background-color: #111; background-size: cover; background-position: center;
@@ -243,7 +364,15 @@
         .sound-toggle-btn.off { color: #888; }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 12px; color: #aaa; font-weight: 700; }
-        .form-group input[type="text"], .form-group select { background: #1a1c24; border: 1px solid #33374a; border-radius: 6px; padding: 8px; color: #fff; font-size: 13px; outline: none; }
+        .form-group input[type="text"], .form-group input[type="number"], .form-group select { background: #1a1c24; border: 1px solid #33374a; border-radius: 6px; padding: 8px; color: #fff; font-size: 13px; outline: none; }
+        
+        .highlight-form-group {
+            background: rgba(212,175,55,0.08);
+            border: 1px solid #d4af37;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
         .prize-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 5px;}
         .prize-table th { color: #aaa; text-align: left; padding-bottom: 6px; }
         .prize-table input { background: #1a1c24; border: 1px solid #33374a; color:#fff; border-radius: 4px; padding: 6px; width: 100%; }
@@ -259,6 +388,7 @@
 
         .btn-restore { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); color: #ffd700; border: 1px solid #b8860b; padding: 8px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; z-index: 10000; display: none; }
         body.obs-mode .control-section { display: none !important; }
+        body.obs-mode .quick-x-controller { display: none !important; }
         body.obs-mode .btn-restore { display: block; }
     </style>
 </head>
@@ -287,13 +417,27 @@
                     </div>
                 </div>
 
+                <!-- 📍 메인 화면에 전면 배치된 배율(X N개) 퀵 조절 패널 -->
+                <div class="quick-x-controller">
+                    <span class="quick-x-title">⚡ 1회당 배율:</span>
+                    <button class="quick-x-btn" id="btn-x-minus">-</button>
+                    <input type="number" class="quick-x-input" id="quick-x-input" min="1" step="1" value="1">
+                    <button class="quick-x-btn" id="btn-x-plus">+</button>
+                    <span class="quick-x-title">개</span>
+                </div>
+
                 <div class="hud-controls">
-                    <button class="btn-draw" id="btn-draw-1" title="1회 뽑기"></button>
-                    <button class="btn-draw" id="btn-draw-11" title="11연차 뽑기"></button>
+                    <button class="btn-draw" id="btn-draw-1" title="1회 뽑기">
+                        <span class="draw-cost-label"><span class="draw-cost-icon">●</span><span id="draw-cost-1-label">100개</span></span>
+                        <span class="draw-x-label" id="draw-x-1-label">X 1개</span>
+                    </button>
+                    <button class="btn-draw" id="btn-draw-11" title="11연차 뽑기">
+                        <span class="draw-cost-label"><span class="draw-cost-icon">●</span><span id="draw-cost-11-label">1000개</span></span>
+                    </button>
                 </div>
 
                 <div class="popup-overlay" id="popup-11">
-                    <div class="popup-title">📜 11연차 개봉 결과</div>
+                    <div class="popup-title" id="popup-results-title">📜 연차 개봉 결과</div>
                     <div class="gacha-grid" id="gacha-grid"></div>
                     <button class="btn-close" id="btn-popup-close">확인</button>
                 </div>
@@ -314,6 +458,22 @@
                     <option value="500">500개</option>
                 </select>
             </div>
+
+            <div class="form-group">
+                <label>💰 1회 뽑기 별풍선 개수</label>
+                <input id="draw-cost-1-input" type="number" min="0" step="1" value="100">
+            </div>
+
+            <div class="form-group">
+                <label>💰 11연차 별풍선 개수</label>
+                <input id="draw-cost-11-input" type="number" min="0" step="1" value="1000">
+            </div>
+
+            <!-- 📍 강조된 1회 뽑기 옆 X개 연사 수량 설정 -->
+            <div class="form-group highlight-form-group">
+                <label style="color:#ffd700;">✖️ 1회 뽑기 옆 X개 연사 수량</label>
+                <input id="draw-x-1-input" type="number" min="1" step="1" value="1" style="border-color:#ffd700;">
+            </div>
             
             <div class="form-group">
                 <label>🎁 당첨 목록 (위에서부터 최고 등급 순서)</label>
@@ -322,7 +482,7 @@
                     <tbody id="prize-list-body"></tbody>
                 </table>
                 <button class="btn btn-add" id="add-prize-btn">+ 항목 추가</button>
-                <div class="kkwang-info" id="kkwang-count-display">자동 6등(N): 0개</div>
+                <div class="kkwang-info" id="kkwang-count-display">자동 꽝: 0개</div>
             </div>
             <div class="reset-btn-wrap">
                 <button class="btn btn-obs" id="obs-toggle-btn">📺 OBS 모드</button>
@@ -397,6 +557,52 @@
         }
 
         const sizeSelect = document.getElementById('board-size-select'), prizeListBody = document.getElementById('prize-list-body');
+        const drawCost1Input = document.getElementById('draw-cost-1-input');
+        const drawCost11Input = document.getElementById('draw-cost-11-input');
+        const drawCost1Label = document.getElementById('draw-cost-1-label');
+        const drawCost11Label = document.getElementById('draw-cost-11-label');
+        const drawX1Input = document.getElementById('draw-x-1-input');
+        const drawX1Label = document.getElementById('draw-x-1-label');
+        const quickXInput = document.getElementById('quick-x-input');
+
+        /* 📍 실시간 수량 동기화 함수 */
+        function syncXValue(val) {
+            const num = Math.max(1, parseInt(val) || 1);
+            drawX1Input.value = num;
+            quickXInput.value = num;
+            updateDrawCostLabels();
+            saveSettings();
+        }
+
+        function updateDrawCostLabels() {
+            const cost1 = Math.max(0, parseInt(drawCost1Input.value) || 0);
+            const cost11 = Math.max(0, parseInt(drawCost11Input.value) || 0);
+            drawCost1Label.innerText = `${cost1.toLocaleString('ko-KR')}개`;
+            drawCost11Label.innerText = `${cost11.toLocaleString('ko-KR')}개`;
+            
+            const x1 = Math.max(1, parseInt(drawX1Input.value) || 1);
+            drawX1Label.innerText = `X ${x1.toLocaleString('ko-KR')}개`;
+            
+            document.getElementById('btn-draw-1').title = `${x1}회 뽑기 (${cost1.toLocaleString('ko-KR')}개)`;
+            document.getElementById('btn-draw-11').title = `11연차 뽑기 (${cost11.toLocaleString('ko-KR')}개)`;
+        }
+
+        ['input', 'keyup', 'change'].forEach(evtType => {
+            drawCost1Input.addEventListener(evtType, () => { updateDrawCostLabels(); saveSettings(); });
+            drawCost11Input.addEventListener(evtType, () => { updateDrawCostLabels(); saveSettings(); });
+            drawX1Input.addEventListener(evtType, () => syncXValue(drawX1Input.value));
+            quickXInput.addEventListener(evtType, () => syncXValue(quickXInput.value));
+        });
+
+        document.getElementById('btn-x-minus').addEventListener('click', () => {
+            playSnd('click');
+            syncXValue(parseInt(quickXInput.value || 1) - 1);
+        });
+        document.getElementById('btn-x-plus').addEventListener('click', () => {
+            playSnd('click');
+            syncXValue(parseInt(quickXInput.value || 1) + 1);
+        });
+
         const kkwangDisplay = document.getElementById('kkwang-count-display'), statusBoard = document.getElementById('prize-status-board');
         const mainCard = document.getElementById('main-card'), cardFront = document.getElementById('card-front');
         const cardImg = document.getElementById('card-img'), cStars = document.getElementById('c-stars'), cTitle = document.getElementById('c-title');
@@ -407,10 +613,8 @@
             document.querySelectorAll('.p-count').forEach(i => sum += parseInt(i.value)||0);
             const kkw = Math.max(0, totalCount - sum);
             
-            const rows = document.querySelectorAll('#prize-list-body tr');
-            const lastPrizeName = rows.length > 0 ? rows[rows.length - 1].querySelector('.p-name').value : '쌍욕';
-            kkwangDisplay.innerText = `자동 최하위(${lastPrizeName}): ${kkw}개 (총 미션: ${sum}/${totalCount}개)`;
-            return { totalCount, kkw, lastPrizeName };
+            kkwangDisplay.innerText = `자동 꽝: ${kkw}개 (총 미션: ${sum}/${totalCount}개)`;
+            return { totalCount, kkw };
         }
 
         function addPrizeRow(n, c) {
@@ -423,7 +627,7 @@
         document.getElementById('add-prize-btn').addEventListener('click', ()=>{ addPrizeRow('새 항목', 1); updateKkwangCount(); saveSettings(); });
 
         function initPool() {
-            const { totalCount, kkw, lastPrizeName } = updateKkwangCount();
+            const { totalCount, kkw } = updateKkwangCount();
             prizePool = []; remainingPrizes = {}; initialPrizes = {};
             
             document.querySelectorAll('#prize-list-body tr').forEach(row => {
@@ -436,7 +640,7 @@
             });
             
             if (kkw > 0) { 
-                const defaultLastName = lastPrizeName || '쌍욕';
+                const defaultLastName = '꽝';
                 remainingPrizes[defaultLastName] = (remainingPrizes[defaultLastName] || 0) + kkw; 
                 initialPrizes[defaultLastName] = (initialPrizes[defaultLastName] || 0) + kkw; 
                 for(let i=0; i<kkw; i++) prizePool.push(defaultLastName); 
@@ -501,47 +705,17 @@
             setTimeout(nextGlow, 500);
         }
 
-        document.getElementById('btn-draw-1').addEventListener('click', () => {
-            playSnd('click');
-            if(isDrawing || prizePool.length < 1) return;
-            isDrawing = true; document.getElementById('card-stage').classList.remove('show-backlight');
-            
-            const result = prizePool.pop(); 
-            const d = getCardDataByName(result);
-
-            runColorBuildup(d.t, () => {
-                stopLoopSnd();
-                
-                if(remainingPrizes[result]>0) remainingPrizes[result]--; 
-                currentAmmo--;
-                renderStatusBoard();
-
-                mainCard.className = 'card';
-                if(d.t >= 5) {
-                    const impactCls = `impact-${d.t}`;
-                    document.body.classList.add(impactCls); setTimeout(()=>document.body.classList.remove(impactCls), 800);
-                    document.getElementById('card-stage').classList.add('show-backlight');
-                    stageBl.style.background = `radial-gradient(circle, var(--t-${d.code.toLowerCase()}) 0%, transparent 70%)`;
-                    playSnd('draw_legend');
-                } else playSnd('draw_normal');
-
-                cardFront.className = `card-face card-front ${d.cls}`;
-                cardImg.style.backgroundImage = `url('${d.img}')`;
-                cStars.innerText = d.code; 
-                cTitle.innerText = result;
-                
-                mainCard.classList.add('flipped');
-                setTimeout(()=>{ fireConfetti(d.t); isDrawing=false; }, 300);
-            });
-        });
-
-        document.getElementById('btn-draw-11').addEventListener('click', () => {
-            playSnd('click'); 
-            if(isDrawing || prizePool.length < 11) { if(prizePool.length<11) alert("카드가 부족합니다!"); return; }
-            isDrawing = true; gachaGrid.innerHTML = '';
+        function executeMultiDraw(count, titleText) {
+            if (isDrawing || prizePool.length < count) {
+                if (prizePool.length < count) alert(`카드가 부족합니다! (남은 카드: ${prizePool.length}개)`);
+                return;
+            }
+            isDrawing = true; 
+            gachaGrid.innerHTML = '';
+            document.getElementById('popup-results-title').innerText = titleText;
 
             const results = []; let maxT = 1;
-            for(let i=0; i<11; i++) {
+            for(let i=0; i<count; i++) {
                 const res = prizePool.pop(); 
                 const d = getCardDataByName(res);
                 results.push({ res: res, d: d });
@@ -555,7 +729,15 @@
                 
                 let current = 0;
                 function popNext() {
-                    if (current >= 11) { setTimeout(() => { stopLoopSnd(); fireConfetti(maxT); document.getElementById('btn-popup-close').style.opacity = 1; isDrawing = false; }, 400); return; }
+                    if (current >= count) { 
+                        setTimeout(() => { 
+                            stopLoopSnd(); 
+                            fireConfetti(maxT); 
+                            document.getElementById('btn-popup-close').style.opacity = 1; 
+                            isDrawing = false; 
+                        }, 400); 
+                        return; 
+                    }
 
                     const itemData = results[current]; const d = itemData.d;
                     
@@ -571,7 +753,7 @@
 
                     let ms = 200; 
                     if (d.t >= 5) {
-                        ms = 1500; 
+                        ms = 1200; 
                         document.body.classList.add(`impact-${d.t}`); 
                         setTimeout(()=>document.body.classList.remove(`impact-${d.t}`), 800);
                         playSnd('draw_legend');
@@ -579,14 +761,61 @@
                         item.classList.add('show'); 
                         setTimeout(() => fireConfetti(d.t), 200);
                     } else {
-                        playSnd('gacha_pop'); setTimeout(()=>item.classList.add('show'), 10);
-                        if(d.t >= 3) ms = 350; 
+                        playSnd('gacha_pop'); 
+                        setTimeout(()=>item.classList.add('show'), 10);
+                        if(d.t >= 3) ms = 300; 
                     }
-                    current++; setTimeout(popNext, ms);
+                    current++; 
+                    setTimeout(popNext, ms);
                 }
                 document.getElementById('btn-popup-close').style.opacity = 0;
                 setTimeout(popNext, 500); 
             });
+        }
+
+        document.getElementById('btn-draw-1').addEventListener('click', () => {
+            playSnd('click');
+            const xCount = Math.max(1, parseInt(drawX1Input.value) || 1);
+            
+            if (xCount === 1) {
+                if(isDrawing || prizePool.length < 1) return;
+                isDrawing = true; 
+                document.getElementById('card-stage').classList.remove('show-backlight');
+                
+                const result = prizePool.pop(); 
+                const d = getCardDataByName(result);
+
+                runColorBuildup(d.t, () => {
+                    stopLoopSnd();
+                    if(remainingPrizes[result]>0) remainingPrizes[result]--; 
+                    currentAmmo--;
+                    renderStatusBoard();
+
+                    mainCard.className = 'card';
+                    if(d.t >= 5) {
+                        const impactCls = `impact-${d.t}`;
+                        document.body.classList.add(impactCls); setTimeout(()=>document.body.classList.remove(impactCls), 800);
+                        document.getElementById('card-stage').classList.add('show-backlight');
+                        stageBl.style.background = `radial-gradient(circle, var(--t-${d.code.toLowerCase()}) 0%, transparent 70%)`;
+                        playSnd('draw_legend');
+                    } else playSnd('draw_normal');
+
+                    cardFront.className = `card-face card-front ${d.cls}`;
+                    cardImg.style.backgroundImage = `url('${d.img}')`;
+                    cStars.innerText = d.code; 
+                    cTitle.innerText = result;
+                    
+                    mainCard.classList.add('flipped');
+                    setTimeout(()=>{ fireConfetti(d.t); isDrawing=false; }, 300);
+                });
+            } else {
+                executeMultiDraw(xCount, `📜 ${xCount}회 연속 개봉 결과`);
+            }
+        });
+
+        document.getElementById('btn-draw-11').addEventListener('click', () => {
+            playSnd('click'); 
+            executeMultiDraw(11, `📜 11연차 개봉 결과`);
         });
 
         document.getElementById('btn-popup-close').addEventListener('click', () => { popup11.classList.remove('active'); stopLoopSnd(); isDrawing = false; mainCard.className='card'; });
@@ -594,7 +823,13 @@
         function saveSettings() {
             try {
                 const missions = []; document.querySelectorAll('#prize-list-body tr').forEach(row => { missions.push({ name: row.querySelector('.p-name').value, count: parseInt(row.querySelector('.p-count').value)||0 }); });
-                localStorage.setItem('gamstCardsSettingsV3', JSON.stringify({ s: sizeSelect.value, m: missions }));
+                localStorage.setItem('gamstCardsSettingsV3', JSON.stringify({
+                    s: sizeSelect.value,
+                    m: missions,
+                    c1: Math.max(0, parseInt(drawCost1Input.value) || 0),
+                    c11: Math.max(0, parseInt(drawCost11Input.value) || 0),
+                    x1: Math.max(1, parseInt(drawX1Input.value) || 1)
+                }));
             } catch(e) {}
         }
 
@@ -603,7 +838,10 @@
                 const saved = localStorage.getItem('gamstCardsSettingsV3'); prizeListBody.innerHTML = '';
                 if (saved) {
                     const s = JSON.parse(saved);
-                    sizeSelect.value = s.s; 
+                    sizeSelect.value = s.s;
+                    drawCost1Input.value = s.c1 ?? 100;
+                    drawCost11Input.value = s.c11 ?? 1000;
+                    syncXValue(s.x1 ?? 1);
                     s.m.forEach(m => addPrizeRow(m.name, m.count));
                 } else { 
                     addPrizeRow('움짤방셀', 1);   
@@ -611,7 +849,6 @@
                     addPrizeRow('프사', 1);       
                     addPrizeRow('거북알', 30);    
                     addPrizeRow('데스윙크', 10);  
-                    addPrizeRow('쌍욕', 54);      
                 }
             } catch(e) { 
                 prizeListBody.innerHTML = ''; 
@@ -620,9 +857,9 @@
                 addPrizeRow('프사', 1);
                 addPrizeRow('거북알', 30);
                 addPrizeRow('데스윙크', 10);
-                addPrizeRow('쌍욕', 54);
             }
             updateKkwangCount();
+            updateDrawCostLabels();
         }
 
         document.getElementById('reset-btn').addEventListener('click', () => { if(confirm("진행 중인 카드를 모두 버리고 새 팩을 가져오시겠습니까?")) initPool(); });
