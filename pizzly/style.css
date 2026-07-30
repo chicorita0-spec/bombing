@@ -232,10 +232,12 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
 }
 
 .damage.miss{
-  color:#111;
-  font-size:clamp(25px,2.8vw,54px);
-  -webkit-text-stroke:2px #949494;
-  text-shadow:0 2px #000,0 0 7px #fff,0 7px 14px #000;
+  color:#f0f0f0;
+  font-size:clamp(42px,5.4vw,106px);
+  letter-spacing:.08em;
+  -webkit-text-stroke:2px #111;
+  text-shadow:0 4px #050505,0 0 10px #fff8,0 8px 18px #000;
+  animation:missFloat 1.05s ease-out forwards;
 }
 
 .damage.jackpot{
@@ -388,4 +390,31 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
 }
 .game.final-phase-active .hp-shell{
   box-shadow:0 0 24px #ff4a2b88;
+}
+
+
+/* ===== 3% MISS / 5% 약한 데미지 ===== */
+.damage.weak{
+  color:#111;
+  font-size:clamp(25px,2.8vw,54px);
+  -webkit-text-stroke:2px #9d9d9d;
+  text-shadow:0 2px #000,0 0 7px #fff,0 7px 14px #000;
+}
+.weak-impact{
+  border-color:#777;
+  box-shadow:0 0 16px #aaa;
+  opacity:.58;
+}
+@keyframes missFloat{
+  0%{transform:translate(-50%,4px) scale(.35) rotate(-5deg);opacity:0}
+  18%{transform:translate(-50%,-8px) scale(1.18) rotate(3deg);opacity:1}
+  38%{transform:translate(-50%,-26px) scale(1) rotate(-1deg);opacity:1}
+  100%{transform:translate(-50%,-115px) scale(.9);opacity:0}
+}
+.bullet.miss-bullet{
+  animation:missBulletFly .18s linear forwards;
+}
+@keyframes missBulletFly{
+  from{transform:translate(0,0) scaleX(.2);opacity:.2}
+  to{transform:translate(var(--travel),var(--rise)) scaleX(1);opacity:1}
 }

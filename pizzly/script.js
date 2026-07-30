@@ -134,37 +134,43 @@ function randomInt(min,max){
 }
 
 // 데미지 등급:
-// 5% 꽝      : 최소 데미지 ~ 최대 데미지의 10% (검은색)
-// 5% 초대박  : 최대 데미지 초과 ~ 최대 데미지의 4배 (빨간색)
-// 90% 일반   : 최대 데미지의 10% 초과 ~ 최대 데미지
-// 일반 중 최대 데미지의 85% 이상은 기존 주황색 크리티컬
+// 3% MISS    : 0 데미지, 보스를 스쳐 지나감
+// 5% 약함    : 최소 데미지 ~ 최대 데미지의 10% (검은색)
+// 89% 일반   : 최대 데미지의 10% 초과 ~ 최대 데미지
+// 3% 초대박  : 최대 데미지 초과 ~ 최대 데미지의 4배 (빨간색)
+// 일반 중 최대 데미지의 85% 이상은 주황색 크리티컬
 function randomDamage(){
   const min=config.minDamage;
   const max=config.maxDamage;
   const roll=Math.random();
-
   const lowUpper=Math.max(min,Math.floor(max*0.10));
 
-  if(roll<0.05){
+  if(roll<0.03){
     return {
-      damage:randomInt(min,lowUpper),
+      damage:0,
       type:'miss'
     };
   }
 
-  if(roll<0.10){
+  if(roll<0.08){
     return {
-      damage:randomInt(max+1,max*4),
-      type:'jackpot'
+      damage:randomInt(min,lowUpper),
+      type:'weak'
     };
   }
 
-  const normalMin=Math.min(max,lowUpper+1);
-  const damage=randomInt(normalMin,max);
+  if(roll<0.97){
+    const normalMin=Math.min(max,lowUpper+1);
+    const damage=randomInt(normalMin,max);
+    return {
+      damage,
+      type:damage>=max*0.85?'critical':'normal'
+    };
+  }
 
   return {
-    damage,
-    type:damage>=max*0.85?'critical':'normal'
+    damage:randomInt(max+1,max*4),
+    type:'jackpot'
   };
 }
 function nickname(){ return $('#nicknameInput').value.trim() || '익명의 시청자'; }
@@ -173,6 +179,7 @@ let audioCtx=null;
 function audio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
 function gunSound(){ try{const c=audio(),t=c.currentTime,o=c.createOscillator(),g=c.createGain(),n=c.createBufferSource(),b=c.createBuffer(1,c.sampleRate*.08,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);n.buffer=b;o.type='square';o.frequency.setValueAtTime(120,t);o.frequency.exponentialRampToValueAtTime(55,t+.08);g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.1);o.connect(g);n.connect(g);g.connect(c.destination);o.start(t);n.start(t);o.stop(t+.1)}catch{}}
 function hitSound(big=false){try{const c=audio(),t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sawtooth';o.frequency.setValueAtTime(big?90:160,t);o.frequency.exponentialRampToValueAtTime(38,t+.15);g.gain.setValueAtTime(big?.18:.08,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.connect(g).connect(c.destination);o.start();o.stop(t+.2)}catch{}}
+function missSound(){try{const c=audio(),t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(900,t);o.frequency.exponentialRampToValueAtTime(260,t+.22);g.gain.setValueAtTime(.055,t);g.gain.exponentialRampToValueAtTime(.001,t+.24);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.25)}catch{}}
 
 function restartAnimation(el,cls){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls)}
 function screenShake(heavy=false){restartAnimation(game,heavy?'heavy-shake':'shake')}
@@ -219,27 +226,69 @@ function wait(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
 async function animateShot(result, attacker){
   const {damage,type}=result;
   if(dead)return;
+
+  const isMiss=type==='miss';
   const gw=game.clientWidth,gh=game.clientHeight;
-  const startX=gw*.275,startY=gh*(.515+Math.random()*.035),hitX=gw*(.74+Math.random()*.09),hitY=gh*(.43+Math.random()*.22);
+  const startX=gw*.275,startY=gh*(.515+Math.random()*.035);
+
+  // MISS는 보스 위나 옆을 스쳐 지나가게 조정
+  const hitX=isMiss
+    ? gw*(.91+Math.random()*.07)
+    : gw*(.74+Math.random()*.09);
+  const hitY=isMiss
+    ? gh*(Math.random()<.5 ? .28+Math.random()*.10 : .70+Math.random()*.09)
+    : gh*(.43+Math.random()*.22);
+
   setSprite(bombing,SPRITES.bombingAttack);
   await wait(160);
   if(dead)return;
+
   setSprite(bombing,SPRITES.bombingShoot);
-  restartAnimation(bombing,'fire');restartAnimation(muzzle,'on');gunSound();muzzleBurst(startX,startY);screenShake(false);
-  const bullet=document.createElement('div');bullet.className='bullet';bullet.style.left=`${startX}px`;bullet.style.top=`${startY}px`;bullet.style.width=`${Math.max(90,(hitX-startX)*.2)}px`;bullet.style.setProperty('--travel',`${hitX-startX}px`);fxLayer.appendChild(bullet);
+  restartAnimation(bombing,'fire');
+  restartAnimation(muzzle,'on');
+  gunSound();
+  muzzleBurst(startX,startY);
+  screenShake(false);
+
+  const bullet=document.createElement('div');
+  bullet.className=`bullet${isMiss?' miss-bullet':''}`;
+  bullet.style.left=`${startX}px`;
+  bullet.style.top=`${startY}px`;
+  bullet.style.width=`${Math.max(90,(hitX-startX)*.2)}px`;
+  bullet.style.setProperty('--travel',`${hitX-startX}px`);
+  bullet.style.setProperty('--rise',`${hitY-startY}px`);
+  fxLayer.appendChild(bullet);
+
   await wait(110);
   if(!dead)setSprite(bombing,SPRITES.bombingIdle);
-  bullet.remove(); if(dead)return;
+  bullet.remove();
+  if(dead)return;
+
+  if(isMiss){
+    const miss=document.createElement('div');
+    miss.className='damage miss';
+    miss.textContent='MISS';
+    miss.style.left=`${gw*(.77+Math.random()*.08)}px`;
+    miss.style.top=`${gh*(.36+Math.random()*.18)}px`;
+    fxLayer.appendChild(miss);
+
+    missSound();
+    lastAttack.textContent=`${attacker} · MISS`;
+    setTimeout(()=>miss.remove(),1150);
+    await wait(Math.max(80,config.shotInterval-150));
+    return;
+  }
+
   const defendedDamage=applyBossDefense(damage);
   const actual=Math.min(defendedDamage,currentHp);
   const isCritical=type==='critical';
   const isJackpot=type==='jackpot';
-  const isMiss=type==='miss';
+  const isWeak=type==='weak';
   const isBig=isCritical||isJackpot;
   const isKill=defendedDamage>=currentHp;
 
   const impact=document.createElement('div');
-  impact.className=`impact${isJackpot?' jackpot-impact':''}${isMiss?' miss-impact':''}`;
+  impact.className=`impact${isJackpot?' jackpot-impact':''}${isWeak?' weak-impact':''}`;
   impact.style.left=`${hitX-18}px`;
   impact.style.top=`${hitY-18}px`;
   fxLayer.appendChild(impact);
@@ -251,16 +300,25 @@ async function animateShot(result, attacker){
   num.style.top=`${hitY}px`;
   fxLayer.appendChild(num);
 
-  sparks(hitX,hitY,isJackpot?24:isCritical?15:isMiss?4:8);
+  sparks(hitX,hitY,isJackpot?24:isCritical?15:isWeak?5:8);
   setSprite(boss,SPRITES.bossHit);
   restartAnimation(boss,'hit');
   setTimeout(()=>{if(!dead)setSprite(boss,SPRITES.bossIdle)},190);
   screenShake(isJackpot||isCritical);
   hitSound(isJackpot||isCritical);
   addCombo();
-  updateHp(currentHp-actual);lastAttack.textContent=`${attacker} · ${actual.toLocaleString()} DAMAGE`;
-  setTimeout(()=>impact.remove(),420);setTimeout(()=>num.remove(),1150);
-  if(currentHp<=0){defeatBoss(attacker,actual);return;}
+
+  updateHp(currentHp-actual);
+  lastAttack.textContent=`${attacker} · ${actual.toLocaleString()} DAMAGE`;
+
+  setTimeout(()=>impact.remove(),420);
+  setTimeout(()=>num.remove(),1150);
+
+  if(currentHp<=0){
+    defeatBoss(attacker,actual);
+    return;
+  }
+
   await wait(Math.max(80,config.shotInterval-150));
 }
 
