@@ -1,0 +1,285 @@
+*{box-sizing:border-box} :root{--purple:#bd4cff;--pink:#ff4fd8;--cyan:#55e8ff;--red:#ff315f;--gold:#ffd85a;--ink:#07040d}
+html,body{margin:0;width:100%;height:100%;background:#030207;color:#fff;font-family:Pretendard,"Noto Sans KR",Arial,sans-serif}body{display:grid;place-items:center;overflow:hidden}
+button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);aspect-ratio:16/9;overflow:hidden;background:#090510;isolation:isolate;box-shadow:0 0 100px #000}
+.background,.frame,.fighter{position:absolute;pointer-events:none;user-select:none}.background{inset:0;width:100%;height:100%;object-fit:cover;z-index:-5;filter:saturate(.85) contrast(1.08)}.frame{inset:0;width:100%;height:100%;z-index:50;opacity:.7}
+.bg-energy{position:absolute;inset:-30%;z-index:-4;background:conic-gradient(from 0deg at 70% 45%,transparent,#7f18d322,transparent,#e733ab22,transparent);animation:spin 18s linear infinite}.scanlines{position:absolute;inset:0;z-index:45;pointer-events:none;opacity:.08;background:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 4px)}.vignette{position:absolute;inset:0;z-index:44;pointer-events:none;background:radial-gradient(circle at 50% 48%,transparent 10%,rgba(0,0,0,.12) 52%,rgba(0,0,0,.78) 100%)}@keyframes spin{to{transform:rotate(360deg)}}
+.topbar{position:absolute;z-index:60;left:2.3%;right:2.3%;top:2.4%;height:18%;display:flex;gap:2.2%}.player-card{width:18%;display:flex;align-items:center;gap:5%;padding:1%;background:linear-gradient(135deg,#0d0912ee,#381347d9);border:1px solid #d36cff;clip-path:polygon(0 0,91% 0,100% 22%,100% 100%,8% 100%,0 78%);box-shadow:0 0 25px #a72fff44 inset,0 0 25px #000}.player-card img{height:100%;width:38%;object-fit:contain}.player-card div{display:flex;flex-direction:column}.player-card strong{font-size:clamp(16px,2vw,34px)}.player-card span{font-size:clamp(8px,.8vw,15px);letter-spacing:.15em;color:#d69aff;font-weight:900}
+.boss-ui{flex:1;text-align:center}.boss-title-row{height:38%;display:flex;justify-content:center;align-items:center;gap:1.2%}.boss-title-row h1{margin:0;font-size:clamp(26px,3vw,56px);letter-spacing:.06em;text-shadow:0 0 18px #ad3cff,0 4px #2a0b3a}.boss-tag,#phaseText{font-size:clamp(9px,.85vw,15px);font-weight:1000;letter-spacing:.1em;padding:.35em .75em;border:1px solid #b849ff;background:#160b20cc}.boss-tag{color:#ff78d8}#phaseText{color:#8befff}
+.hp-shell{position:relative;width:100%;height:34%;padding:.35%;background:#050408;border:3px solid #26132f;outline:2px solid #b948ff;clip-path:polygon(1.4% 0,98.6% 0,100% 50%,98.6% 100%,1.4% 100%,0 50%);overflow:hidden}.hp-lag,.hp-fill{position:absolute;left:.35%;top:10%;height:80%;width:99.3%;transform-origin:left;transition:width .5s cubic-bezier(.2,.8,.2,1)}.hp-lag{background:#fff176;transition-duration:1.05s;transition-delay:.18s}.hp-fill{background:linear-gradient(90deg,#6d16b8,#bf2eff 58%,#ff54cb);box-shadow:0 0 25px #d145ff inset,0 0 22px #ab2cff}.hp-fill.low{background:linear-gradient(90deg,#b90035,#ff234f,#ff784f);animation:lowHp .5s ease-in-out infinite alternate}.hp-shine{position:absolute;left:2%;right:2%;top:15%;height:18%;background:#ffffff38;filter:blur(2px)}@keyframes lowHp{to{filter:brightness(1.45)}}
+.hp-meta{display:flex;justify-content:center;align-items:center;gap:.45em;font-size:clamp(13px,1.25vw,24px);font-weight:1000;text-shadow:0 2px 5px #000}.slash{opacity:.5}#hpPercent{margin-left:1em;color:#d995ff;font-size:.82em}
+.fighter{z-index:8;filter:drop-shadow(0 18px 20px #000)}.bombing{left:1%;bottom:-5%;height:72%;width:34%;object-fit:contain;object-position:left bottom;transform:scaleX(-1);transform-origin:45% 80%}.boss{right:-1%;bottom:-3%;height:76%;width:48%;object-fit:contain;object-position:right bottom;transform-origin:65% 85%}.boss-shadow{position:absolute;z-index:4;right:8%;bottom:4%;width:33%;height:8%;background:#000a;filter:blur(18px);border-radius:50%}
+.bombing.fire{animation:recoil .16s ease}.boss.hit{animation:bossHit .22s ease}.boss.dying{animation:bossDeath 1.5s cubic-bezier(.2,.7,.2,1) forwards}.game.shake{animation:screenShake .23s linear}.game.heavy-shake{animation:heavyShake .7s linear}@keyframes recoil{50%{transform:scaleX(-1) translateX(2.5%) rotate(-1deg)}}@keyframes bossHit{45%{transform:translateX(1.2%) rotate(1deg);filter:brightness(2.3) drop-shadow(0 0 28px #ff54da)}}@keyframes bossDeath{0%{transform:translate(0) rotate(0);filter:brightness(2)}20%{transform:translateX(2%) rotate(3deg)}100%{transform:translate(8%,18%) rotate(18deg);filter:brightness(.25) grayscale(.7);opacity:.25}}@keyframes screenShake{0%,100%{transform:none}25%{transform:translate(-4px,2px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,-1px)}}@keyframes heavyShake{0%,100%{transform:none}10%{transform:translate(-12px,7px) rotate(-.25deg)}25%{transform:translate(10px,-5px)}40%{transform:translate(-8px,-2px)}60%{transform:translate(6px,4px)}80%{transform:translate(-3px,1px)}}
+.muzzle{position:absolute;z-index:20;left:27%;top:50%;width:5%;aspect-ratio:1;opacity:0;background:radial-gradient(circle,#fff 0 8%,#ffe85c 10% 25%,#ff6a00 30%,transparent 67%);clip-path:polygon(0 35%,42% 40%,60% 0,67% 40%,100% 50%,67% 60%,60% 100%,42% 60%);filter:drop-shadow(0 0 14px #ffb000)}.muzzle.on{animation:muzzle .13s ease-out}@keyframes muzzle{0%{opacity:1;transform:scale(.35) rotate(0)}100%{opacity:0;transform:scale(1.7) rotate(30deg)}}
+.fx-layer{position:absolute;inset:0;z-index:25;pointer-events:none;overflow:hidden}.bullet{position:absolute;height:5px;border-radius:999px;background:linear-gradient(90deg,transparent,#fff 25%,#65ecff 48%,#ff5dde 80%,transparent);box-shadow:0 0 8px #fff,0 0 18px #8b55ff;transform-origin:left center;animation:bulletFly .16s linear forwards}.bullet:after{content:"";position:absolute;right:-9px;top:-4px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 0 16px #fff,0 0 26px #ec54ff}@keyframes bulletFly{from{transform:translateX(0) scaleX(.2);opacity:.2}to{transform:translateX(var(--travel)) scaleX(1);opacity:1}}
+.impact{position:absolute;width:36px;height:36px;border:4px solid #fff;border-radius:50%;box-shadow:0 0 24px #ef5dff;animation:impact .38s ease-out forwards}.impact:before,.impact:after{content:"";position:absolute;left:50%;top:50%;width:90px;height:3px;background:linear-gradient(90deg,transparent,#fff,transparent);transform:translate(-50%,-50%) rotate(45deg)}.impact:after{transform:translate(-50%,-50%) rotate(-45deg)}@keyframes impact{from{transform:scale(.2);opacity:1}to{transform:scale(2.8);opacity:0}}
+.spark{position:absolute;width:5px;height:20px;background:linear-gradient(#fff,#ff59df,transparent);box-shadow:0 0 8px #ff55de;transform-origin:50% 0;animation:spark .5s ease-out forwards}@keyframes spark{to{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0}}
+.damage{position:absolute;z-index:40;font-weight:1000;font-style:italic;font-size:clamp(27px,3.2vw,62px);color:#fff;text-shadow:0 4px #47105d,0 0 12px #b941ff,0 7px 15px #000;animation:damageFloat 1.05s ease-out forwards}.damage.big{color:#ffe763;font-size:clamp(38px,4.7vw,90px);text-shadow:0 4px #7d2700,0 0 20px #ff8a00,0 8px 16px #000}.damage.kill{color:#fff2a1;font-size:clamp(50px,6vw,116px)}@keyframes damageFloat{0%{transform:translate(-50%,10px) scale(.25);opacity:0}16%{transform:translate(-50%,-12px) scale(1.2);opacity:1}100%{transform:translate(-50%,-125px) scale(.9);opacity:0}}
+.combo{position:absolute;z-index:35;right:2.8%;top:25%;display:flex;flex-direction:column;align-items:flex-end;opacity:0;transform:translateX(20px);transition:.18s}.combo.show{opacity:1;transform:none}.combo b{font-size:clamp(38px,5vw,94px);font-style:italic;color:#fff;text-shadow:0 0 18px #e145ff,0 6px #4a0b69}.combo span{font-weight:1000;letter-spacing:.22em;color:#ff8fe7}
+.danger-banner{position:absolute;z-index:38;left:50%;top:22%;transform:translate(-50%,-30px);opacity:0;padding:.45em 2.2em;border-top:2px solid #ff315f;border-bottom:2px solid #ff315f;background:#24000bcc;color:#ff94aa;font-weight:1000;letter-spacing:.22em;font-size:clamp(10px,1vw,18px);transition:.35s}.danger-banner.show{opacity:1;transform:translate(-50%,0);animation:dangerPulse .7s infinite alternate}@keyframes dangerPulse{to{box-shadow:0 0 25px #ff315f88;color:#fff}}
+.phase-flash{position:absolute;z-index:41;inset:0;pointer-events:none;opacity:0;background:#fff}.phase-flash.on{animation:flash .35s ease-out}@keyframes flash{0%{opacity:.75}100%{opacity:0}}
+.lower-ui{position:absolute;z-index:60;left:2.5%;bottom:2.8%;width:95%;display:flex;align-items:flex-end;gap:1.2vw}.attacker-panel{width:clamp(170px,16vw,310px);padding:.7em;background:#090611dd;border-left:4px solid #b846ff;box-shadow:0 0 20px #000}.attacker-panel label{display:block;font-size:clamp(9px,.75vw,13px);color:#c996e8;font-weight:900}.attacker-panel input{width:100%;margin:.25em 0;background:#160b20;border:1px solid #71348e;color:#fff;padding:.45em .55em;font-weight:900}.last-attack{font-size:clamp(9px,.72vw,13px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9beaff}.controls{display:flex;gap:1vw}.attack-button{min-width:clamp(170px,18vw,345px);min-height:clamp(65px,8vw,120px);display:flex;align-items:center;justify-content:center;gap:1em;color:#fff;background:linear-gradient(180deg,#3d185bdd,#0b0711ee);border:2px solid #c950ff;outline:3px solid #130b1c;clip-path:polygon(7% 0,93% 0,100% 18%,100% 82%,93% 100%,7% 100%,0 82%,0 18%);cursor:pointer;box-shadow:0 0 20px #9b31ff33;transition:.14s}.attack-button:hover{transform:translateY(-4px);filter:brightness(1.2)}.attack-button:active{transform:scale(.97)}.attack-button:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(1)}.attack-button .cost{font-size:clamp(22px,2.5vw,48px);font-weight:1000;color:#ffd75c;text-shadow:0 3px #6b3800}.attack-button span:last-child{display:flex;flex-direction:column;align-items:flex-start}.attack-button b{font-size:clamp(16px,1.7vw,31px)}.attack-button small{color:#d69cff;font-weight:900;letter-spacing:.16em}.attack-button.multi{background:linear-gradient(180deg,#531b5ddd,#0b0711ee);border-color:#ff58dc}
+.settings-panel{position:absolute;z-index:80;right:1.5%;bottom:1.8%}.settings-toggle{float:right;width:38px;height:38px;border-radius:50%;background:#160b20dd;color:#fff;border:1px solid #a84bd3;cursor:pointer}.settings-body{clear:both;width:min(330px,28vw);padding:1em;display:none;gap:.6em;background:#06040aec;border:1px solid #b450e8;box-shadow:0 0 35px #000}.settings-body.open{display:grid}.settings-body h2{margin:0 0 .35em;font-size:1.1em}.settings-body label{display:grid;grid-template-columns:1fr 44%;gap:.6em;align-items:center;font-size:.83em}.settings-body input{width:100%;background:#140a1d;color:#fff;border:1px solid #6d328a;padding:.4em}.settings-actions{display:flex;gap:.5em}.settings-actions button{flex:1;background:#39144e;color:#fff;border:1px solid #b851eb;padding:.6em;cursor:pointer}.settings-body small{color:#bf9bca}
+.winner-screen{position:absolute;z-index:100;inset:0;display:grid;place-items:center;visibility:hidden;opacity:0;background:radial-gradient(circle,#5a1349aa,#05030adf 65%);transition:.5s}.winner-screen.show{visibility:visible;opacity:1}.winner-rays{position:absolute;width:120%;aspect-ratio:1;background:repeating-conic-gradient(from 0deg,#ffef8b22 0 8deg,transparent 8deg 18deg);animation:spin 12s linear infinite}.winner-card{position:relative;text-align:center;padding:clamp(25px,4vw,70px) clamp(45px,7vw,125px);background:linear-gradient(145deg,#160b20f2,#07040bf4);border:2px solid #ffd65c;clip-path:polygon(7% 0,93% 0,100% 12%,100% 88%,93% 100%,7% 100%,0 88%,0 12%);box-shadow:0 0 55px #ffb52c77,0 0 120px #a33eff55}.final-label{font-weight:1000;letter-spacing:.35em;color:#ffd75c;font-size:clamp(16px,1.5vw,28px)}.winner-card h2{margin:.2em 0;font-size:clamp(48px,7vw,130px);text-shadow:0 0 25px #ff6fe7,0 7px #571367}.winner-card p{font-size:clamp(15px,1.5vw,28px);color:#e7cceb}.winner-damage{color:#ffd75c;font-size:clamp(18px,2vw,36px);font-weight:1000}.winner-card button{margin-top:1.2em;padding:.7em 2em;background:#ffd75c;color:#271100;border:0;font-weight:1000;cursor:pointer}
+@media(max-aspect-ratio:4/3){.player-card{width:23%}.bombing{width:40%}.boss{width:52%}.attacker-panel{display:none}}
+
+/* v5 sprite integration */
+.player-card img{
+  transform:scale(1.28);
+  filter:drop-shadow(0 6px 8px #000);
+}
+.bombing,.boss{object-fit:contain;object-position:center bottom}
+.bombing{left:-1%;bottom:-1%;height:58%;width:31%;transform:none;transition:filter .08s}
+.boss{right:-6%;bottom:2%;height:86%;width:53%}
+.boss-shadow{right:7%;bottom:5%;width:35%}
+.bombing.fire{animation:recoilV5 .20s ease}
+.boss.hit{animation:bossHitV5 .24s ease}
+.boss.dying{animation:bossDeathV5 1.1s cubic-bezier(.2,.7,.2,1) forwards}
+.muzzle{left:29.5%;top:49%}
+@keyframes recoilV5{0%,100%{transform:translateX(0) rotate(0)}45%{transform:translateX(-1.2%) rotate(-1.2deg);filter:brightness(1.25)}}
+@keyframes bossHitV5{45%{transform:translateX(1.2%) rotate(1.2deg);filter:brightness(2.4) drop-shadow(0 0 30px #ff54da)}}
+@keyframes bossDeathV5{0%{transform:none;filter:brightness(2)}25%{transform:translateX(2%) rotate(3deg)}100%{transform:translate(5%,12%) rotate(8deg);filter:brightness(.45);opacity:.15}}
+.winner-card{min-width:min(62vw,980px);overflow:visible}
+.winner-boss,.winner-bombing{position:absolute;pointer-events:none;object-fit:contain;filter:drop-shadow(0 15px 20px #000)}
+.winner-boss{width:35%;height:58%;right:4%;bottom:-2%}.winner-bombing{width:28%;height:65%;left:-2%;bottom:-3%}
+
+/* ===== 최종 하단 UI 배치 ===== */
+
+/* 공격자 패널은 현재처럼 왼쪽 위에 유지 */
+.attacker-panel{
+    position:absolute;
+    left:0;
+    bottom:485%;
+    width:15vw;
+    min-width:190px;
+}
+
+/* 공격 버튼 두 개만 오른쪽으로 이동 */
+.controls{
+    display:flex;
+    gap:1vw;
+    margin-left:390px;
+    transform:none;
+}
+
+/* 버튼 크기는 기존 화면 비율 유지 */
+.attack-button{
+    min-width:17vw;
+    min-height:6.5vw;
+}
+
+/* 좁은 화면에서는 버튼 이동량을 줄임 */
+@media(max-width:1200px){
+    .controls{
+        margin-left:140px;
+    }
+}
+
+.boss.hit{
+    animation: bossHitEffect 0.19s ease-out;
+}
+
+@keyframes bossHitEffect{
+    0%{
+        filter: brightness(1);
+        transform: translateX(0);
+    }
+
+    35%{
+        filter: brightness(2.5);
+        transform: translateX(10px);
+    }
+
+    70%{
+        filter: brightness(1.5);
+        transform: translateX(-4px);
+    }
+
+    100%{
+        filter: brightness(1);
+        transform: translateX(0);
+    }
+}
+
+.bombing.fire{
+    animation: bombingRecoil 0.12s ease-out;
+}
+
+@keyframes bombingRecoil{
+    0%{
+        transform: translateX(0);
+    }
+
+    35%{
+        transform: translateX(-10px);
+    }
+
+    100%{
+        transform: translateX(0);
+    }
+}
+
+/* ===== 강화된 총격 연출 ===== */
+.muzzle{
+  width:7.2%;
+  left:27.7%;
+  top:46.8%;
+  filter:drop-shadow(0 0 20px #fff)
+         drop-shadow(0 0 34px #ffb000)
+         drop-shadow(0 0 48px #ff4f00);
+}
+.muzzle.on{animation:muzzleStrong .18s ease-out}
+@keyframes muzzleStrong{
+  0%{opacity:1;transform:scale(.25) rotate(-8deg);filter:brightness(3)}
+  45%{opacity:1;transform:scale(1.55) rotate(10deg);filter:brightness(2)}
+  100%{opacity:0;transform:scale(2.5) rotate(30deg);filter:brightness(1)}
+}
+
+.bullet{
+  height:9px;
+  background:linear-gradient(90deg,transparent 0%,#fff 16%,#fff9b8 30%,#74f3ff 52%,#ff5dde 78%,transparent 100%);
+  box-shadow:0 0 10px #fff,0 0 24px #62efff,0 0 40px #e448ff;
+}
+.bullet:after{
+  right:-13px;
+  top:-7px;
+  width:20px;
+  height:20px;
+  box-shadow:0 0 20px #fff,0 0 38px #ffef77,0 0 54px #ec54ff;
+}
+
+.muzzle-burst{
+  position:absolute;
+  width:92px;
+  height:92px;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle,#fff 0 8%,#fff6b1 9% 18%,#ff9b16 22% 36%,#ff3d00aa 42%,transparent 70%);
+  clip-path:polygon(0 43%,38% 41%,50% 0,60% 39%,100% 48%,62% 58%,53% 100%,40% 61%);
+  filter:drop-shadow(0 0 13px #fff) drop-shadow(0 0 28px #ff9900);
+  animation:muzzleBurst .24s ease-out forwards;
+}
+@keyframes muzzleBurst{
+  0%{opacity:1;transform:translate(-50%,-50%) scale(.2) rotate(-8deg)}
+  55%{opacity:1;transform:translate(-50%,-50%) scale(1.35) rotate(8deg)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(2.1) rotate(20deg)}
+}
+
+.muzzle-ring{
+  position:absolute;
+  width:36px;
+  height:36px;
+  border:4px solid #fff6b1;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 14px #fff,0 0 30px #ff8a00;
+  animation:muzzleRing .3s ease-out forwards;
+}
+@keyframes muzzleRing{
+  from{opacity:1;transform:translate(-50%,-50%) scale(.25)}
+  to{opacity:0;transform:translate(-50%,-50%) scale(3.2)}
+}
+
+.muzzle-particle{
+  position:absolute;
+  width:13px;
+  height:4px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#fff,#ffd54d,transparent);
+  box-shadow:0 0 8px #fff,0 0 13px #ff9d00;
+  transform-origin:left center;
+  animation:muzzleParticle .28s ease-out forwards;
+}
+@keyframes muzzleParticle{
+  from{opacity:1;transform:translate(0,0) rotate(var(--mr)) scaleX(.5)}
+  to{opacity:0;transform:translate(var(--mx),var(--my)) rotate(var(--mr)) scaleX(1.6)}
+}
+
+.shot-flash{
+  position:absolute;
+  z-index:24;
+  inset:0;
+  pointer-events:none;
+  background:radial-gradient(circle at 29% 50%,rgba(255,245,190,.32),rgba(255,120,30,.10) 18%,transparent 45%);
+  animation:shotFlash .12s ease-out forwards;
+}
+@keyframes shotFlash{from{opacity:1}to{opacity:0}}
+
+.bombing.fire{animation:bombingRecoilStrong .17s cubic-bezier(.2,.8,.2,1)}
+@keyframes bombingRecoilStrong{
+  0%{transform:translateX(0) rotate(0)}
+  28%{transform:translateX(-18px) rotate(-1.8deg);filter:brightness(1.35)}
+  65%{transform:translateX(5px) rotate(.5deg)}
+  100%{transform:translateX(0) rotate(0);filter:brightness(1)}
+}
+
+.impact{
+  width:48px;
+  height:48px;
+  border-width:5px;
+  box-shadow:0 0 30px #fff,0 0 48px #ef5dff;
+}
+
+
+/* ===== 데미지 등급 4종 ===== */
+.damage.normal{
+  color:#fff;
+  text-shadow:0 4px #47105d,0 0 12px #b941ff,0 7px 15px #000;
+}
+
+.damage.critical{
+  color:#ffe763;
+  font-size:clamp(38px,4.7vw,90px);
+  text-shadow:0 4px #7d2700,0 0 20px #ff8a00,0 8px 16px #000;
+}
+
+.damage.miss{
+  color:#111;
+  font-size:clamp(25px,2.8vw,54px);
+  -webkit-text-stroke:2px #949494;
+  text-shadow:0 2px #000,0 0 7px #fff,0 7px 14px #000;
+}
+
+.damage.jackpot{
+  color:#ff2020;
+  font-size:clamp(48px,5.8vw,112px);
+  -webkit-text-stroke:2px #730000;
+  text-shadow:0 5px #5b0000,0 0 18px #ff0000,0 0 42px #ff3b00,0 10px 20px #000;
+  animation:jackpotDamage 1.25s cubic-bezier(.15,.85,.2,1) forwards;
+}
+
+@keyframes jackpotDamage{
+  0%{transform:translate(-50%,18px) scale(.18) rotate(-5deg);opacity:0}
+  13%{transform:translate(-50%,-8px) scale(1.35) rotate(3deg);opacity:1}
+  28%{transform:translate(-50%,-24px) scale(1.05) rotate(-1deg);opacity:1}
+  100%{transform:translate(-50%,-155px) scale(.92);opacity:0}
+}
+
+.jackpot-impact{
+  border-color:#ff2b2b;
+  box-shadow:0 0 34px #fff,0 0 60px #ff0000,0 0 90px #ff3b00;
+  transform:scale(1.25);
+}
+
+.miss-impact{
+  border-color:#777;
+  box-shadow:0 0 16px #aaa;
+  opacity:.55;
+}
+
+.damage-guide{
+  position:absolute;
+  z-index:55;
+  left:34%;
+  top:15.5%;
+  transform:translateX(-50%);
+  width:clamp(260px,23vw,410px);
+  pointer-events:none;
+}
+
+.damage-guide img{
+  display:block;
+  width:100%;
+  height:auto;
+  user-select:none;
+  opacity:.96;
+  filter:drop-shadow(0 8px 16px rgba(0,0,0,.75));
+}

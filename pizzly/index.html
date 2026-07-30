@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>피즐리베어 : FINAL HIT</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="game" class="game" aria-label="피즐리베어 보스 레이드">
+    <img class="background" src="assets/background.webp" alt="" />
+    <div class="bg-energy"></div><div class="scanlines"></div><div class="vignette"></div>
+    <img class="frame" src="assets/ui-frame.png" alt="" />
+
+    <header class="topbar">
+      <section class="player-card">
+        <img src="assets/bombing_idle.png" alt="바밍" />
+        <div><strong>바밍</strong><span>RAID UNIT</span></div>
+      </section>
+
+      <section class="boss-ui">
+        <div class="boss-title-row"><span class="boss-tag">BOSS</span><h1 id="bossName">피즐리베어</h1><span id="phaseText">PHASE 1</span></div>
+        <div class="hp-shell"><div id="hpLag" class="hp-lag"></div><div id="hpFill" class="hp-fill"></div><div class="hp-shine"></div></div>
+        <div class="hp-meta"><span id="currentHp">30,000</span><span class="slash">/</span><span id="maxHp">30,000</span><span id="hpPercent">100%</span></div>
+      </section>
+    </header>
+
+<div class="damage-guide">
+  <img src="assets/damage.png" alt="데미지 확률 안내">
+</div>
+
+<div id="dangerBanner" class="danger-banner">
+  DANGER · EXECUTION RANGE
+</div>
+
+    <div id="dangerBanner" class="danger-banner">DANGER · EXECUTION RANGE</div>
+    <div id="phaseFlash" class="phase-flash"></div>
+
+    <img id="bombing" class="fighter bombing" src="assets/bombing_idle.png" alt="바밍 캐릭터" />
+    <div id="muzzle" class="muzzle"></div>
+    <img id="boss" class="fighter boss" src="assets/pizzlybear_idle.png" alt="피즐리베어" />
+    <div id="bossShadow" class="boss-shadow"></div>
+
+    <div id="fxLayer" class="fx-layer" aria-hidden="true"></div>
+    <div id="combo" class="combo"><b id="comboCount">0</b><span>HIT COMBO</span></div>
+
+    <section class="lower-ui">
+      <div class="attacker-panel">
+        <label for="nicknameInput">공격자</label>
+        <input id="nicknameInput" maxlength="20" value="테스트 시청자" autocomplete="off" />
+        <div id="lastAttack" class="last-attack">대기 중</div>
+      </div>
+      <div class="controls">
+        <button id="attackBtn" class="attack-button single"><span class="cost">100</span><span><b>단발 공격</b><small>1 SHOT</small></span></button>
+        <button id="multiBtn" class="attack-button multi"><span class="cost">1000</span><span><b>11연속 사격</b><small>11 SHOTS</small></span></button>
+      </div>
+    </section>
+
+    <aside class="settings-panel">
+      <button id="settingsToggle" class="settings-toggle">⚙</button>
+      <div id="settingsBody" class="settings-body">
+        <h2>게임 밸런스</h2>
+        <label>보스 이름<input id="bossNameInput" type="text" value="피즐리베어" /></label>
+        <label>보스 최대 체력<input id="maxHpInput" type="number" min="1" value="30000" /></label>
+        <label>최소 데미지<input id="minDamageInput" type="number" min="0" value="1" /></label>
+        <label>최대 데미지<input id="maxDamageInput" type="number" min="1" value="2000" /></label>
+        <label>1000개 공격 횟수<input id="multiCountInput" type="number" min="1" max="100" value="11" /></label>
+        <label>연사 간격(ms)<input id="shotIntervalInput" type="number" min="50" max="2000" value="240" /></label>
+        <div class="settings-actions"><button id="applySettingsBtn">적용·보스 초기화</button><button id="healBtn">체력만 회복</button></div>
+        <small>5% 꽝·5% 초대박(최대 4배)·90% 일반 랜덤</small>
+      </div>
+    </aside>
+
+    <section id="winnerScreen" class="winner-screen" aria-hidden="true">
+      <div class="winner-rays"></div>
+      <div class="winner-card"><img class="winner-boss" src="assets/pizzlybear_die.png" alt="쓰러진 피즐리베어"><img class="winner-bombing" src="assets/bombing_idle.png" alt="승리한 바밍"><span class="final-label">FINAL HIT</span><h2 id="winnerName">테스트 시청자</h2><p>피즐리베어 처치 성공</p><div id="winnerDamage" class="winner-damage"></div><button id="restartBtn">다음 보스 소환</button></div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+
+<div class="boss-panel">
+
+</body>
+</html>
