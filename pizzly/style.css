@@ -418,3 +418,114 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
   from{transform:translate(0,0) scaleX(.2);opacity:.2}
   to{transform:translate(var(--travel),var(--rise)) scaleX(1);opacity:1}
 }
+
+
+/* ===== 실시간 시계 + 최근 데미지 15개 ===== */
+.lower-ui{align-items:stretch}
+.battle-history-panel{
+  width:28%;min-width:300px;padding:.72% .8%;
+  display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:.45em;
+  background:linear-gradient(145deg,rgba(7,4,13,.96),rgba(38,10,54,.93));
+  border:1px solid #c757ff;
+  box-shadow:0 0 25px #9d28ff35,inset 0 0 22px #000a;
+  overflow:hidden;
+}
+.live-clock-wrap{
+  display:grid;grid-template-columns:1fr auto;
+  grid-template-areas:"label time" "date time";align-items:center;
+  padding:.42em .65em;border-left:4px solid #55e8ff;
+  background:linear-gradient(90deg,#071a25db,#17091fbb);
+  box-shadow:inset 0 0 14px #0008;
+}
+.live-clock-label{
+  grid-area:label;color:#64eaff;font-size:clamp(8px,.65vw,12px);
+  font-weight:1000;letter-spacing:.18em;
+}
+#liveClock{
+  grid-area:time;font-variant-numeric:tabular-nums;
+  font-size:clamp(20px,2vw,38px);line-height:1;color:#fff;
+  letter-spacing:.04em;text-shadow:0 0 13px #55e8ff,0 3px #07141b;
+}
+#liveDate{
+  grid-area:date;color:#b9dce4;font-size:clamp(8px,.62vw,12px);font-weight:900;
+}
+.damage-log-head{
+  display:flex;justify-content:space-between;align-items:center;padding:0 .15em;
+  color:#fff;font-size:clamp(9px,.72vw,13px);font-weight:1000;letter-spacing:.08em;
+}
+.damage-log-head b{color:#ce83ff;font-size:.85em}
+.damage-log{
+  min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;
+  gap:3px;padding:.25em;background:#030207aa;border:1px solid #63307b;
+  box-shadow:inset 0 0 16px #000;
+}
+.damage-log-empty{
+  margin:auto;color:#786887;font-size:clamp(10px,.75vw,14px);font-weight:900;
+}
+.damage-log-row{
+  flex:0 0 auto;min-height:22px;
+  display:grid;grid-template-columns:2.1em 1fr auto;align-items:center;gap:.45em;
+  padding:.18em .48em;border-left:3px solid #a84cff;
+  background:linear-gradient(90deg,#2a0b38cc,#0b0610cc);
+  animation:damageLogIn .22s ease-out;font-variant-numeric:tabular-nums;
+}
+.damage-log-index{color:#806c8e;font-size:clamp(8px,.6vw,11px);font-weight:1000}
+.damage-log-value{
+  font-size:clamp(12px,.95vw,18px);line-height:1;color:#f4eaff;
+  text-shadow:0 0 8px currentColor;
+}
+.damage-log-badge{
+  padding:.12em .42em;border:1px solid currentColor;
+  font-size:clamp(7px,.5vw,10px);font-style:normal;font-weight:1000;letter-spacing:.05em;opacity:.9;
+}
+.damage-log-row.weak{border-color:#8e8e8e;background:linear-gradient(90deg,#252525dd,#080808cc)}
+.damage-log-row.weak .damage-log-value,.damage-log-row.weak .damage-log-badge{color:#d2d2d2}
+.damage-log-row.normal .damage-log-value,.damage-log-row.normal .damage-log-badge{color:#d58aff}
+.damage-log-row.critical{border-color:#ff9d22;background:linear-gradient(90deg,#4b2009e8,#130906d0)}
+.damage-log-row.critical .damage-log-value,.damage-log-row.critical .damage-log-badge{color:#ffd45b}
+.damage-log-row.jackpot{
+  border-color:#ff3030;background:linear-gradient(90deg,#650b0be8,#1a0303e0);
+  box-shadow:0 0 10px #ff292966,inset 0 0 10px #ff4b3522;
+}
+.damage-log-row.jackpot .damage-log-value,.damage-log-row.jackpot .damage-log-badge{color:#ff4848;font-weight:1000}
+.damage-log-row.miss{border-color:#8a9298;background:linear-gradient(90deg,#252b2fdb,#080a0bd0)}
+.damage-log-row.miss .damage-log-value,.damage-log-row.miss .damage-log-badge{color:#e9eef2}
+@keyframes damageLogIn{from{opacity:0;transform:translateX(-22px) scale(.96)}to{opacity:1;transform:none}}
+.battle-history-panel .last-attack{
+  min-height:auto;margin:0;padding:.32em .55em;text-align:center;
+  font-size:clamp(10px,.78vw,14px);font-weight:1000;color:#e9ccff;
+  background:#16091fb8;border:1px solid #64327c;
+}
+
+/* ===== JACKPOT 중앙 알림 ===== */
+.jackpot-notice{
+  position:absolute;z-index:102;left:50%;top:42%;width:min(760px,74vw);
+  padding:1em 2em 1.15em;transform:translate(-50%,-50%) scale(.25) rotate(-4deg);
+  opacity:0;pointer-events:none;text-align:center;
+  background:radial-gradient(circle at 50% 50%,#fff2a6 0 3%,#ff8a00 4% 13%,#c91414e8 28%,#3f0303e8 62%,transparent 74%);
+  border-top:4px solid #ffe15c;border-bottom:4px solid #ff3b1f;
+  box-shadow:0 0 28px #fff18a,0 0 70px #ff2a00,0 0 120px #ff000099;
+}
+.jackpot-notice strong{
+  display:block;font-size:clamp(54px,6.8vw,132px);line-height:.88;
+  color:#fff7bb;letter-spacing:.06em;-webkit-text-stroke:3px #8b0800;
+  text-shadow:0 5px #a80b00,0 0 20px #fff,0 0 42px #ffb000,0 10px 22px #000;
+}
+.jackpot-notice em{
+  display:block;margin-top:.5em;color:#fff1bc;font-size:clamp(16px,1.45vw,28px);
+  font-style:normal;font-weight:1000;letter-spacing:.25em;
+  text-shadow:0 0 12px #ff3400,0 3px #650000;
+}
+.jackpot-burst{
+  position:absolute;left:50%;top:50%;font-size:clamp(150px,22vw,420px);
+  line-height:1;color:#ffd75a;opacity:.2;transform:translate(-50%,-50%);
+  filter:drop-shadow(0 0 18px #ff2700);
+}
+.jackpot-notice.show{animation:jackpotNoticeShow 1.45s cubic-bezier(.15,.85,.2,1) forwards}
+@keyframes jackpotNoticeShow{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.15) rotate(-7deg)}
+  11%{opacity:1;transform:translate(-50%,-50%) scale(1.28) rotate(3deg)}
+  22%{opacity:1;transform:translate(-50%,-50%) scale(.96) rotate(-1deg)}
+  32%,70%{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}
+  100%{opacity:0;transform:translate(-50%,-58%) scale(1.08)}
+}

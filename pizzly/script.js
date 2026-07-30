@@ -15,6 +15,10 @@ const game=$('#game'), hpFill=$('#hpFill'), hpLag=$('#hpLag'), currentHpEl=$('#c
 const boss=$('#boss'), bombing=$('#bombing'), muzzle=$('#muzzle'), fxLayer=$('#fxLayer'), dangerBanner=$('#dangerBanner');
 const attackBtn=$('#attackBtn'), multiBtn=$('#multiBtn'), lastAttack=$('#lastAttack'), winnerScreen=$('#winnerScreen');
 const armorStatus=$('#armorStatus'), phaseNotice=$('#phaseNotice'), phaseNoticeIcon=$('#phaseNoticeIcon'), phaseNoticeTitle=$('#phaseNoticeTitle'), phaseNoticeBossText=$('#phaseNoticeBossText'), phaseNoticeDefenseText=$('#phaseNoticeDefenseText');
+const liveClock=$('#liveClock'), liveDate=$('#liveDate'), damageLog=$('#damageLog'), jackpotNotice=$('#jackpotNotice');
+const MAX_DAMAGE_LOGS=15;
+let damageLogSequence=0;
+let jackpotNoticeTimer=null;
 
 const SPRITES={ bombingIdle:'assets/bombing_idle.png', bombingAttack:'assets/bombing_attack.png', bombingShoot:'assets/bombing_shoot.png', bossIdle:'assets/pizzlybear_idle.png', bossHit:'assets/pizzlybear_hit.png', bossDead:'assets/pizzlybear_die.png' };
 function setSprite(el,src){ if(el.getAttribute('src')!==src) el.setAttribute('src',src); }
@@ -173,7 +177,95 @@ function randomDamage(){
     type:'jackpot'
   };
 }
-function nickname(){ return $('#nicknameInput').value.trim() || '익명의 시청자'; }
+function nickname(){ return '테스트 공격'; }
+
+
+function updateLiveClock(){
+  const now=new Date();
+  liveClock.textContent=new Intl.DateTimeFormat('ko-KR',{
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
+  }).format(now);
+  liveDate.textContent=new Intl.DateTimeFormat('ko-KR',{
+    year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'
+  }).format(now);
+}
+
+function clearDamageLog(){
+  damageLogSequence=0;
+  damageLog.innerHTML='<div class="damage-log-empty">공격 대기 중</div>';
+}
+
+function addDamageLog(type,damage=0){
+  const empty=damageLog.querySelector('.damage-log-empty');
+  if(empty) empty.remove();
+
+  damageLogSequence+=1;
+  const row=document.createElement('div');
+  row.className=`damage-log-row ${type}`;
+
+  const index=document.createElement('span');
+  index.className='damage-log-index';
+  index.textContent=String(damageLogSequence).padStart(2,'0');
+
+  const label=document.createElement('strong');
+  label.className='damage-log-value';
+
+  const badge=document.createElement('em');
+  badge.className='damage-log-badge';
+
+  if(type==='miss'){
+    label.textContent='MISS';
+    badge.textContent='빗나감';
+  }else{
+    label.textContent=`-${Number(damage).toLocaleString()}`;
+    badge.textContent=
+      type==='jackpot'?'JACKPOT':
+      type==='critical'?'CRITICAL':
+      type==='weak'?'WEAK':'HIT';
+  }
+
+  row.append(index,label,badge);
+  damageLog.appendChild(row);
+
+  while(damageLog.children.length>MAX_DAMAGE_LOGS){
+    damageLog.firstElementChild.remove();
+  }
+  damageLog.scrollTop=damageLog.scrollHeight;
+}
+
+function jackpotSound(){
+  try{
+    const c=audio(),t=c.currentTime;
+    [220,330,440,660].forEach((freq,i)=>{
+      const o=c.createOscillator(),g=c.createGain();
+      o.type=i%2?'square':'sawtooth';
+      o.frequency.setValueAtTime(freq,t+i*.035);
+      o.frequency.exponentialRampToValueAtTime(freq*1.7,t+.42+i*.035);
+      g.gain.setValueAtTime(.001,t);
+      g.gain.linearRampToValueAtTime(.075,t+i*.035+.02);
+      g.gain.exponentialRampToValueAtTime(.001,t+.5+i*.035);
+      o.connect(g).connect(c.destination);
+      o.start(t+i*.035);
+      o.stop(t+.55+i*.035);
+    });
+  }catch{}
+}
+
+function showJackpotNotice(){
+  clearTimeout(jackpotNoticeTimer);
+  jackpotNotice.classList.remove('show');
+  jackpotNotice.setAttribute('aria-hidden','false');
+  void jackpotNotice.offsetWidth;
+  jackpotNotice.classList.add('show');
+  restartAnimation(game,'heavy-shake');
+  restartAnimation($('#phaseFlash'),'on');
+  jackpotSound();
+
+  jackpotNoticeTimer=setTimeout(()=>{
+    jackpotNotice.classList.remove('show');
+    jackpotNotice.setAttribute('aria-hidden','true');
+  },1450);
+}
 
 let audioCtx=null;
 function audio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
@@ -273,7 +365,8 @@ async function animateShot(result, attacker){
     fxLayer.appendChild(miss);
 
     missSound();
-    lastAttack.textContent=`${attacker} · MISS`;
+    addDamageLog('miss',0);
+    lastAttack.textContent='MISS';
     setTimeout(()=>miss.remove(),1150);
     await wait(Math.max(80,config.shotInterval-150));
     return;
@@ -309,7 +402,14 @@ async function animateShot(result, attacker){
   addCombo();
 
   updateHp(currentHp-actual);
-  lastAttack.textContent=`${attacker} · ${actual.toLocaleString()} DAMAGE`;
+  addDamageLog(type,actual);
+  lastAttack.textContent=isJackpot
+    ? `JACKPOT · ${actual.toLocaleString()} DAMAGE`
+    : `${actual.toLocaleString()} DAMAGE`;
+
+  if(isJackpot){
+    showJackpotNotice();
+  }
 
   setTimeout(()=>impact.remove(),420);
   setTimeout(()=>num.remove(),1150);
@@ -333,7 +433,7 @@ function defeatBoss(attacker,damage){
   $('#winnerName').textContent=attacker;$('#winnerDamage').textContent=`막타 데미지 ${damage.toLocaleString()}`;
   setTimeout(()=>{winnerScreen.classList.add('show');winnerScreen.setAttribute('aria-hidden','false')},1050);
 }
-function resetBoss(){dead=false;combo=0;currentPhase=1;clearTimeout(phaseNoticeTimer);phaseNotice.classList.remove('show');phaseNotice.setAttribute('aria-hidden','true');setSprite(bombing,SPRITES.bombingIdle);setSprite(boss,SPRITES.bossIdle);boss.className='fighter boss';winnerScreen.classList.remove('show');winnerScreen.setAttribute('aria-hidden','true');attackBtn.disabled=false;multiBtn.disabled=false;$('#combo').classList.remove('show');updateHp(config.maxHp);lastAttack.textContent='대기 중';}
+function resetBoss(){dead=false;combo=0;currentPhase=1;clearTimeout(phaseNoticeTimer);clearTimeout(jackpotNoticeTimer);phaseNotice.classList.remove('show');phaseNotice.setAttribute('aria-hidden','true');jackpotNotice.classList.remove('show');jackpotNotice.setAttribute('aria-hidden','true');setSprite(bombing,SPRITES.bombingIdle);setSprite(boss,SPRITES.bossIdle);boss.className='fighter boss';winnerScreen.classList.remove('show');winnerScreen.setAttribute('aria-hidden','true');attackBtn.disabled=false;multiBtn.disabled=false;$('#combo').classList.remove('show');updateHp(config.maxHp);clearDamageLog();lastAttack.textContent='대기 중';}
 
 attackBtn.addEventListener('click',()=>queueAttack(nickname(),1));
 multiBtn.addEventListener('click',()=>queueAttack(nickname(),config.multiCount));
@@ -353,8 +453,12 @@ $('#applySettingsBtn').addEventListener('click',()=>{
 // 예: window.raidAttack({ nickname: '홍길동', amount: 1000 })
 window.raidAttack=({nickname='익명의 시청자',amount=100}={})=>{
   const count=Number(amount)>=1000?config.multiCount:Math.max(1,Math.floor(Number(amount)/100));
-  $('#nicknameInput').value=nickname;queueAttack(nickname,count);
+  queueAttack(nickname,count);
 };
 window.raidReset=resetBoss;
 
-loadSettings();updateHp(config.maxHp);
+loadSettings();
+updateHp(config.maxHp);
+clearDamageLog();
+updateLiveClock();
+setInterval(updateLiveClock,250);
