@@ -181,7 +181,7 @@ td input{padding:4px;font-size:12px;text-align:center}
         <div class="table-wrap" style="margin-top:6px;">
           <table id="configTable">
             <thead>
-              <tr><th>단계</th><th>성공확률(%)</th><th>달성 보상 상품</th><th>초기수량</th><th>재고</th></tr>
+              <tr><th>단계</th><th>해당 단계 도달확률(%)</th><th>달성 보상 상품</th><th>초기수량</th><th>재고</th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -211,11 +211,11 @@ const MASTER_VOLUME = 0.30;
 
 function getDefaultStages(){
   return [
-    { level:0, chance:80, reward:'이게뭐야', initialStock:null, stock:null },
-    { level:1, chance:60, reward:'꽝', initialStock:null, stock:null },
-    { level:2, chance:50, reward:'주먹감자', initialStock:null, stock:null },
-    { level:3, chance:40, reward:'데스윙크', initialStock:null, stock:null },
-    { level:4, chance:30, reward:'거북알', initialStock:null, stock:null },
+    { level:0, chance:100, reward:'이게뭐야', initialStock:null, stock:null },
+    { level:1, chance:80, reward:'꽝', initialStock:null, stock:null },
+    { level:2, chance:60, reward:'주먹감자', initialStock:null, stock:null },
+    { level:3, chance:50, reward:'데스윙크', initialStock:null, stock:null },
+    { level:4, chance:40, reward:'거북알', initialStock:null, stock:null },
     { level:5, chance:15, reward:'프사', initialStock:3, stock:3 },
     { level:6, chance:8, reward:'방셀', initialStock:2, stock:2 },
     { level:7, chance:3, reward:'움짤방셀', initialStock:1, stock:1 }
@@ -224,7 +224,7 @@ function getDefaultStages(){
 
 let stageConfigs=getDefaultStages();
 try{
-  const saved=JSON.parse(localStorage.getItem('forgeStages_stock_v1')||'null');
+  const saved=JSON.parse(localStorage.getItem('forgeStages_stock_v2_reach_chance')||'null');
   if(Array.isArray(saved)&&saved.length){
     stageConfigs=saved.map((cfg,idx)=>{
       const level=Number(cfg.level ?? idx);
@@ -275,7 +275,7 @@ function saveAll(){
   localStorage.setItem('forgeLevel',level);
   localStorage.setItem('forgeInven',JSON.stringify(inventory));
   localStorage.setItem('forgeHistory',JSON.stringify(historyLog));
-  localStorage.setItem('forgeStages_stock_v1',JSON.stringify(stageConfigs));
+  localStorage.setItem('forgeStages_stock_v2_reach_chance',JSON.stringify(stageConfigs));
   localStorage.setItem('forgeCost',el('costInput').value);
   localStorage.setItem('forgeMultiplier',getMultiplier());
 }
@@ -298,7 +298,10 @@ function renderTable(){
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td>+${cfg.level}</td>
-      <td><input type="number" min="0" max="100" step="0.1" value="${cfg.chance}" data-idx="${idx}" class="cfg-chance"></td>
+      <td>${cfg.level===0
+        ? '<span style="color:#777">시작</span>'
+        : `<input type="number" min="0" max="100" step="0.1" value="${cfg.chance}" data-idx="${idx}" class="cfg-chance">`}
+      </td>
       <td><input type="text" value="${escapeHtml(cfg.reward)}" data-idx="${idx}" class="cfg-reward"></td>
       <td>${managed
         ? `<input type="number" min="0" step="1" value="${cfg.initialStock}" data-idx="${idx}" class="cfg-stock stock-input">`
@@ -497,13 +500,14 @@ async function executeStep(isTenMode){
   if(level>=maxLevel)return{finished:true,success:true,reachedMax:true};
 
   const currentCfg=stageConfigs[level];
-  if(!currentCfg)return{finished:true,success:true,reachedMax:true};
+  const nextCfg=stageConfigs[level+1];
+  if(!currentCfg||!nextCfg)return{finished:true,success:true,reachedMax:true};
 
   const old=level;
   const weapon=el('weapon');
   weapon.className='weapon charge';
   el('result').className='result';
-  el('result').textContent=`+${old} 단계 강화 중... (확률: ${currentCfg.chance}%)`;
+  el('result').textContent=`+${old} → +${old+1} 강화 중... (+${old+1} 도달확률: ${nextCfg.chance}%)`;
 
   // 망치음은 긴 원본 전체를 재생하지 않고 강화 모션 동안만 짧게 재생
   const hammerAudio=playSound('hammer',.75);
@@ -512,7 +516,7 @@ async function executeStep(isTenMode){
   stopAudio(hammerAudio);
   await wait(80);
 
-  const ok=Math.random()*100<Number(currentCfg.chance);
+  const ok=Math.random()*100<Number(nextCfg.chance);
 
   if(ok){
     level++;
@@ -643,7 +647,7 @@ el('applyMultiplier').addEventListener('click',()=>{
 el('resetDefaults').addEventListener('click',()=>{
   if(confirm('확률·상품·초기 재고를 기본값으로 되돌리시겠습니까?')){
     stageConfigs=getDefaultStages();
-    localStorage.removeItem('forgeStages_stock_v1');
+    localStorage.removeItem('forgeStages_stock_v2_reach_chance');
     renderTable();
     saveAll();
   }
