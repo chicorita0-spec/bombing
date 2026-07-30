@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>감스트 대장간 - 유비 쌍고검 연속 강화</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#050505;color:#fff;font-family:Pretendard,"Noto Sans KR",sans-serif;min-height:100%}
+body{display:grid;place-items:center;overflow:auto;padding:10px}
+.stage{
+  position:relative;
+  width:min(1536px,100vw);
+  aspect-ratio:1536/1024;
+  background:url('gamst_forge_ui_bg.png') center/100% 100% no-repeat;
+  overflow:hidden;
+  box-shadow:0 0 50px #000;
+}
+.cover{
+  position:absolute;
+  background:rgba(6,8,12,.94);
+  border:1px solid rgba(185,132,47,.55);
+  box-shadow:inset 0 0 20px rgba(255,176,55,.05);
+}
+.left-level{left:2.4%;top:31.4%;width:14.2%;height:26.3%;padding:1.1%;text-align:center}
+.left-level .cap{font-size:clamp(10px,1.05vw,18px);color:#d8bd83}
+.level{font-size:clamp(30px,5vw,76px);font-weight:1000;color:#ffd267;text-shadow:0 0 12px #ff8f00;margin:4% 0}
+.weapon-name{font-size:clamp(12px,1.35vw,22px);font-weight:900;color:#66ff8b}
+.ticket-status{margin-top:8%;font-size:clamp(9px,.95vw,15px);color:#f0d49b;line-height:1.45}
+
+.right-panel{right:2.3%;top:10.6%;width:31.5%;height:69.2%;padding:1.2%;overflow:auto}
+.right-panel h2{margin:0 0 2%;font-size:clamp(16px,1.55vw,27px);color:#e5c689}
+.help{font-size:clamp(9px,.76vw,12px);line-height:1.55;color:#cdbb94;padding:2.2%;background:rgba(255,170,40,.06);border-left:3px solid #d69a37;margin-bottom:2.5%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:2%}
+.field{margin-bottom:2.4%}
+label{display:block;color:#cdbb94;font-size:clamp(9px,.8vw,13px);font-weight:800;margin-bottom:3px}
+input,select{width:100%;padding:2.3%;background:#0d1015;color:#fff;border:1px solid #7c5b2a;border-radius:5px;font-size:clamp(10px,.9vw,15px)}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:2%;margin:2% 0}
+.summary>div{padding:3%;text-align:center;border:1px solid #5e4726;background:rgba(0,0,0,.48)}
+.summary span{display:block;color:#a8946e;font-size:clamp(8px,.65vw,11px)}
+.summary strong{display:block;color:#ffd363;font-size:clamp(13px,1.2vw,20px)}
+.table-wrap{max-height:27%;overflow:auto;border:1px solid #5f4828}
+table{width:100%;border-collapse:collapse;font-size:clamp(8px,.65vw,11px)}
+th{position:sticky;top:0;background:#12151a;color:#d8bf8d;padding:5px}
+td{padding:4px;border-bottom:1px solid rgba(255,255,255,.06)}
+td:first-child{width:15%;text-align:center;color:#ffd35f;font-weight:900}
+td input{padding:5px;font-size:inherit}
+.start{width:100%;margin-top:2%;padding:3%;border:2px solid #ffd66a;background:linear-gradient(#ffbd35,#a95300);color:#fff6d4;font-size:clamp(17px,1.7vw,30px);font-weight:1000;cursor:pointer;box-shadow:0 0 24px rgba(255,160,22,.45)}
+.stop{width:100%;margin-top:1.5%;padding:1.8%;border:1px solid #843b3b;background:#310e0e;color:#ff9898;font-weight:900;cursor:pointer}
+.result{margin-top:2%;padding:2%;min-height:7%;display:grid;place-items:center;text-align:center;border:1px solid #5d482b;background:rgba(0,0,0,.5);font-weight:900;font-size:clamp(10px,.9vw,15px)}
+.good{color:#72ff93}.bad{color:#ff7777}
+
+.bottom-left{left:2.2%;bottom:2.1%;width:36.5%;height:14.5%;padding:1%;overflow:hidden}
+.bottom-mid{left:39.7%;bottom:2.1%;width:21.5%;height:14.5%;padding:1%;overflow:hidden}
+.bottom-left h3,.bottom-mid h3{margin:0 0 5px;color:#d9bd84;font-size:clamp(12px,1.15vw,19px)}
+.log,.rewards{font-family:monospace;font-size:clamp(8px,.72vw,12px);line-height:1.55;max-height:75%;overflow:auto}
+.success{color:#62ff85}.failure{color:#ff6f6f}.reward{color:#ffe36d}
+
+.flash,.shock{position:fixed;inset:0;pointer-events:none}
+.flash.on{animation:flash .6s ease-out}
+@keyframes flash{0%{background:#fff;opacity:1}30%{background:#8dff9d;opacity:.75}100%{opacity:0}}
+.shock.on{animation:shock .42s ease-out}
+@keyframes shock{0%,100%{transform:translate(0)}20%{transform:translate(-8px,4px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-5px,2px)}80%{transform:translate(5px,-2px)}}
+.embers{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.ember{position:absolute;width:4px;height:4px;border-radius:50%;background:#ffba4d;box-shadow:0 0 9px #ff6a00;animation:rise linear forwards}
+@keyframes rise{to{transform:translateY(-250px) scale(.2);opacity:0}}
+@media(max-width:900px){
+ body{padding:0}
+ .stage{width:1000px;max-width:none;transform-origin:top left}
+}
+</style>
+</head>
+<body>
+<div class="flash" id="flash"></div><div class="shock" id="shock"></div><div class="embers" id="embers"></div>
+<div class="stage">
+  <section class="cover left-level">
+    <div class="cap">현재 강화 단계</div>
+    <div class="level" id="level">+0</div>
+    <div class="weapon-name">쌍고검 - 유비</div>
+    <div class="ticket-status" id="ticketStatus">별풍선을 입력하고 시작하세요.</div>
+  </section>
+
+  <section class="cover right-panel">
+    <h2>무파괴 연속 강화 설정</h2>
+    <div class="help">도전권 1개는 실패할 때까지 자동 강화됩니다. 실패해도 현재 단계가 유지되며, 남은 도전권이 있으면 그 단계부터 다시 이어갑니다.</div>
+
+    <div class="grid2">
+      <div class="field"><label>기본 단가</label><input id="baseCost" type="number" value="200" min="1"></div>
+      <div class="field"><label>별풍선 배율</label><input id="multiplier" type="number" value="1" min=".1" step=".1"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>투입 별풍선</label><input id="inputBalloons" type="number" value="2000" min="0"></div>
+      <div class="field"><label>최대 강화 단계</label><input id="maxLevel" type="number" value="15" min="1" max="30"></div>
+    </div>
+
+    <div class="summary">
+      <div><span>전체 도전권</span><strong id="totalTickets">10회</strong></div>
+      <div><span>1회 비용</span><strong id="unitCost">200개</strong></div>
+      <div><span>남은 도전권</span><strong id="leftTickets">0회</strong></div>
+    </div>
+
+    <label>단계별 성공 확률 / 달성 상품</label>
+    <div class="table-wrap">
+      <table><thead><tr><th>단계</th><th>확률</th><th>상품</th></tr></thead><tbody id="stageRows"></tbody></table>
+    </div>
+
+    <button class="start" id="startBtn">🔨 강화 시작</button>
+    <button class="stop" id="stopBtn">현재 진행 중지</button>
+    <div class="result" id="result">+0부터 시작합니다.</div>
+  </section>
+
+  <section class="cover bottom-left">
+    <h3>강화 기록</h3><div class="log" id="log"></div>
+  </section>
+
+  <section class="cover bottom-mid">
+    <h3>획득 상품</h3><div class="rewards" id="rewards">아직 획득한 상품이 없습니다.</div>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id), wait=ms=>new Promise(r=>setTimeout(r,ms));
+let level=0,busy=false,stopRequested=false,ticketsLeft=0,claimed=new Set();
+
+const sounds={hammer:new Audio('hammer.wav'),success:new Audio('success.wav'),fail:new Audio('fail.wav'),reward:new Audio('reward.wav')};
+function play(n,v=.8){try{const s=sounds[n].cloneNode();s.volume=v;s.play().catch(()=>{})}catch(e){}}
+
+function defaultChance(t){const a=[100,85,72,60,50,42,35,29,24,20,16,13,10,8,6,4,3,2,1,1,1,1,1,1,1,1,1,1,1,1];return a[t-1]??1}
+function defaultReward(t){return ({3:'애교 1회',5:'프사 변경권',7:'노래 1곡',10:'방송국 역팬',12:'방셀',15:'움짤 방셀'})[t]||''}
+function unitCost(){return Math.max(1,Math.round((+$('baseCost').value||1)*(+$('multiplier').value||1)))}
+function tickets(){return Math.floor(Math.max(0,+$('inputBalloons').value||0)/unitCost())}
+
+function makeRows(){
+  const max=Math.max(1,Math.min(30,+$('maxLevel').value||15));
+  const old={};document.querySelectorAll('#stageRows tr').forEach(tr=>old[tr.dataset.t]={c:tr.querySelector('.chance').value,r:tr.querySelector('.reward').value});
+  $('stageRows').innerHTML='';
+  for(let t=1;t<=max;t++){
+    const tr=document.createElement('tr');tr.dataset.t=t;const o=old[t]||{};
+    tr.innerHTML=`<td>+${t}</td><td><input class="chance" type="number" min="0" max="100" step=".1" value="${o.c??defaultChance(t)}"></td><td><input class="reward" type="text" value="${o.r??defaultReward(t)}"></td>`;
+    $('stageRows').appendChild(tr)
+  }
+}
+function stageData(t){const tr=document.querySelector(`#stageRows tr[data-t="${t}"]`);return{chance:Math.max(0,Math.min(100,+tr.querySelector('.chance').value||0)),reward:tr.querySelector('.reward').value.trim()}}
+function refresh(){
+  $('level').textContent='+'+level;
+  $('unitCost').textContent=unitCost().toLocaleString()+'개';
+  $('totalTickets').textContent=tickets().toLocaleString()+'회';
+  $('leftTickets').textContent=ticketsLeft.toLocaleString()+'회';
+}
+function ember(n=50){for(let i=0;i<n;i++){const e=document.createElement('i');e.className='ember';e.style.left=(35+Math.random()*25)+'%';e.style.top=(55+Math.random()*15)+'%';e.style.animationDuration=(.45+Math.random()*.8)+'s';$('embers').appendChild(e);setTimeout(()=>e.remove(),1400)}}
+function flash(){$('flash').classList.remove('on');void $('flash').offsetWidth;$('flash').classList.add('on')}
+function shock(){$('shock').classList.remove('on');void $('shock').offsetWidth;$('shock').classList.add('on')}
+function log(ok,from,to,ch,ticket){const d=document.createElement('div');d.className=ok?'success':'failure';d.textContent=`[${new Date().toLocaleTimeString()}] ${ticket}번권 | +${from} → +${to} ${ok?'성공':'실패'} (${ch}%)`;$('log').prepend(d)}
+function reward(t,name){if(!name||claimed.has(t))return;claimed.add(t);if($('rewards').textContent.includes('아직'))$('rewards').innerHTML='';const d=document.createElement('div');d.className='reward';d.textContent=`+${t} 달성: ${name}`;$('rewards').prepend(d);play('reward')}
+async function attempt(){
+  $('ticketStatus').textContent='대장장이가 쌍고검을 두드리는 중...';
+  play('hammer',.78);ember(55);await wait(650);play('hammer',.9);ember(70);await wait(520)
+}
+async function runTicket(no){
+  while(!stopRequested){
+    const max=+$('maxLevel').value||15;if(level>=max)return'max';
+    const target=level+1,d=stageData(target);await attempt();if(stopRequested)return'stop';
+    const old=level,ok=Math.random()*100<d.chance;
+    if(ok){
+      level=target;flash();ember(120);play('success');$('result').className='result good';$('result').textContent=`강화 성공! +${old} → +${level}`;log(true,old,level,d.chance,no);reward(level,d.reward);refresh();await wait(850)
+    }else{
+      shock();ember(30);play('fail');$('result').className='result bad';$('result').textContent=`강화 실패… +${level} 유지`;log(false,old,old,d.chance,no);await wait(750);return'fail'
+    }
+  }
+  return'stop'
+}
+async function start(){
+  if(busy)return;const total=tickets();if(total<1){$('result').textContent='투입 별풍선이 부족합니다.';return}
+  busy=true;stopRequested=false;level=0;ticketsLeft=total;claimed=new Set();$('log').innerHTML='';$('rewards').textContent='아직 획득한 상품이 없습니다.';$('startBtn').disabled=true;refresh();
+  for(let i=1;i<=total;i++){
+    if(stopRequested)break;ticketsLeft=total-i;refresh();$('ticketStatus').textContent=`${i}번째 도전권 · 실패할 때까지 자동 강화`;
+    const s=await runTicket(i);if(s==='max')break;await wait(400)
+  }
+  $('ticketStatus').textContent=`자동 강화 종료 · 최종 +${level}`;$('startBtn').disabled=false;busy=false;refresh()
+}
+$('startBtn').onclick=start;$('stopBtn').onclick=()=>stopRequested=true;
+['baseCost','multiplier','inputBalloons'].forEach(id=>$(id).oninput=refresh);
+$('maxLevel').onchange=()=>{makeRows();refresh()};
+makeRows();refresh();
+</script>
+</body>
+</html>
