@@ -51,6 +51,8 @@ body{overflow-x:hidden}
 .stat-row{display:flex;justify-content:space-between;align-items:center;font-size:14px}
 .stat-row strong{color:#ffd65d;font-size:18px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.multiplier-box{display:grid;grid-template-columns:1fr 110px;gap:8px;align-items:end}
+.multiplier-preview{margin-top:7px;color:#ffd37a;font-size:13px;font-weight:900;text-align:right}
 label{font-size:11px;color:#cdbb95;font-weight:800}
 input[type=number],select{width:100%;margin-top:3px;padding:8px;border-radius:6px;border:1px solid rgba(246,196,83,.38);background:#0d0f13;color:#fff;font-size:14px}
 .btn{padding:12px;border:none;border-radius:8px;font-weight:900;cursor:pointer;text-align:center}
@@ -157,9 +159,20 @@ td input{padding:4px;font-size:12px;text-align:center}
         </div>
       </div>
 
+      <div class="stat">
+        <div class="multiplier-box">
+          <div>
+            <label for="multiplierInput">도전 배율 / 총 강화 시도 횟수</label>
+            <input id="multiplierInput" type="number" min="1" max="100" step="1" value="3">
+          </div>
+          <button id="applyMultiplier" class="btn btn-sub">X3 적용</button>
+        </div>
+        <div id="multiplierPreview" class="multiplier-preview">X3 · 총 비용 300개 별풍선</div>
+      </div>
+
       <div class="grid2">
-        <button id="enhance1" class="btn btn-primary">🔨 1회 시도 (실패할때까지)</button>
-        <button id="enhance10" class="btn btn-primary" style="background:linear-gradient(180deg,#2e8fff,#004ab7);border-color:#6baeff;">⚡ 10회 연속 시도 (실패 시 유지·재도전)</button>
+        <button id="enhance1" class="btn btn-primary">🔨 기본 1회 (실패할 때까지)</button>
+        <button id="enhanceMulti" class="btn btn-primary" style="background:linear-gradient(180deg,#2e8fff,#004ab7);border-color:#6baeff;">⚡ X3 배율 도전 (실패 시 유지)</button>
       </div>
       <div id="result" class="result">강화 버튼을 눌러 시작하세요!</div>
 
@@ -264,6 +277,7 @@ function saveAll(){
   localStorage.setItem('forgeHistory',JSON.stringify(historyLog));
   localStorage.setItem('forgeStages_stock_v1',JSON.stringify(stageConfigs));
   localStorage.setItem('forgeCost',el('costInput').value);
+  localStorage.setItem('forgeMultiplier',getMultiplier());
 }
 
 function stockBadge(cfg){
@@ -345,9 +359,24 @@ function renderInventory(){
   inv.scrollTop=inv.scrollHeight;
 }
 
+function getMultiplier(){
+  return Math.max(1,Math.min(100,parseInt(el('multiplierInput')?.value)||1));
+}
+
+function updateMultiplierUI(){
+  const multi=getMultiplier();
+  const cost=Math.max(0,Number(el('costInput').value)||0);
+  el('multiplierInput').value=multi;
+  el('enhanceMulti').textContent=`⚡ X${multi} 배율 도전 (실패 시 유지)`;
+  el('applyMultiplier').textContent=`X${multi} 적용`;
+  el('multiplierPreview').textContent=
+    `X${multi} · 총 ${multi}번 강화 판정 · 총 비용 ${(cost*multi).toLocaleString('ko-KR')}개 별풍선`;
+}
+
 function refreshUI(){
   el('level').textContent='+'+level;
   el('costView').textContent=(Number(el('costInput').value)||0).toLocaleString('ko-KR');
+  updateMultiplierUI();
   renderHistory();
   renderInventory();
   renderTable();
@@ -542,10 +571,14 @@ el('enhance1').addEventListener('click',async()=>{
   busy=false;
 });
 
-el('enhance10').addEventListener('click',async()=>{
+el('enhanceMulti').addEventListener('click',async()=>{
   if(busy)return;
   busy=true;
 
+  const multiplier=getMultiplier();
+
+  // 배율 도전은 전체가 하나의 강화 진행입니다.
+  // 실패해도 단계가 유지되고, 남은 시도 횟수로 같은 단계에 다시 도전합니다.
   level=0;
   inventory=[];
   historyLog=[];
@@ -553,11 +586,11 @@ el('enhance10').addEventListener('click',async()=>{
 
   let usedAttempts=0;
 
-  for(let attempt=1;attempt<=10;attempt++){
+  for(let attempt=1;attempt<=multiplier;attempt++){
     if(level>=stageConfigs.length)break;
 
     usedAttempts=attempt;
-    addHistory(true,`━━ ${attempt}/10번째 강화 시도 · 현재 +${level} ━━`);
+    addHistory(true,`━━ ${attempt}/${multiplier}번째 강화 시도 · 현재 +${level} ━━`);
 
     const beforeLevel=level;
     const res=await executeStep(true);
@@ -568,19 +601,31 @@ el('enhance10').addEventListener('click',async()=>{
     }
 
     if(!res.success){
-      addHistory(false,`실패했지만 +${beforeLevel} 유지 · 다음 횟수로 재도전`);
+      addHistory(false,`실패했지만 +${beforeLevel} 유지 · 남은 횟수로 같은 단계 재도전`);
     }
 
     await wait(700);
   }
 
+  // 배율 수만큼 상품을 주는 것이 아니라, 모든 시도 종료 후 최종 단계 상품 하나만 지급
   grantFinalReward(level,1);
   refreshUI();
-  showRewardModal(`총 ${usedAttempts}회 시도 완료 · 최종 +${level} 보상만 지급되었습니다.`);
+  showRewardModal(
+    `X${multiplier} 배율 도전 · 총 ${usedAttempts}회 시도 완료 · 최종 +${level} 보상만 지급되었습니다.`
+  );
   busy=false;
 });
-
 el('costInput').addEventListener('input',refreshUI);
+el('multiplierInput').addEventListener('input',()=>{
+  updateMultiplierUI();
+  saveAll();
+});
+el('applyMultiplier').addEventListener('click',()=>{
+  updateMultiplierUI();
+  saveAll();
+  el('result').className='result';
+  el('result').textContent=`X${getMultiplier()} 배율이 적용되었습니다.`;
+});
 
 el('resetDefaults').addEventListener('click',()=>{
   if(confirm('확률·상품·초기 재고를 기본값으로 되돌리시겠습니까?')){
@@ -602,6 +647,10 @@ el('resetAll').addEventListener('click',()=>{
 
 const savedCost=localStorage.getItem('forgeCost');
 if(savedCost)el('costInput').value=savedCost;
+
+const savedMultiplier=localStorage.getItem('forgeMultiplier');
+if(savedMultiplier)el('multiplierInput').value=
+  Math.max(1,Math.min(100,parseInt(savedMultiplier)||3));
 
 renderTable();
 refreshUI();
