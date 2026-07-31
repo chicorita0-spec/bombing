@@ -781,31 +781,58 @@ if (bulkApplyBtn) {
       return;
     }
 
-    const lines = text.split('\n');
+    const lines = text.split(/\r?\n/);
     let individualShots = [];
+    let hasError = false; // 👈 형식 오류가 있는지 체크할 변수
+    let errorLineMsg = '';
 
-    lines.forEach(line => {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        const nickname = parts[0];
-        const amount = Number(parts[1]);
-        if (!isNaN(amount) && amount > 0) {
-          const thousandCount = Math.floor(amount / 1000);
-          const remainderCount = Math.floor((amount % 1000) / 100);
-          const count = (thousandCount * config.multiCount) + remainderCount;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue; // 빈 줄은 무시
 
-          for (let i = 0; i < count; i++) {
-            individualShots.push({ nickname });
-          }
-        }
+      const parts = line.split(/\s+/);
+      if (parts.length < 2) {
+        hasError = true;
+        errorLineMsg = `"${line}" 형식 오류! (예: 닉네임 횟수 형태여야 합니다)`;
+        break;
       }
-    });
 
-    if (individualShots.length === 0) {
-      alert('올바른 형식의 데이터가 없습니다. (예: 닉네임 1000)');
+      const nickname = parts[0];
+      const amount = Number(parts[1]);
+
+      if (isNaN(amount) || amount <= 0) {
+        hasError = true;
+        errorLineMsg = `"${line}" 횟수 오류! (숫자만 올 수 있습니다)`;
+        break;
+      }
+
+      const thousandCount = Math.floor(amount / 1000);
+      const remainderCount = Math.floor((amount % 1000) / 100);
+      const count = (thousandCount * config.multiCount) + remainderCount;
+
+      if (count <= 0) {
+        hasError = true;
+        errorLineMsg = `"${line}" 횟수가 너무 적습니다 (최소 100 이상)`;
+        break;
+      }
+
+      for (let j = 0; j < count; j++) {
+        individualShots.push({ nickname });
+      }
+    }
+
+    // 💡 형식에 안 맞는 줄이 하나라도 있으면 즉시 경고창을 띄우고 중단! (누락 방지)
+    if (hasError) {
+      alert(`입력 형식 오류가 발생했습니다!\n\n[오류 내용] ${errorLineMsg}\n\n모든 줄이 [닉네임 횟수] 형식인지 확인해주세요.`);
       return;
     }
 
+    if (individualShots.length === 0) {
+      alert('올바른 형식의 데이터가 없습니다.');
+      return;
+    }
+
+    // 셔플
     for (let i = individualShots.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [individualShots[i], individualShots[j]] = [individualShots[j], individualShots[i]];
