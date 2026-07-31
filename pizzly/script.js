@@ -1,6 +1,6 @@
 'use strict';
 
-const CONFIG_DEFAULT = { bossName:'피즐리베어', maxHp:33000, minDamage:1, maxDamage:2000, multiCount:11, shotInterval:240 };
+const CONFIG_DEFAULT = { bossName:'피즐리베어', maxHp:33000, minDamage:1, maxDamage:2000, multiCount:11, shotInterval:240, apiEnabled:true, guideEnabled:true };
 let config = {...CONFIG_DEFAULT};
 let currentHp = config.maxHp;
 let dead = false;
@@ -10,6 +10,9 @@ let comboTimer = null;
 let currentPhase = 1;
 let phaseNoticeTimer = null;
 let totalHitCount = 0;
+
+let attackerStats = {}; 
+let remainingQueue = []; 
 
 const $ = s => document.querySelector(s);
 const game=$('#game'), hpFill=$('#hpFill'), hpLag=$('#hpLag'), currentHpEl=$('#currentHp'), maxHpEl=$('#maxHp'), hpPercent=$('#hpPercent');
@@ -25,9 +28,26 @@ const SPRITES={ bombingIdle:'assets/bombing_idle.png', bombingAttack:'assets/bom
 function setSprite(el,src){ if(el.getAttribute('src')!==src) el.setAttribute('src',src); }
 
 function loadSettings(){ try{ const saved=JSON.parse(localStorage.getItem('pizzlyRaidConfig')); if(saved) config={...config,...saved}; }catch{} syncInputs(); }
-function syncInputs(){ $('#bossNameInput').value=config.bossName; $('#maxHpInput').value=config.maxHp; $('#minDamageInput').value=config.minDamage; $('#maxDamageInput').value=config.maxDamage; $('#multiCountInput').value=config.multiCount; $('#shotIntervalInput').value=config.shotInterval; $('#bossName').textContent=config.bossName; }
-function saveSettings(){ localStorage.setItem('pizzlyRaidConfig',JSON.stringify(config)); }
+function syncInputs(){ 
+  $('#bossNameInput').value=config.bossName; 
+  $('#maxHpInput').value=config.maxHp; 
+  $('#minDamageInput').value=config.minDamage; 
+  $('#maxDamageInput').value=config.maxDamage; 
+  $('#multiCountInput').value=config.multiCount; 
+  $('#shotIntervalInput').value=config.shotInterval; 
+  $('#bossName').textContent=config.bossName; 
 
+  const apiToggle = $('#apiEnabledInput');
+  const apiStatusText = $('#apiStatusText');
+  if (apiToggle) {
+    apiToggle.checked = config.apiEnabled !== false;
+    if(apiStatusText) {
+      apiStatusText.textContent = apiToggle.checked ? 'ON (작동 중)' : 'OFF (차단됨)';
+      apiStatusText.style.color = apiToggle.checked ? '#ffea00' : '#ff3333';
+    }
+  }
+}
+function saveSettings(){ localStorage.setItem('pizzlyRaidConfig',JSON.stringify(config)); }
 
 function getPhaseByPercent(pct){
   if(pct<=0) return 0;
@@ -132,18 +152,13 @@ function updateHp(next){
 
   currentPhase=nextPhase;
 }
+
 function randomInt(min,max){
   const low=Math.ceil(Math.min(min,max));
   const high=Math.floor(Math.max(min,max));
   return Math.floor(Math.random()*(high-low+1))+low;
 }
 
-// 데미지 등급:
-// 3% MISS    : 0 데미지, 보스를 스쳐 지나감
-// 5% 약함    : 최소 데미지 ~ 최대 데미지의 10% (검은색)
-// 89% 일반   : 최대 데미지의 10% 초과 ~ 최대 데미지
-// 3% 초대박  : 최대 데미지 초과 ~ 최대 데미지의 4배 (빨간색)
-// 일반 중 최대 데미지의 85% 이상은 주황색 크리티컬
 function randomDamage(){
   const min=config.minDamage;
   const max=config.maxDamage;
@@ -151,43 +166,25 @@ function randomDamage(){
   const lowUpper=Math.max(min,Math.floor(max*0.10));
 
   if(roll<0.03){
-    return {
-      damage:0,
-      type:'miss'
-    };
+    return { damage:0, type:'miss' };
   }
-
   if(roll<0.08){
-    return {
-      damage:randomInt(min,lowUpper),
-      type:'weak'
-    };
+    return { damage:randomInt(min,lowUpper), type:'weak' };
   }
-
   if(roll<0.97){
     const normalMin=Math.min(max,lowUpper+1);
     const damage=randomInt(normalMin,max);
-    return {
-      damage,
-      type:damage>=max*0.85?'critical':'normal'
-    };
+    return { damage, type:damage>=max*0.85?'critical':'normal' };
   }
-
-  return {
-    damage:randomInt(max+1,max*4),
-    type:'jackpot'
-  };
+  return { damage:randomInt(max+1,max*4), type:'jackpot' };
 }
-function nickname(){ return '테스트 공격'; }
-
-
 
 function clearDamageLog(){
   damageLogSequence=0;
   damageLog.innerHTML='<div class="damage-log-empty">공격 대기 중</div>';
 }
 
-function addDamageLog(type,damage=0){
+function addDamageLog(type, damage=0, nickname='익명의 시청자'){
   const empty=damageLog.querySelector('.damage-log-empty');
   if(empty) empty.remove();
 
@@ -198,6 +195,11 @@ function addDamageLog(type,damage=0){
   const index=document.createElement('span');
   index.className='damage-log-index';
   index.textContent=String(damageLogSequence).padStart(2,'0');
+
+  const nickEl=document.createElement('span');
+  nickEl.className='damage-log-nick';
+  nickEl.textContent=nickname;
+  nickEl.style.cssText='color: #ffea00; font-weight: bold; max-width: 75px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px;';
 
   const label=document.createElement('strong');
   label.className='damage-log-value';
@@ -216,7 +218,7 @@ function addDamageLog(type,damage=0){
       type==='weak'?'WEAK':'HIT';
   }
 
-  row.append(index,label,badge);
+  row.append(index, nickEl, label, badge);
   damageLog.appendChild(row);
 
   while(damageLog.children.length>MAX_DAMAGE_LOGS){
@@ -313,17 +315,69 @@ function muzzleBurst(x,y){
 
 function wait(ms){ return new Promise(resolve=>setTimeout(resolve,ms)); }
 
+const centerLog = $('#centerLog');
+
+function showDamagePopup(nickname, actualDamage, type) {
+  if (dead) return;
+
+  const safeName = nickname || '익명의 시청자';
+  
+  let color = '#ffea00';      
+  let shadow = '#ff6a00';
+  let scale = 'scale(1)';
+  let displayText = `🔥 ${actualDamage.toLocaleString()} 데미지!`;
+
+  if (type === 'miss' || actualDamage <= 0) {
+    color = '#ff3333';
+    shadow = '#880000';
+    displayText = `❌ MISS!`;
+  } else if (type === 'jackpot') {
+    color = '#ff00ea';
+    shadow = '#7b00ff';
+    scale = 'scale(1.25)';
+    displayText = `💥 [초대박!] ${actualDamage.toLocaleString()} 데미지!`;
+  } else if (type === 'critical') {
+    color = '#ff5500';
+    shadow = '#ff0000';
+    scale = 'scale(1.12)';
+    displayText = `⚡ [크리티컬] ${actualDamage.toLocaleString()} 데미지!`;
+  } else if (type === 'weak') {
+    color = '#b0b0b0';
+    shadow = '#333333';
+    displayText = `💤 약함 (${actualDamage.toLocaleString()})`;
+  } else {
+    color = '#ffea00';
+    shadow = '#ff6a00';
+    displayText = `🔥 ${actualDamage.toLocaleString()} 데미지!`;
+  }
+
+  centerLog.innerHTML = `
+    <span class="cl-nick" style="font-size: clamp(22px, 2.8vw, 38px); color: #fff; text-shadow: 2px 2px 0 #000;">${safeName}</span>
+    <span class="cl-amount" style="font-size: clamp(28px, 3.8vw, 58px); color: ${color}; text-shadow: 0 0 15px ${shadow}, 2px 2px 0 #000; transform: ${scale}; display: inline-block; transition: transform 0.1s;">${displayText}</span>
+  `;
+
+  centerLog.classList.add('show');
+
+  setTimeout(() => {
+    centerLog.classList.remove('show');
+  }, Math.max(config.shotInterval * 1.2, 600));
+}
+
 async function animateShot(result, attacker){
   const {damage,type}=result;
   if(dead)return;
 
-totalHitCount++;
+  totalHitCount++;
+
+  if (!attackerStats[attacker]) {
+    attackerStats[attacker] = { totalDamage: 0, hitCount: 0, missCount: 0, critCount: 0, jackpotCount: 0, maxHitDamage: 0 };
+  }
+  attackerStats[attacker].hitCount++;
 
   const isMiss=type==='miss';
   const gw=game.clientWidth,gh=game.clientHeight;
   const startX=gw*.275,startY=gh*(.515+Math.random()*.035);
 
-  // MISS는 보스 위나 옆을 스쳐 지나가게 조정
   const hitX=isMiss
     ? gw*(.91+Math.random()*.07)
     : gw*(.74+Math.random()*.09);
@@ -357,6 +411,9 @@ totalHitCount++;
   if(dead)return;
 
   if(isMiss){
+    attackerStats[attacker].missCount++;
+    showDamagePopup(attacker, 0, 'miss');
+
     const miss=document.createElement('div');
     miss.className='damage miss';
     miss.textContent='MISS';
@@ -365,8 +422,8 @@ totalHitCount++;
     fxLayer.appendChild(miss);
 
     missSound();
-    addDamageLog('miss',0);
-    lastAttack.textContent='MISS';
+    addDamageLog('miss', 0, attacker);
+    lastAttack.textContent=`${attacker} · MISS`;
     setTimeout(()=>miss.remove(),1150);
     await wait(Math.max(80,config.shotInterval-150));
     return;
@@ -377,8 +434,17 @@ totalHitCount++;
   const isCritical=type==='critical';
   const isJackpot=type==='jackpot';
   const isWeak=type==='weak';
-  const isBig=isCritical||isJackpot;
   const isKill=defendedDamage>=currentHp;
+
+  attackerStats[attacker].totalDamage += actual;
+  if(isCritical) attackerStats[attacker].critCount++;
+  if(isJackpot) attackerStats[attacker].jackpotCount++;
+
+  if(actual > attackerStats[attacker].maxHitDamage) {
+    attackerStats[attacker].maxHitDamage = actual;
+  }
+
+  showDamagePopup(attacker, actual, type);
 
   const impact=document.createElement('div');
   impact.className=`impact${isJackpot?' jackpot-impact':''}${isWeak?' weak-impact':''}`;
@@ -402,10 +468,10 @@ totalHitCount++;
   addCombo();
 
   updateHp(currentHp-actual);
-  addDamageLog(type,actual);
+  addDamageLog(type, actual, attacker);
   lastAttack.textContent=isJackpot
-    ? `JACKPOT · ${actual.toLocaleString()} DAMAGE`
-    : `${actual.toLocaleString()} DAMAGE`;
+    ? `${attacker} · JACKPOT · ${actual.toLocaleString()} DAMAGE`
+    : `${attacker} · ${actual.toLocaleString()} DAMAGE`;
 
   if(isJackpot){
     showJackpotNotice();
@@ -422,43 +488,371 @@ totalHitCount++;
   await wait(Math.max(80,config.shotInterval-150));
 }
 
-function queueAttack(attacker,count){
-  if(dead)return; attackBtn.disabled=true;multiBtn.disabled=true;
-  shotQueue=shotQueue.then(async()=>{for(let i=0;i<count;i++){if(dead)break;await animateShot(randomDamage(),attacker)}}).finally(()=>{if(!dead){attackBtn.disabled=false;multiBtn.disabled=false}});
+function updateLeftoverDisplay() {
+  const leftoverEl = $('#winnerLeftover');
+  if (!leftoverEl) return;
+
+  if (remainingQueue.length === 0) {
+    leftoverEl.textContent = `✨ 깔끔하게 잔탄 없이 클리어!`;
+    return;
+  }
+
+  let summary = {};
+  remainingQueue.forEach(item => {
+    summary[item.nickname] = (summary[item.nickname] || 0) + item.count;
+  });
+
+  let textArr = Object.entries(summary).map(([name, cnt]) => `${name} ${cnt}발`);
+  leftoverEl.textContent = `🔥 초과 탄환 대기: ${textArr.join(', ')}`;
 }
 
-function defeatBoss(attacker,damage){
-  if(dead)return; dead=true; attackBtn.disabled=true;multiBtn.disabled=true;dangerBanner.classList.remove('show');
-  setSprite(boss,SPRITES.bossDead);restartAnimation(game,'heavy-shake');boss.classList.add('dying');hitSound(true);$('#phaseFlash').classList.add('on');
+function queueAttack(attacker, count) {
+  if (dead) {
+    remainingQueue.push({ nickname: attacker, count: count });
+    updateLeftoverDisplay();
+    return;
+  }
+  
+  attackBtn.disabled = true; 
+  multiBtn.disabled = true;
+  
+  shotQueue = shotQueue.then(async () => {
+    for (let i = 0; i < count; i++) {
+      if (dead) {
+        remainingQueue.push({ nickname: attacker, count: count - i });
+        updateLeftoverDisplay();
+        break; 
+      }
+      await animateShot(randomDamage(), attacker);
+    }
+  }).finally(() => {
+    if (!dead) {
+      attackBtn.disabled = false; 
+      multiBtn.disabled = false;
+    }
+  });
+}
+
+function defeatBoss(attacker, damage) {
+  if (dead) return; 
+  dead = true; 
+  attackBtn.disabled = true; 
+  multiBtn.disabled = true; 
+  dangerBanner.classList.remove('show');
+  
+  setSprite(boss, SPRITES.bossDead); 
+  restartAnimation(game, 'heavy-shake'); 
+  boss.classList.add('dying'); 
+  hitSound(true); 
+  $('#phaseFlash').classList.add('on');
+  
   $('#winnerName').textContent = attacker;
-$('#winnerDamage').textContent = `막타 데미지 ${damage.toLocaleString()}`;
-$('#winnerHitCount').textContent = totalHitCount.toLocaleString();
-  setTimeout(()=>{winnerScreen.classList.add('show');winnerScreen.setAttribute('aria-hidden','false')},1050);
-}
-function resetBoss(){dead=false;totalHitCount=0;combo=0;currentPhase=1;clearTimeout(phaseNoticeTimer);clearTimeout(jackpotNoticeTimer);phaseNotice.classList.remove('show');phaseNotice.setAttribute('aria-hidden','true');jackpotNotice.classList.remove('show');jackpotNotice.setAttribute('aria-hidden','true');setSprite(bombing,SPRITES.bombingIdle);setSprite(boss,SPRITES.bossIdle);boss.className='fighter boss';winnerScreen.classList.remove('show');winnerScreen.setAttribute('aria-hidden','true');attackBtn.disabled=false;multiBtn.disabled=false;$('#combo').classList.remove('show');updateHp(config.maxHp);clearDamageLog();lastAttack.textContent='대기 중';}
+  $('#winnerDamage').textContent = `막타 데미지 ${damage.toLocaleString()}`;
+  $('#winnerHitCount').textContent = totalHitCount.toLocaleString();
 
-attackBtn.addEventListener('click',()=>queueAttack(nickname(),1));
-multiBtn.addEventListener('click',()=>queueAttack(nickname(),config.multiCount));
-$('#restartBtn').addEventListener('click',resetBoss);$('#healBtn').addEventListener('click',resetBoss);
-$('#settingsToggle').addEventListener('click',()=>$('#settingsBody').classList.toggle('open'));
-$('#applySettingsBtn').addEventListener('click',()=>{
-  const next={bossName:$('#bossNameInput').value.trim()||'피즐리베어',maxHp:Math.floor(Number($('#maxHpInput').value)),minDamage:Math.floor(Number($('#minDamageInput').value)),maxDamage:Math.floor(Number($('#maxDamageInput').value)),multiCount:Math.floor(Number($('#multiCountInput').value)),shotInterval:Math.floor(Number($('#shotIntervalInput').value))};
-  if(!Number.isFinite(next.maxHp)||next.maxHp<1)return alert('최대 체력은 1 이상이어야 합니다.');
-  if(!Number.isFinite(next.minDamage)||next.minDamage<0)return alert('최소 데미지는 0 이상이어야 합니다.');
-  if(!Number.isFinite(next.maxDamage)||next.maxDamage<next.minDamage)return alert('최대 데미지는 최소 데미지 이상이어야 합니다.');
-  if(!Number.isFinite(next.multiCount)||next.multiCount<1||next.multiCount>100)return alert('연속 공격 횟수는 1~100입니다.');
-  if(!Number.isFinite(next.shotInterval)||next.shotInterval<50)return alert('연사 간격은 50ms 이상이어야 합니다.');
-  config=next;saveSettings();syncInputs();resetBoss();$('#settingsBody').classList.remove('open');
+  updateLeftoverDisplay();
+
+  // 💡 동률(공동 1등 / 공동 MISS왕 등)을 모두 수집하기 위한 로직
+  let topDamageUsers = [];
+  let maxDamageVal = -1;
+
+  let topMaxHitUsers = [];
+  let maxHitVal = -1;
+
+  let topMissUsers = [];
+  let maxMissVal = -1;
+
+  for (let [name, stat] of Object.entries(attackerStats)) {
+    // 딜량 1등 체크
+    if (stat.totalDamage > maxDamageVal) {
+      maxDamageVal = stat.totalDamage;
+      topDamageUsers = [{ name, val: stat.totalDamage }];
+    } else if (stat.totalDamage === maxDamageVal && maxDamageVal > 0) {
+      topDamageUsers.push({ name, val: stat.totalDamage });
+    }
+
+    // 1타 최대 데미지 체크
+    if (stat.maxHitDamage > maxHitVal) {
+      maxHitVal = stat.maxHitDamage;
+      topMaxHitUsers = [{ name, val: stat.maxHitDamage }];
+    } else if (stat.maxHitDamage === maxHitVal && maxHitVal > 0) {
+      topMaxHitUsers.push({ name, val: stat.maxHitDamage });
+    }
+
+    // MISS 왕 체크 (0회 초과일 때만)
+    if (stat.missCount > maxMissVal) {
+      maxMissVal = stat.missCount;
+      topMissUsers = [{ name, val: stat.missCount }];
+    } else if (stat.missCount === maxMissVal && maxMissVal > 0) {
+      topMissUsers.push({ name, val: stat.missCount });
+    }
+  }
+
+  // 텍스트 포맷팅 도우미 (공동 1등들이면 "A, B (각각 OO)" 형태로 묶어주기)
+  const formatTies = (users, unit) => {
+    if (users.length === 0 || (unit === '회 헛발질 ㅋㅋㅋ' && maxMissVal <= 0)) return '없음 (0회)';
+    return users.map(u => `${u.name} (${u.val.toLocaleString()}${unit})`).join(', ');
+  };
+
+  const damageText = topDamageUsers.length > 0 ? formatTies(topDamageUsers, ' 데미지') : '없음';
+  const maxHitText = topMaxHitUsers.length > 0 ? formatTies(topMaxHitUsers, ' 데미지') : '없음';
+  const missText = maxMissVal > 0 ? formatTies(topMissUsers, '회 헛발질 ㅋㅋㅋ') : '없음 (0회)';
+
+  const funStatsEl = $('#funStatsContainer');
+  if (funStatsEl) {
+    funStatsEl.innerHTML = `
+      <div style="margin-top: 8px; font-size: 14px; font-family: 'MaplestoryOTFBold', sans-serif; color: #ffea00; background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 6px; border: 1px dashed #777; line-height: 1.5;">
+        👑 <b>딜량 1등(MVP):</b> ${damageText}<br>
+        🔥 <b>1타 최대 데미지:</b> ${maxHitText}<br>
+        🤡 <b>눈 감았어(MISS왕):</b> ${missText}
+      </div>
+    `;
+  }
+  
+  setTimeout(() => {
+    winnerScreen.classList.add('show'); 
+    winnerScreen.setAttribute('aria-hidden', 'false');
+  }, 1050);
+}
+
+function resetBoss() {
+  dead = false; 
+  totalHitCount = 0; 
+  combo = 0; 
+  currentPhase = 1;
+  attackerStats = {}; 
+  clearTimeout(phaseNoticeTimer); 
+  clearTimeout(jackpotNoticeTimer);
+  phaseNotice.classList.remove('show'); 
+  phaseNotice.setAttribute('aria-hidden', 'true');
+  jackpotNotice.classList.remove('show'); 
+  jackpotNotice.setAttribute('aria-hidden', 'true');
+  setSprite(bombing, SPRITES.bombingIdle); 
+  setSprite(boss, SPRITES.bossIdle);
+  boss.className = 'fighter boss'; 
+  winnerScreen.classList.remove('show'); 
+  winnerScreen.setAttribute('aria-hidden', 'true');
+  attackBtn.disabled = false; 
+  multiBtn.disabled = false;
+  $('#combo').classList.remove('show'); 
+  updateHp(config.maxHp); 
+  clearDamageLog(); 
+  lastAttack.textContent = '대기 중';
+  
+  const leftoverEl = $('#winnerLeftover');
+  if (leftoverEl) leftoverEl.textContent = '';
+  
+  const funStatsEl = $('#funStatsContainer');
+  if (funStatsEl) funStatsEl.innerHTML = '';
+
+  if (remainingQueue.length > 0) {
+    const queueToRestore = [...remainingQueue];
+    remainingQueue = [];
+
+    setTimeout(() => {
+      queueToRestore.forEach(item => {
+        queueAttack(item.nickname, item.count);
+      });
+    }, 1200);
+  }
+}
+
+attackBtn.addEventListener('click', () => queueAttack('익명의 부밍이', 1));
+multiBtn.addEventListener('click', () => queueAttack('익명의 부밍이', config.multiCount));
+$('#restartBtn').addEventListener('click', resetBoss);
+$('#healBtn').addEventListener('click', resetBoss);
+$('#settingsToggle').addEventListener('click', () => $('#settingsBody').classList.toggle('open'));
+
+$('#applySettingsBtn').addEventListener('click', () => {
+  const next = {
+    bossName: $('#bossNameInput').value.trim() || '피즐리베어',
+    maxHp: Math.floor(Number($('#maxHpInput').value)),
+    minDamage: Math.floor(Number($('#minDamageInput').value)),
+    maxDamage: Math.floor(Number($('#maxDamageInput').value)),
+    multiCount: Math.floor(Number($('#multiCountInput').value)),
+    shotInterval: Math.floor(Number($('#shotIntervalInput').value)),
+    apiEnabled: $('#apiEnabledInput') ? $('#apiEnabledInput').checked : true,
+    guideEnabled: $('#guideToggleInput') ? $('#guideToggleInput').checked : true
+  };
+  if (!Number.isFinite(next.maxHp) || next.maxHp < 1) return alert('최대 체력은 1 이상이어야 합니다.');
+  if (!Number.isFinite(next.minDamage) || next.minDamage < 0) return alert('최소 데미지는 0 이상이어야 합니다.');
+  if (!Number.isFinite(next.maxDamage) || next.maxDamage < next.minDamage) return alert('최대 데미지는 최소 데미지 이상이어야 합니다.');
+  if (!Number.isFinite(next.multiCount) || next.multiCount < 1 || next.multiCount > 100) return alert('연속 공격 횟수는 1~100입니다.');
+  if (!Number.isFinite(next.shotInterval) || next.shotInterval < 50) return alert('연사 간격은 50ms 이상이어야 합니다.');
+  
+  config = next; 
+  saveSettings(); 
+  syncInputs(); 
+  applyGuideVisibility();
+  resetBoss(); 
+  $('#settingsBody').classList.remove('open');
 });
 
-// 방송 후원 API/브릿지가 붙으면 이 함수만 호출하면 됩니다.
-// 예: window.raidAttack({ nickname: '홍길동', amount: 1000 })
-window.raidAttack=({nickname='익명의 시청자',amount=100}={})=>{
-  const count=Number(amount)>=1000?config.multiCount:Math.max(1,Math.floor(Number(amount)/100));
-  queueAttack(nickname,count);
+function applyGuideVisibility() {
+  const guidePanel = $('#damageGuidePanel');
+  const guideToggle = $('#guideToggleInput');
+  const guideToggleText = $('#guideToggleText');
+  
+  const isEnabled = config.guideEnabled !== false;
+  if (guideToggle) guideToggle.checked = isEnabled;
+  if (guideToggleText) {
+    guideToggleText.textContent = isEnabled ? 'ON' : 'OFF';
+    guideToggleText.style.color = isEnabled ? '#ffea00' : '#888';
+  }
+  if (guidePanel) {
+    guidePanel.style.display = isEnabled ? 'block' : 'none';
+  }
+}
+
+const guideToggleInput = $('#guideToggleInput');
+if (guideToggleInput) {
+  guideToggleInput.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    const guideToggleText = $('#guideToggleText');
+    const guidePanel = $('#damageGuidePanel');
+    if (guideToggleText) {
+      guideToggleText.textContent = isChecked ? 'ON' : 'OFF';
+      guideToggleText.style.color = isChecked ? '#ffea00' : '#888';
+    }
+    if (guidePanel) {
+      guidePanel.style.display = isChecked ? 'block' : 'none';
+    }
+  });
+}
+
+const apiEnabledInput = $('#apiEnabledInput');
+if (apiEnabledInput) {
+  apiEnabledInput.addEventListener('change', (e) => {
+    const isChecked = e.target.checked;
+    const apiStatusText = $('#apiStatusText');
+    if (apiStatusText) {
+      apiStatusText.textContent = isChecked ? 'ON (작동 중)' : 'OFF (차단됨)';
+      apiStatusText.style.color = isChecked ? '#ffea00' : '#ff3333';
+    }
+  });
+}
+
+const test100Btn = $('#test100Btn');
+const test1000Btn = $('#test1000Btn');
+
+if (test100Btn) {
+  test100Btn.addEventListener('click', () => {
+    window.raidAttack({ nickname: '테스트시청자1', amount: 100 });
+  });
+}
+
+if (test1000Btn) {
+  test1000Btn.addEventListener('click', () => {
+    window.raidAttack({ nickname: '테스트회장님', amount: 1000 });
+  });
+}
+
+window.raidAttack = ({nickname = '익명의 시청자', amount = 100} = {}) => {
+  if (config.apiEnabled === false) {
+    return; 
+  }
+
+  const amt = Number(amount);
+  const thousandCount = Math.floor(amt / 1000);
+  const remainderCount = Math.floor((amt % 1000) / 100);
+  const count = (thousandCount * config.multiCount) + remainderCount;
+
+  if (count <= 0) return;
+  queueAttack(nickname, count);
 };
-window.raidReset=resetBoss;
+
+window.raidReset = resetBoss;
 
 loadSettings();
+applyGuideVisibility();
 updateHp(config.maxHp);
 clearDamageLog();
+
+const bulkQueueInput = document.getElementById('bulkQueueInput');
+const bulkApplyBtn = document.getElementById('bulkApplyBtn');
+const bulkClearBtn = document.getElementById('bulkClearBtn');
+const bulkStatusText = document.getElementById('bulkStatusText');
+
+if (bulkApplyBtn) {
+  bulkApplyBtn.addEventListener('click', async () => {
+    const text = bulkQueueInput.value.trim();
+    if (!text) {
+      alert('공격할 후원 목록을 입력해주세요!');
+      return;
+    }
+
+    const lines = text.split('\n');
+    let individualShots = [];
+
+    lines.forEach(line => {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        const nickname = parts[0];
+        const amount = Number(parts[1]);
+        if (!isNaN(amount) && amount > 0) {
+          const thousandCount = Math.floor(amount / 1000);
+          const remainderCount = Math.floor((amount % 1000) / 100);
+          const count = (thousandCount * config.multiCount) + remainderCount;
+
+          for (let i = 0; i < count; i++) {
+            individualShots.push({ nickname });
+          }
+        }
+      }
+    });
+
+    if (individualShots.length === 0) {
+      alert('올바른 형식의 데이터가 없습니다. (예: 닉네임 1000)');
+      return;
+    }
+
+    for (let i = individualShots.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [individualShots[i], individualShots[j]] = [individualShots[j], individualShots[i]];
+    }
+
+    bulkApplyBtn.disabled = true;
+    bulkQueueInput.disabled = true;
+    bulkStatusText.textContent = `🔥 총 ${individualShots.length}발 난사 셔플 시작...`;
+
+    for (let i = 0; i < individualShots.length; i++) {
+      const shot = individualShots[i];
+      bulkStatusText.textContent = `난사 중: [${shot.nickname}] (${i + 1}/${individualShots.length})`;
+      
+      await new Promise(resolve => {
+        queueAttack(shot.nickname, 1);
+        const estimatedTime = config.shotInterval + 100;
+        setTimeout(resolve, estimatedTime);
+      });
+    }
+
+    bulkStatusText.textContent = '✨ 모든 난사 공격 완료!';
+    bulkApplyBtn.disabled = false;
+    bulkQueueInput.disabled = false;
+    bulkQueueInput.value = '';
+  });
+}
+
+if (bulkClearBtn) {
+  bulkClearBtn.addEventListener('click', () => {
+    bulkQueueInput.value = '';
+    bulkStatusText.textContent = '대기 중인 공격 없음';
+  });
+}
+
+const toggleTextareaBtn = document.getElementById('toggleTextareaBtn');
+const textareaContainer = document.getElementById('textareaContainer');
+
+if (toggleTextareaBtn && textareaContainer) {
+  let isTextareaOpen = true;
+  toggleTextareaBtn.addEventListener('click', () => {
+    isTextareaOpen = !isTextareaOpen;
+    if (isTextareaOpen) {
+      textareaContainer.style.display = 'block';
+      toggleTextareaBtn.textContent = '메모장 숨기기';
+    } else {
+      textareaContainer.style.display = 'none';
+      toggleTextareaBtn.textContent = '메모장 펼치기';
+    }
+  });
+}

@@ -1,10 +1,30 @@
+/* 파일의 가장 첫 번째 줄에 아래 폰트 코드를 통째로 넣으세요 */
+@font-face {
+    font-family: 'MaplestoryOTFBold';
+    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/MaplestoryOTFBold.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
 *{box-sizing:border-box} :root{--purple:#bd4cff;--pink:#ff4fd8;--cyan:#55e8ff;--red:#ff315f;--gold:#ffd85a;--ink:#07040d}
 html,body{margin:0;width:100%;height:100%;background:#030207;color:#fff;font-family:Pretendard,"Noto Sans KR",Arial,sans-serif}body{display:grid;place-items:center;overflow:hidden}
 button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);aspect-ratio:16/9;overflow:hidden;background:#090510;isolation:isolate;box-shadow:0 0 100px #000}
 .background,.frame,.fighter{position:absolute;pointer-events:none;user-select:none}.background{inset:0;width:100%;height:100%;object-fit:cover;z-index:-5;filter:saturate(.85) contrast(1.08)}.frame{inset:0;width:100%;height:100%;z-index:50;opacity:.7}
 .bg-energy{position:absolute;inset:-30%;z-index:-4;background:conic-gradient(from 0deg at 70% 45%,transparent,#7f18d322,transparent,#e733ab22,transparent);animation:spin 18s linear infinite}.scanlines{position:absolute;inset:0;z-index:45;pointer-events:none;opacity:.08;background:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 4px)}.vignette{position:absolute;inset:0;z-index:44;pointer-events:none;background:radial-gradient(circle at 50% 48%,transparent 10%,rgba(0,0,0,.12) 52%,rgba(0,0,0,.78) 100%)}@keyframes spin{to{transform:rotate(360deg)}}
-.topbar{position:absolute;z-index:60;left:2.3%;right:2.3%;top:2.4%;height:18%;display:flex;gap:2.2%}.player-card{width:18%;display:flex;align-items:center;gap:5%;padding:1%;background:linear-gradient(135deg,#0d0912ee,#381347d9);border:1px solid #d36cff;clip-path:polygon(0 0,91% 0,100% 22%,100% 100%,8% 100%,0 78%);box-shadow:0 0 25px #a72fff44 inset,0 0 25px #000}.player-card img{height:100%;width:38%;object-fit:contain}.player-card div{display:flex;flex-direction:column}.player-card strong{font-size:clamp(16px,2vw,34px)}.player-card span{font-size:clamp(8px,.8vw,15px);letter-spacing:.15em;color:#d69aff;font-weight:900}
-.boss-ui{flex:1;text-align:center}.boss-title-row{height:38%;display:flex;justify-content:center;align-items:center;gap:1.2%}.boss-title-row h1{margin:0;font-size:clamp(26px,3vw,56px);letter-spacing:.06em;text-shadow:0 0 18px #ad3cff,0 4px #2a0b3a}.boss-tag,#phaseText{font-size:clamp(9px,.85vw,15px);font-weight:1000;letter-spacing:.1em;padding:.35em .75em;border:1px solid #b849ff;background:#160b20cc}.boss-tag{color:#ff78d8}#phaseText{color:#8befff}
+
+/* 💡 상단 프로필(바밍) 영역 폰트 메이플 스타일 적용 */
+.topbar{position:absolute;z-index:60;left:2.3%;right:2.3%;top:2.4%;height:18%;display:flex;gap:2.2%}.player-card{width:18%;display:flex;align-items:center;gap:5%;padding:1%;background:linear-gradient(135deg,#0d0912ee,#381347d9);border:1px solid #d36cff;clip-path:polygon(0 0,91% 0,100% 22%,100% 100%,8% 100%,0 78%);box-shadow:0 0 25px #a72fff44 inset,0 0 25px #000}.player-card img{height:100%;width:38%;object-fit:contain}.player-card div{display:flex;flex-direction:column}
+.player-card strong{font-family:'MaplestoryOTFBold',sans-serif;font-size:clamp(16px,2vw,32px);color:#fff;text-shadow:0 2px 4px #000;}
+.player-card span{font-family:'MaplestoryOTFBold',sans-serif;font-size:clamp(8px,.8vw,14px);letter-spacing:.15em;color:#ff8fe7;font-weight:normal;}
+
+.boss-ui{flex:1;text-align:center}.boss-title-row{
+  height:38%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:1.2%;
+  position: relative;
+  left: -45px; /* 👈 이 숫자를 조절하여 왼쪽으로 살짝 당겨 맞출 수 있습니다 (예: -10px ~ -20px) */
+}.boss-title-row h1{margin:0;font-size:clamp(26px,3vw,56px);letter-spacing:.06em;text-shadow:0 0 18px #ad3cff,0 4px #2a0b3a}.boss-tag,#phaseText{font-size:clamp(9px,.85vw,15px);font-weight:1000;letter-spacing:.1em;padding:.35em .75em;border:1px solid #b849ff;background:#160b20cc}.boss-tag{color:#ff78d8}#phaseText{color:#8befff}
 .hp-shell{position:relative;width:100%;height:34%;padding:.35%;background:#050408;border:3px solid #26132f;outline:2px solid #b948ff;clip-path:polygon(1.4% 0,98.6% 0,100% 50%,98.6% 100%,1.4% 100%,0 50%);overflow:hidden}.hp-lag,.hp-fill{position:absolute;left:.35%;top:10%;height:80%;width:99.3%;transform-origin:left;transition:width .5s cubic-bezier(.2,.8,.2,1)}.hp-lag{background:#fff176;transition-duration:1.05s;transition-delay:.18s}.hp-fill{background:linear-gradient(90deg,#6d16b8,#bf2eff 58%,#ff54cb);box-shadow:0 0 25px #d145ff inset,0 0 22px #ab2cff}.hp-fill.low{background:linear-gradient(90deg,#b90035,#ff234f,#ff784f);animation:lowHp .5s ease-in-out infinite alternate}.hp-shine{position:absolute;left:2%;right:2%;top:15%;height:18%;background:#ffffff38;filter:blur(2px)}@keyframes lowHp{to{filter:brightness(1.45)}}
 .hp-meta{display:flex;justify-content:center;align-items:center;gap:.45em;font-size:clamp(13px,1.25vw,24px);font-weight:1000;text-shadow:0 2px 5px #000}.slash{opacity:.5}#hpPercent{margin-left:1em;color:#d995ff;font-size:.82em}
 .fighter{z-index:8;filter:drop-shadow(0 18px 20px #000)}.bombing{left:-15%;bottom:-5%;height:72%;width:34%;object-fit:contain;object-position:left bottom;transform:scaleX(-1);transform-origin:45% 80%}.boss{right:-1%;bottom:-3%;height:76%;width:48%;object-fit:contain;object-position:right bottom;transform-origin:65% 85%}.boss-shadow{position:absolute;z-index:4;right:8%;bottom:4%;width:33%;height:8%;background:#000a;filter:blur(18px);border-radius:50%}
@@ -19,7 +39,20 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
 .phase-flash{position:absolute;z-index:41;inset:0;pointer-events:none;opacity:0;background:#fff}.phase-flash.on{animation:flash .35s ease-out}@keyframes flash{0%{opacity:.75}100%{opacity:0}}
 .lower-ui{position:absolute;z-index:60;left:2.5%;bottom:2.8%;width:95%;display:flex;align-items:flex-end;gap:1.2vw}.attacker-panel{width:clamp(170px,16vw,310px);padding:.7em;background:#090611dd;border-left:4px solid #b846ff;box-shadow:0 0 20px #000}.attacker-panel label{display:block;font-size:clamp(9px,.75vw,13px);color:#c996e8;font-weight:900}.attacker-panel input{width:100%;margin:.25em 0;background:#160b20;border:1px solid #71348e;color:#fff;padding:.45em .55em;font-weight:900}.last-attack{font-size:clamp(9px,.72vw,13px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#9beaff}.controls{display:flex;gap:1vw}.attack-button{min-width:clamp(170px,18vw,345px);min-height:clamp(65px,8vw,120px);display:flex;align-items:center;justify-content:center;gap:1em;color:#fff;background:linear-gradient(180deg,#3d185bdd,#0b0711ee);border:2px solid #c950ff;outline:3px solid #130b1c;clip-path:polygon(7% 0,93% 0,100% 18%,100% 82%,93% 100%,7% 100%,0 82%,0 18%);cursor:pointer;box-shadow:0 0 20px #9b31ff33;transition:.14s}.attack-button:hover{transform:translateY(-4px);filter:brightness(1.2)}.attack-button:active{transform:scale(.97)}.attack-button:disabled{opacity:.35;cursor:not-allowed;filter:grayscale(1)}.attack-button .cost{font-size:clamp(22px,2.5vw,48px);font-weight:1000;color:#ffd75c;text-shadow:0 3px #6b3800}.attack-button span:last-child{display:flex;flex-direction:column;align-items:flex-start}.attack-button b{font-size:clamp(16px,1.7vw,31px)}.attack-button small{color:#d69cff;font-weight:900;letter-spacing:.16em}.attack-button.multi{background:linear-gradient(180deg,#531b5ddd,#0b0711ee);border-color:#ff58dc}
 .settings-panel{position:absolute;z-index:80;right:1.5%;bottom:1.8%}.settings-toggle{float:right;width:38px;height:38px;border-radius:50%;background:#160b20dd;color:#fff;border:1px solid #a84bd3;cursor:pointer}.settings-body{clear:both;width:min(330px,28vw);padding:1em;display:none;gap:.6em;background:#06040aec;border:1px solid #b450e8;box-shadow:0 0 35px #000}.settings-body.open{display:grid}.settings-body h2{margin:0 0 .35em;font-size:1.1em}.settings-body label{display:grid;grid-template-columns:1fr 44%;gap:.6em;align-items:center;font-size:.83em}.settings-body input{width:100%;background:#140a1d;color:#fff;border:1px solid #6d328a;padding:.4em}.settings-actions{display:flex;gap:.5em}.settings-actions button{flex:1;background:#39144e;color:#fff;border:1px solid #b851eb;padding:.6em;cursor:pointer}.settings-body small{color:#bf9bca}
-.winner-screen{position:absolute;z-index:100;inset:0;display:grid;place-items:center;visibility:hidden;opacity:0;background:radial-gradient(circle,#5a1349aa,#05030adf 65%);transition:.5s}.winner-screen.show{visibility:visible;opacity:1}.winner-rays{position:absolute;width:120%;aspect-ratio:1;background:repeating-conic-gradient(from 0deg,#ffef8b22 0 8deg,transparent 8deg 18deg);animation:spin 12s linear infinite}.winner-card{position:relative;text-align:center;padding:clamp(25px,4vw,70px) clamp(45px,7vw,125px);background:linear-gradient(145deg,#160b20f2,#07040bf4);border:2px solid #ffd65c;clip-path:polygon(7% 0,93% 0,100% 12%,100% 88%,93% 100%,7% 100%,0 88%,0 12%);box-shadow:0 0 55px #ffb52c77,0 0 120px #a33eff55}.final-label{font-weight:1000;letter-spacing:.35em;color:#ffd75c;font-size:clamp(16px,1.5vw,28px)}.winner-card h2{margin:.2em 0;font-size:clamp(48px,7vw,130px);text-shadow:0 0 25px #ff6fe7,0 7px #571367}.winner-card p{font-size:clamp(15px,1.5vw,28px);color:#e7cceb}.winner-damage{color:#ffd75c;font-size:clamp(18px,2vw,36px);font-weight:1000}.winner-card button{margin-top:1.2em;padding:.7em 2em;background:#ffd75c;color:#271100;border:0;font-weight:1000;cursor:pointer}
+.winner-screen{position:absolute;z-index:100;inset:0;display:grid;place-items:center;visibility:hidden;opacity:0;background:radial-gradient(circle,#5a1349aa,#05030adf 65%);transition:.5s}.winner-screen.show{visibility:visible;opacity:1}.winner-rays{position:absolute;width:120%;aspect-ratio:1;background:repeating-conic-gradient(from 0deg,#ffef8b22 0 8deg,transparent 8deg 18deg);animation:spin 12s linear infinite}.winner-card{position:relative;text-align:center;padding:clamp(20px,3.5vw,50px) clamp(40px,6vw,100px);background:linear-gradient(145deg,#160b20f2,#07040bf4);border:2px solid #ffd65c;clip-path:polygon(7% 0,93% 0,100% 12%,100% 88%,93% 100%,7% 100%,0 88%,0 12%);box-shadow:0 0 55px #ffb52c77,0 0 120px #a33eff55}.final-label{font-weight:1000;letter-spacing:.35em;color:#ffd75c;font-size:clamp(14px,1.3vw,24px)}
+
+/* 💡 막타 친 사람 이름(예: 건부) 메이플 폰트 및 적당한 크기 적용 */
+.winner-card h2{
+    margin:.15em 0;
+    font-family:'MaplestoryOTFBold',sans-serif !important;
+    font-size:clamp(36px, 4.5vw, 75px) !important;
+    color:#ffde59;
+    text-shadow:0 0 20px #ff6fe7,0 4px #571367;
+}
+
+.winner-card p{font-size:clamp(14px,1.3vw,24px);color:#e7cceb;margin:0.2em 0;}
+.winner-damage{color:#ffd75c;font-size:clamp(16px,1.7vw,30px);font-weight:1000;margin:0.2em 0;}
+.winner-card button{margin-top:0.8em;padding:.6em 1.8em;background:#ffd75c;color:#271100;border:0;font-weight:1000;cursor:pointer}
 @media(max-aspect-ratio:4/3){.player-card{width:23%}.bombing{width:40%}.boss{width:52%}.attacker-panel{display:none}}
 
 /* v5 sprite integration */
@@ -31,22 +64,23 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
 .bombing{left:-15%;bottom:-1%;height:58%;width:31%;transform:none;transition:filter .08s}
 .boss{right:-8%;bottom:2%;height:86%;width:53%}
 .boss-shadow{right:7%;bottom:5%;width:35%}
-.bombing.fire{animation:recoilV5 .20s ease}
-.boss.hit{animation:bossHitV5 .24s ease}
-.boss.dying{animation:bossDeathV5 1.1s cubic-bezier(.2,.7,.2,1) forwards}
-.muzzle{left:29.5%;top:49%}
-@keyframes recoilV5{0%,100%{transform:translateX(0) rotate(0)}45%{transform:translateX(-1.2%) rotate(-1.2deg);filter:brightness(1.25)}}
-@keyframes bossHitV5{45%{transform:translateX(1.2%) rotate(1.2deg);filter:brightness(2.4) drop-shadow(0 0 30px #ff54da)}}
-@keyframes bossDeathV5{0%{transform:none;filter:brightness(2)}25%{transform:translateX(2%) rotate(3deg)}100%{transform:translate(5%,12%) rotate(8deg);filter:brightness(.45);opacity:.15}}
-.winner-card{min-width:min(62vw,980px);overflow:visible}
+.winner-card{min-width:min(68vw, 1020px);overflow:visible}
 .winner-boss,.winner-bombing{position:absolute;pointer-events:none;object-fit:contain;filter:drop-shadow(0 15px 20px #000)}
-.winner-boss{width:35%;height:58%;right:4%;bottom:-2%}.winner-bombing{width:28%;height:65%;left:-2%;bottom:-3%}
-.winner-hit-count{
-    margin-top:.35em;
-    font-size:clamp(16px,1.5vw,28px);
-    font-weight:1000;
-    color:#d9d9ff;
-    text-shadow:0 0 10px #000;
+.winner-boss{width:33%;height:54%;right:3%;bottom:-2%}.winner-bombing{width:26%;height:60%;left:-2%;bottom:-3%}
+
+/* 승리 화면 내부 모든 글꼴 통일 */
+.winner-card p,
+.winner-damage,
+.winner-hit-count,
+#funStatsContainer,
+.winner-leftover-box {
+    font-family: 'MaplestoryOTFBold', sans-serif !important;
+}
+
+.winner-hit-count {
+    font-size: clamp(15px, 1.4vw, 24px) !important;
+    color: #d9d9ff;
+    margin-top: 0.1em;
 }
 
 #winnerHitCount{
@@ -55,36 +89,19 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
     text-shadow:0 0 10px #55e8ff;
 }
 
-/* ===== 최종 하단 UI 배치 ===== */
-
-/* 공격자 패널은 현재처럼 왼쪽 위에 유지 */
-.attacker-panel{
-    position:absolute;
-    left:0;
-    bottom:485%;
-    width:15vw;
-    min-width:190px;
+#funStatsContainer {
+    margin-top: 6px !important;
 }
 
-/* 공격 버튼 두 개만 오른쪽으로 이동 */
-.controls{
-    display:flex;
-    gap:1vw;
-    margin-left:390px;
-    transform:none;
-}
-
-/* 버튼 크기는 기존 화면 비율 유지 */
-.attack-button{
-    min-width:17vw;
-    min-height:6.5vw;
-}
-
-/* 좁은 화면에서는 버튼 이동량을 줄임 */
-@media(max-width:1200px){
-    .controls{
-        margin-left:140px;
-    }
+/* 💡 버튼 아래로 완전히 분리된 초과 탄환 대기 박스 */
+.winner-leftover-box {
+    margin-top: 105px !important;
+    font-size: clamp(13px, 1.2vw, 19px) !important;
+    color: #00ffcc;
+    text-shadow: 0 0 10px rgba(0,255,204,0.6);
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    padding: 0 20px;
 }
 
 .boss.hit{
@@ -331,7 +348,7 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
   position:absolute;
   z-index:96;
   left:50%;
-  top:42%;
+  top:82%;
   min-width:min(640px,68vw);
   padding:1.1em 2.4em 1.25em;
   transform:translate(-50%,-50%) scale(.6);
@@ -601,12 +618,6 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
   white-space:nowrap;
 }
 
-/* 확률 안내는 로그 오른쪽, 기존 위치 유지 */
-.damage-guide{
-  left:34%;
-  top:15.5%;
-}
-
 /* 바밍은 확률 안내 바로 아래 중앙에 배치 */
 #bombing{
   left:4.5%;
@@ -680,4 +691,61 @@ button,input{font:inherit}.game{position:relative;width:min(100vw,177.777vh);asp
     line-height:14px;
     font-size:10px;
   }
+}
+
+/* ===== 중앙 API 후원 알림 연출 ===== */
+.center-log {
+  position: absolute;
+  z-index: 95;
+  left: 50%;
+  top: 35%;
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  font-family: 'MaplestoryOTFBold', sans-serif;
+}
+
+.center-log.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.center-log .cl-nick {
+  font-size: clamp(32px, 4vw, 65px);
+  font-weight: normal; 
+  color: #ffffff;
+  text-shadow: 
+    -3px -3px 0 #000, 3px -3px 0 #000,
+    -3px  3px 0 #000, 3px  3px 0 #000,
+     0px  8px 15px rgba(0,0,0,0.8);
+}
+
+.center-log .cl-amount {
+  font-size: clamp(22px, 2.5vw, 42px);
+  font-weight: normal;
+  color: #ffde59;
+  text-shadow: 
+    -2px -2px 0 #4a1500, 2px -2px 0 #4a1500,
+    -2px  2px 0 #4a1500, 2px  2px 0 #4a1500,
+     0px  0px 20px #ff6a00;
+}
+
+.winner-leftover {
+    margin-top: 0.6em;
+    margin-bottom: 0.3em;
+    font-size: clamp(15px, 1.4vw, 26px);
+    font-weight: 1000;
+    color: #ffb700;
+    text-shadow: 0 0 15px #ff4800, 0 3px 5px #3a0b00;
+    animation: pulseLeftover 1s infinite alternate;
+}
+
+@keyframes pulseLeftover {
+    from { transform: scale(1); filter: brightness(1); }
+    to { transform: scale(1.05); filter: brightness(1.3); }
 }
