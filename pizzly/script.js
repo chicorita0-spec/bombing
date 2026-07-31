@@ -1,6 +1,6 @@
 'use strict';
 
-const CONFIG_DEFAULT = { bossName:'피즐리베어', maxHp:33000, minDamage:1, maxDamage:2000, multiCount:11, shotInterval:240, apiEnabled:true, guideEnabled:true };
+const CONFIG_DEFAULT = { bossName:'피즐리베어', maxHp:33000, minDamage:1, maxDamage:1500, multiCount:11, shotInterval:240, apiEnabled:true, guideEnabled:true };
 let config = {...CONFIG_DEFAULT};
 let currentHp = config.maxHp;
 let dead = false;
