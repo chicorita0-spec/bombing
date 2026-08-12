@@ -15,42 +15,50 @@ const API_URL='https://bombing-donation.pages.dev/api/fan-status';
 const PRE_COMPLETED=new Set(['jkwon1031']);
 let checked=new Set(PRE_COMPLETED);
 let syncing=false;
+let saveQueue=Promise.resolve();
+let pendingCount=0;
+let lastSavedAt=0;
 const el=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function setSync(text,kind=''){const s=el('syncState');s.textContent=text;s.className='sync-state '+kind}
 async function loadStatus(){
+  if(pendingCount||Date.now()-lastSavedAt<5000)return;
   try{
     const r=await fetch(API_URL,{cache:'no-store'});
     if(!r.ok)throw new Error('HTTP '+r.status);
     const data=await r.json();
     checked=new Set([...(data.completed||[]),...PRE_COMPLETED]);
-    setSync('공개 명단과 연결됨','ok');
-    render();
-  }catch(e){setSync('서버 연결 실패','bad');render()}
+    setSync('공개 명단과 연결됨','ok');render();
+  }catch(e){setSync('서버 연결 실패','bad')}
 }
-async function saveStatus(id,done){
-  if(syncing)return;
+function saveStatus(id,done){
   const key=el('adminKey').value.trim();
-  if(!key){alert('관리 비밀번호를 먼저 입력해주세요.');render();return}
-  syncing=true;setSync('저장 중');
-  try{
+  if(!key){done?checked.delete(id):checked.add(id);render();alert('관리 비밀번호를 먼저 입력해주세요.');return}
+  done?checked.add(id):checked.delete(id);
+  pendingCount++;setSync(pendingCount>1?'저장 대기 '+pendingCount+'건':'저장 중');render();
+  saveQueue=saveQueue.then(async()=>{
     const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Key':key},body:JSON.stringify({id,done})});
     const data=await r.json().catch(()=>({}));
     if(!r.ok)throw new Error(data.error||'저장 실패');
-    checked=new Set([...(data.completed||[]),...PRE_COMPLETED]);
-    setSync('저장 완료 · 공개 명단 반영','ok');render();
-  }catch(e){alert(e.message==='unauthorized'?'관리 비밀번호가 맞지 않습니다.':'저장하지 못했습니다. 잠시 후 다시 시도해주세요.');setSync('저장 실패','bad');await loadStatus()}
-  finally{syncing=false}
+    lastSavedAt=Date.now();
+  }).catch(async e=>{
+    alert(e.message==='unauthorized'?'관리 비밀번호가 맞지 않습니다.':'저장하지 못했습니다. 서버 상태를 다시 불러옵니다.');
+    pendingCount=0;lastSavedAt=0;setSync('저장 실패','bad');await loadStatus();
+  }).finally(()=>{
+    if(pendingCount>0)pendingCount--;
+    if(!pendingCount)setSync('저장 완료 · 공개 명단 반영','ok');
+    else setSync('저장 중 · '+pendingCount+'건 남음');
+  });
 }
 function render(){
   const q=el('q').value.trim().toLowerCase(),f=el('filter').value;
   const visible=people.filter(p=>{const hit=(p.name+' '+p.sub+' '+p.id).toLowerCase().includes(q);const isDone=checked.has(p.id);return hit&&(f==='all'||f===p.type||(f==='left'&&!isDone)||(f==='done'&&isDone))});
-  el('list').innerHTML=visible.length?visible.map(p=>{const d=checked.has(p.id),pre=PRE_COMPLETED.has(p.id);return '<div class="row '+(p.type==='10역팬'?'type-ten':'type-one')+' '+(d?'done':'')+' '+(pre?'pre-done':'')+'"><div>'+p.rank+'</div><div class="amount">'+p.amount.toLocaleString()+'</div><div><div class="name">'+esc(p.name||p.sub)+'</div>'+(pre?'<span class="pre-label">사전 협의 역팬 완료</span>':'')+(p.sub&&p.sub!==p.name?'<div class="sub">구독닉 '+esc(p.sub)+'</div>':'')+'</div><div class="idcol">'+esc(p.id)+'</div><div><span class="tag '+(p.type==='10역팬'?'ten':'one')+'"><b>'+(p.cost===10?'10개':'1개')+'</b><small>역팬</small></span></div><a class="station" target="_blank" rel="noopener" href="https://www.sooplive.com/station/'+encodeURIComponent(p.id)+'">방송국 열기</a><input class="check" aria-label="'+esc(p.name)+' 완료" type="checkbox" data-id="'+esc(p.id)+'" '+(d?'checked':'')+' '+(pre||syncing?'disabled':'')+'></div>'}).join(''):'<div class="empty">조건에 맞는 대상이 없습니다.</div>';
+  el('list').innerHTML=visible.length?visible.map(p=>{const d=checked.has(p.id),pre=PRE_COMPLETED.has(p.id);return '<div class="row '+(p.type==='10역팬'?'type-ten':'type-one')+' '+(d?'done':'')+' '+(pre?'pre-done':'')+'"><div>'+p.rank+'</div><div class="amount">'+p.amount.toLocaleString()+'</div><div><div class="name">'+esc(p.name||p.sub)+'</div>'+(pre?'<span class="pre-label">사전 협의 역팬 완료</span>':'')+(p.sub&&p.sub!==p.name?'<div class="sub">구독닉 '+esc(p.sub)+'</div>':'')+'</div><div class="idcol">'+esc(p.id)+'</div><div><span class="tag '+(p.type==='10역팬'?'ten':'one')+'"><b>'+(p.cost===10?'10개':'1개')+'</b><small>역팬</small></span></div><a class="station" target="_blank" rel="noopener" href="https://www.sooplive.com/station/'+encodeURIComponent(p.id)+'">방송국 열기</a><input class="check" aria-label="'+esc(p.name)+' 완료" type="checkbox" data-id="'+esc(p.id)+'" '+(d?'checked':'')+' '+(pre?'disabled':'')+'></div>'}).join(''):'<div class="empty">조건에 맞는 대상이 없습니다.</div>';
   document.querySelectorAll('.check').forEach(c=>c.onchange=()=>saveStatus(c.dataset.id,c.checked));
   const done=people.filter(p=>checked.has(p.id)).length,left=people.length-done,stars=people.filter(p=>!checked.has(p.id)).reduce((s,p)=>s+p.cost,0);
   el('total').textContent=people.length+'명';el('done').textContent=done+'명';el('left').textContent=left+'명';el('stars').textContent=stars.toLocaleString()+'개';el('bar').style.width=(done/people.length*100)+'%'
 }
 el('q').oninput=render;el('filter').onchange=render;
 el('reset').onclick=async()=>{if(!confirm('사전 협의 완료를 제외한 모든 체크를 초기화할까요?'))return;const key=el('adminKey').value.trim();if(!key){alert('관리 비밀번호를 먼저 입력해주세요.');return}syncing=true;setSync('초기화 중');try{const r=await fetch(API_URL,{method:'DELETE',headers:{'X-Admin-Key':key}});const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(data.error||'초기화 실패');checked=new Set(PRE_COMPLETED);setSync('초기화 완료','ok');render()}catch(e){alert(e.message==='unauthorized'?'관리 비밀번호가 맞지 않습니다.':'초기화하지 못했습니다.');setSync('초기화 실패','bad')}finally{syncing=false}};
-render();loadStatus();setInterval(loadStatus,15000);
+render();loadStatus();setInterval(loadStatus,5000);
 </script></body></html>
