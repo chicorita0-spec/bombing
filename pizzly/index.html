@@ -65,31 +65,29 @@
     <div id="fxLayer" class="fx-layer" aria-hidden="true"></div>
     <div id="combo" class="combo"><b id="comboCount">0</b><span>HIT COMBO</span></div>
 
-    <section class="lower-ui">
-      <div class="controls">
-        <button id="attackBtn" class="attack-button single"><span class="attack-gun-icon" aria-hidden="true">🔫</span><span class="cost">100</span><span><b>단발 공격</b><small>1 SHOT</small></span></button>
-        <button id="multiBtn" class="attack-button multi"><span class="attack-gun-icon rapid" aria-hidden="true">🔫</span><span class="cost">1000</span><span><b>11연속 사격</b><small>11 SHOTS</small></span></button>
-      </div>
+    <section class="lower-ui raid-control-ui">
+      <div class="auto-hp-notice"><b>⚙ AUTO HP</b><span>누적 총알 수에 따라 보스 HP가 자동으로 조정됩니다.</span><small>막타 당첨 확률은 보유한 총알 수에 비례합니다.</small></div>
+      <div class="controls"><button id="raidStartBtn" class="attack-button raid-start" type="button"><span class="attack-gun-icon" aria-hidden="true">🎯</span><span><b>막타 레이드 시작</b><small>SHUFFLE &amp; FINAL HIT</small></span></button><button id="pauseBtn" class="attack-button raid-pause" type="button" disabled><span aria-hidden="true">⏸</span><span><b>일시정지</b><small>PAUSE</small></span></button></div>
     </section>
 
     <!-- 왼쪽 아래 후원 대기열 패널 -->
     <aside class="left-panel" style="position: absolute; left: 15px; bottom: 85px; width: 240px; background: rgba(20, 20, 30, 0.95); border: 2px solid #555; border-radius: 8px; padding: 10px; z-index: 100; color: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
       
       <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 6px;">
-        <h3 style="margin: 0; font-size: 14px; color: #ffea00;">📋 후원 대기열</h3>
+        <h3 style="margin: 0; font-size: 14px; color: #ffea00;">📋 레이드 참가 명단</h3>
         <button id="toggleTextareaBtn" type="button" style="background: #333; color: #ffea00; border: 1px solid #666; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 11px;">메모장 숨기기</button>
       </div>
 
       <div id="textareaContainer">
-        <p style="font-size: 10px; color: #aaa; margin: 0 0 4px 0;">형식: 닉네임 횟수 (줄바꿈)</p>
-        <textarea id="bulkQueueInput" placeholder="예시)&#10;부밍이 500" style="width: 100%; height: 90px; background: #111; color: #00ff66; border: 1px solid #444; border-radius: 4px; padding: 6px; font-family: monospace; font-size: 11px; resize: none; box-sizing: border-box; margin-bottom: 6px;"></textarea>
+        <p style="font-size: 10px; color: #aaa; margin: 0 0 4px 0;">형식: 닉네임 별풍선개수 (줄바꿈)</p>
+        <textarea id="bulkQueueInput" placeholder="예시)&#10;부밍이 500&#10;밍밍이 1000" style="width: 100%; height: 90px; background: #111; color: #00ff66; border: 1px solid #444; border-radius: 4px; padding: 6px; font-family: monospace; font-size: 11px; resize: none; box-sizing: border-box; margin-bottom: 6px;"></textarea>
       </div>
       
       <div style="display: flex; gap: 5px;">
-        <button id="bulkApplyBtn" type="button" style="flex: 1; background: #7b2cbf; color: #fff; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">랜덤 일괄 시작</button>
+        <button id="bulkApplyBtn" type="button" style="flex: 1; background: #7b2cbf; color: #fff; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">명단 확인·장전</button>
         <button id="bulkClearBtn" type="button" style="background: #333; color: #aaa; border: 1px solid #555; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px;">비우기</button>
       </div>
-      <div id="bulkStatusText" style="font-size: 10px; color: #ffea00; margin-top: 5px; text-align: center;">대기 중인 공격 없음</div>
+      <div id="bulkStatusText" style="font-size: 10px; color: #ffea00; margin-top: 5px; text-align: center;">참가 명단을 입력해주세요</div>
     </aside>
 
     <!-- 오른쪽 설정창 -->
@@ -98,10 +96,10 @@
       <div id="settingsBody" class="settings-body">
         <h2>게임 밸런스</h2>
         <label>보스 이름<input id="bossNameInput" type="text" value="피즐리베어" /></label>
-        <label>보스 최대 체력<input id="maxHpInput" type="number" min="1" value="33000" /></label>
+        
         <label>최소 데미지<input id="minDamageInput" type="number" min="0" value="1" /></label>
         <label>최대 데미지<input id="maxDamageInput" type="number" min="1" value="1500" /></label>
-        <label>1000개 공격 횟수<input id="multiCountInput" type="number" min="1" max="100" value="11" /></label>
+        
         <label>연사 간격(ms)<input id="shotIntervalInput" type="number" min="50" max="2000" value="240" /></label>
         
         <label style="display: flex; align-items: center; justify-content: space-between; margin: 12px 0; border-top: 1px solid #444; padding-top: 10px; cursor: pointer;">
@@ -112,23 +110,11 @@
           </div>
         </label>
 
-        <label style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; opacity: 0.5;">
-          <span>방송 API 연동 (현재 비활성화)</span>
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" id="apiEnabledInput" disabled style="width: 18px; height: 18px; cursor: not-allowed;" />
-            <span id="apiStatusText" style="font-size: 13px; font-weight: bold; color: #888;">OFF</span>
-          </div>
-        </label>
+        
 
-        <h2 style="margin-top:0.8em; font-size: 14px; color: #888;">API 테스트 후원 (사용 불가)</h2>
-        <div class="settings-actions" style="opacity: 0.5;">
-          <button id="test100Btn" type="button" disabled style="background:#333; cursor: not-allowed; color: #777;">100개 테스트</button>
-          <button id="test1000Btn" type="button" disabled style="background:#333; cursor: not-allowed; color: #777;">1000개 테스트</button>
-        </div>
-
-        <div class="settings-actions">
-          <button id="applySettingsBtn" type="button">적용·보스 초기화</button>
-          <button id="healBtn" type="button">체력만 회복</button>
+        <div class="raid-rule-box"><b>레이드 규칙</b><span>100개당 1발 · 1,000개당 11발</span><span>모든 총알은 무작위 순서로 발사됩니다.</span><span>확정 막타 탄환은 반드시 명중합니다.</span><span>사용된 총알은 다음 판으로 이월되지 않습니다.</span></div><div class="settings-actions">
+          <button id="applySettingsBtn" type="button">설정 적용</button>
+          <button id="healBtn" type="button">현재 판 초기화</button>
         </div>
       </div>
     </aside>
@@ -156,8 +142,8 @@
         <!-- 버튼 -->
         <button id="restartBtn" type="button">다음 보스 소환</button>
 
-        <!-- 💡 초과 탄환 대기 영역을 버튼 아래 독립된 공간으로 이동 -->
-        <div id="winnerLeftover" class="winner-leftover-box"></div>
+        
+        <div id="winnerLeftover" class="winner-leftover-box">모든 참가 총알 사용 완료</div>
       </div>
     </section>
   </main>
