@@ -79,7 +79,11 @@
       </div>
 
       <div id="textareaContainer">
-        <p style="font-size: 10px; color: #aaa; margin: 0 0 4px 0;">형식: 닉네임 별풍선개수 (줄바꿈)</p>
+        <div class="queue-format-tabs" role="group" aria-label="참가 명단 입력 형식">
+          <button id="balloonModeBtn" class="queue-format-btn active" type="button" aria-pressed="true">🎈 별풍선 명단</button>
+          <button id="pinballModeBtn" class="queue-format-btn" type="button" aria-pressed="false">🎯 핀볼 복붙</button>
+        </div>
+        <p id="queueFormatHelp" class="queue-format-help">형식: 닉네임 별풍선개수 (한 줄에 한 명)</p>
         <textarea id="bulkQueueInput" placeholder="예시)&#10;부밍이 500&#10;밍밍이 1000" style="width: 100%; height: 90px; background: #111; color: #00ff66; border: 1px solid #444; border-radius: 4px; padding: 6px; font-family: monospace; font-size: 11px; resize: none; box-sizing: border-box; margin-bottom: 6px;"></textarea>
       </div>
       
@@ -112,7 +116,7 @@
 
         
 
-        <div class="raid-rule-box"><b>레이드 규칙</b><span>100개당 1발 · 1,000개당 11발</span><span>모든 총알은 무작위 순서로 발사됩니다.</span><span>확정 막타 탄환은 반드시 명중합니다.</span><span>사용된 총알은 다음 판으로 이월되지 않습니다.</span></div><div class="settings-actions">
+        <div class="raid-rule-box"><b>레이드 규칙</b><span id="raidAmountRule">100개당 1발 · 1,000개당 11발</span><span>모든 총알은 무작위 순서로 발사됩니다.</span><span>확정 막타 탄환은 반드시 명중합니다.</span><span>사용된 총알은 다음 판으로 이월되지 않습니다.</span></div><div class="settings-actions">
           <button id="applySettingsBtn" type="button">설정 적용</button>
           <button id="healBtn" type="button">현재 판 초기화</button>
         </div>

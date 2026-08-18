@@ -14,6 +14,7 @@ let raidPlan=[];
 let raidRunning=false;
 let raidPaused=false;
 let raidCancelled=false;
+let queueInputMode=localStorage.getItem('pizzlyRaidQueueMode')==='pinball'?'pinball':'balloon';
 
 const $ = s => document.querySelector(s);
 const game=$('#game'), hpFill=$('#hpFill'), hpLag=$('#hpLag'), currentHpEl=$('#currentHp'), maxHpEl=$('#maxHp'), hpPercent=$('#hpPercent');
@@ -275,9 +276,24 @@ async function animateShot(result,attacker,{finalShot=false}={}){
 
 function shotsFromAmount(amount){const n=Math.floor(Number(amount));return Math.floor(n/1000)*11+Math.floor((n%1000)/100)}
 function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]]}return arr}
-function parseParticipants(text){
+function parseBalloonParticipants(text){
   const entries=[];for(const raw of text.split(/\r?\n/)){const line=raw.trim();if(!line)continue;const match=line.match(/^(.+?)\s+([0-9,]+)$/);if(!match)throw new Error(`"${line}" 형식 오류 · 닉네임 별풍선개수로 입력해주세요.`);const nickname=match[1].trim(),amount=Number(match[2].replaceAll(',','')),count=shotsFromAmount(amount);if(!Number.isFinite(amount)||amount<100||count<1)throw new Error(`"${line}" · 최소 100개부터 참가할 수 있습니다.`);entries.push({nickname,amount,count})}if(!entries.length)throw new Error('참가 명단을 입력해주세요.');return entries
 }
+function parsePinballParticipants(text){
+  const merged=new Map();
+  const tokens=text.split(/[,，\r\n]+/).map(token=>token.trim()).filter(Boolean);
+  if(!tokens.length)throw new Error('핀볼 명단을 입력해주세요.');
+  for(const token of tokens){
+    const match=token.match(/^(.+?)\s*\*\s*([0-9]+)$/);
+    if(!match)throw new Error(`"${token}" 형식 오류 · 짱구*5,짱아*10 형식으로 입력해주세요.`);
+    const nickname=match[1].trim();
+    const count=Number(match[2]);
+    if(!nickname||!Number.isSafeInteger(count)||count<1)throw new Error(`"${token}" · 총알 수는 1발 이상이어야 합니다.`);
+    merged.set(nickname,(merged.get(nickname)||0)+count);
+  }
+  return [...merged].map(([nickname,count])=>({nickname,count,amount:null}));
+}
+function parseParticipants(text){return queueInputMode==='pinball'?parsePinballParticipants(text):parseBalloonParticipants(text)}
 function buildRaid(entries){
   const bullets=[];for(const e of entries)for(let i=0;i<e.count;i++)bullets.push({nickname:e.nickname,result:randomDamage()});shuffle(bullets);
   let finalResult=randomDamage();while(finalResult.type==='miss')finalResult=randomDamage();bullets[bullets.length-1].result=finalResult;bullets[bullets.length-1].finalShot=true;
@@ -286,9 +302,9 @@ function buildRaid(entries){
 }
 function updateRaidButtons(){if(raidStartBtn)raidStartBtn.disabled=raidRunning||!raidPlan.length;if(pauseBtn){pauseBtn.disabled=!raidRunning;pauseBtn.querySelector('b').textContent=raidPaused?'계속하기':'일시정지';pauseBtn.querySelector('small').textContent=raidPaused?'RESUME':'PAUSE'}}
 async function startRaid(){
-  if(raidRunning||!raidPlan.length)return;resetBoss(false);raidRunning=true;raidPaused=false;raidCancelled=false;updateRaidButtons();bulkQueueInput.disabled=true;bulkApplyBtn.disabled=true;bulkClearBtn.disabled=true;const total=raidPlan.length;
+  if(raidRunning||!raidPlan.length)return;resetBoss(false);raidRunning=true;raidPaused=false;raidCancelled=false;updateRaidButtons();bulkQueueInput.disabled=true;bulkApplyBtn.disabled=true;bulkClearBtn.disabled=true;setQueueModeControlsDisabled(true);const total=raidPlan.length;
   for(let i=0;i<raidPlan.length;i++){while(raidPaused&&!raidCancelled)await wait(100);if(raidCancelled||dead)break;const shot=raidPlan[i];bulkStatusText.textContent=`사격 중 · ${i+1}/${total}발 · ${shot.nickname}${shot.finalShot?' · FINAL SHOT':''}`;await animateShot(shot.result,shot.nickname,{finalShot:shot.finalShot})}
-  raidRunning=false;updateRaidButtons();bulkQueueInput.disabled=false;bulkApplyBtn.disabled=false;bulkClearBtn.disabled=false;if(!dead&&!raidCancelled)bulkStatusText.textContent='레이드 종료';
+  raidRunning=false;updateRaidButtons();bulkQueueInput.disabled=false;bulkApplyBtn.disabled=false;bulkClearBtn.disabled=false;setQueueModeControlsDisabled(false);if(!dead&&!raidCancelled)bulkStatusText.textContent='레이드 종료';
 }
 function defeatBoss(attacker,damage){
   if(dead)return;dead=true;raidRunning=false;raidPlan=[];dangerBanner.classList.remove('show');setSprite(boss,SPRITES.bossDead);restartAnimation(game,'heavy-shake');boss.classList.add('dying');hitSound(true);$('#phaseFlash').classList.add('on');$('#winnerName').textContent=attacker;$('#winnerDamage').textContent=`막타 데미지 ${damage.toLocaleString()}`;$('#winnerHitCount').textContent=totalHitCount.toLocaleString();$('#winnerLeftover').textContent='✨ 모든 참가 총알 사용 완료 · 이월 없음';
@@ -303,11 +319,27 @@ $('#restartBtn').addEventListener('click',()=>{bulkQueueInput.value='';resetBoss
 $('#applySettingsBtn').addEventListener('click',()=>{const next={...config,bossName:$('#bossNameInput').value.trim()||'피즐리베어',minDamage:Math.floor(Number($('#minDamageInput').value)),maxDamage:Math.floor(Number($('#maxDamageInput').value)),shotInterval:Math.floor(Number($('#shotIntervalInput').value)),guideEnabled:$('#guideToggleInput')?$('#guideToggleInput').checked:true};if(!Number.isFinite(next.minDamage)||next.minDamage<0)return alert('최소 데미지는 0 이상이어야 합니다.');if(!Number.isFinite(next.maxDamage)||next.maxDamage<next.minDamage)return alert('최대 데미지는 최소 데미지 이상이어야 합니다.');if(!Number.isFinite(next.shotInterval)||next.shotInterval<50)return alert('연사 간격은 50ms 이상이어야 합니다.');config=next;saveSettings();syncInputs();applyGuideVisibility();resetBoss(true);$('#settingsBody').classList.remove('open')});
 function applyGuideVisibility(){const panel=$('#damageGuidePanel'),toggle=$('#guideToggleInput'),text=$('#guideToggleText'),enabled=config.guideEnabled!==false;if(toggle)toggle.checked=enabled;if(text){text.textContent=enabled?'ON':'OFF';text.style.color=enabled?'#ffea00':'#888'}if(panel)panel.style.display=enabled?'block':'none'}
 $('#guideToggleInput')?.addEventListener('change',e=>{config.guideEnabled=e.target.checked;applyGuideVisibility()});
-window.raidAttack=({nickname='익명의 시청자',amount=100}={})=>{if(raidRunning)return;const old=bulkQueueInput.value.trim();bulkQueueInput.value=(old?old+'\n':'')+`${nickname} ${amount}`;bulkStatusText.textContent='후원 내역 추가됨 · 명단 확인·장전을 눌러주세요'};window.raidReset=()=>resetBoss(true);
+window.raidAttack=({nickname='익명의 시청자',amount=100}={})=>{if(raidRunning)return;setQueueInputMode('balloon');const old=bulkQueueInput.value.trim();bulkQueueInput.value=(old?old+'\n':'')+`${nickname} ${amount}`;bulkStatusText.textContent='후원 내역 추가됨 · 명단 확인·장전을 눌러주세요'};window.raidReset=()=>resetBoss(true);
 
 const bulkQueueInput=document.getElementById('bulkQueueInput'),bulkApplyBtn=document.getElementById('bulkApplyBtn'),bulkClearBtn=document.getElementById('bulkClearBtn'),bulkStatusText=document.getElementById('bulkStatusText');
-bulkApplyBtn.addEventListener('click',()=>{if(raidRunning)return;try{const entries=parseParticipants(bulkQueueInput.value);raidPlan=buildRaid(entries);raidCancelled=false;currentPhase=1;dead=false;updateHp(config.maxHp);const stars=entries.reduce((s,e)=>s+e.amount,0);bulkStatusText.textContent=`장전 완료 · ${entries.length}명 · ${stars.toLocaleString()}개 · ${raidPlan.length}발`;updateRaidButtons()}catch(e){alert(e.message)}});
+const balloonModeBtn=document.getElementById('balloonModeBtn'),pinballModeBtn=document.getElementById('pinballModeBtn'),queueFormatHelp=document.getElementById('queueFormatHelp'),raidAmountRule=document.getElementById('raidAmountRule');
+function setQueueModeControlsDisabled(disabled){if(balloonModeBtn)balloonModeBtn.disabled=disabled;if(pinballModeBtn)pinballModeBtn.disabled=disabled}
+function setQueueInputMode(mode,{resetPlan=true}={}){
+  if(raidRunning)return;
+  queueInputMode=mode==='pinball'?'pinball':'balloon';
+  localStorage.setItem('pizzlyRaidQueueMode',queueInputMode);
+  const isPinball=queueInputMode==='pinball';
+  balloonModeBtn?.classList.toggle('active',!isPinball);pinballModeBtn?.classList.toggle('active',isPinball);
+  balloonModeBtn?.setAttribute('aria-pressed',String(!isPinball));pinballModeBtn?.setAttribute('aria-pressed',String(isPinball));
+  if(queueFormatHelp)queueFormatHelp.textContent=isPinball?'형식: 짱구*5,짱아*10,봉미선*3 (쉼표 구분)':'형식: 닉네임 별풍선개수 (한 줄에 한 명)';
+  if(raidAmountRule)raidAmountRule.textContent=isPinball?'* 뒤 수량만큼 총알을 직접 장전합니다.':'100개당 1발 · 1,000개당 11발';
+  bulkQueueInput.placeholder=isPinball?'예시)\n짱구*5,짱아*10,봉미선*3':'예시)\n부밍이 500\n밍밍이 1000';
+  if(resetPlan){raidPlan=[];bulkStatusText.textContent=isPinball?'핀볼 복붙 모드 · 명단을 입력해주세요':'별풍선 명단 모드 · 명단을 입력해주세요';updateRaidButtons()}
+}
+balloonModeBtn?.addEventListener('click',()=>setQueueInputMode('balloon'));
+pinballModeBtn?.addEventListener('click',()=>setQueueInputMode('pinball'));
+bulkApplyBtn.addEventListener('click',()=>{if(raidRunning)return;try{const entries=parseParticipants(bulkQueueInput.value);raidPlan=buildRaid(entries);raidCancelled=false;currentPhase=1;dead=false;updateHp(config.maxHp);if(queueInputMode==='pinball'){bulkStatusText.textContent=`장전 완료 · ${entries.length}명 · ${raidPlan.length}발`}else{const stars=entries.reduce((s,e)=>s+e.amount,0);bulkStatusText.textContent=`장전 완료 · ${entries.length}명 · ${stars.toLocaleString()}개 · ${raidPlan.length}발`}updateRaidButtons()}catch(e){alert(e.message)}});
 bulkClearBtn.addEventListener('click',()=>{if(raidRunning)return;bulkQueueInput.value='';raidPlan=[];bulkStatusText.textContent='참가 명단을 입력해주세요';updateRaidButtons()});
 raidStartBtn.addEventListener('click',startRaid);pauseBtn.addEventListener('click',()=>{if(!raidRunning)return;raidPaused=!raidPaused;bulkStatusText.textContent=raidPaused?'⏸ 레이드 일시정지':bulkStatusText.textContent;updateRaidButtons()});
 const toggleTextareaBtn=document.getElementById('toggleTextareaBtn'),textareaContainer=document.getElementById('textareaContainer');toggleTextareaBtn?.addEventListener('click',()=>{const open=textareaContainer.style.display==='none';textareaContainer.style.display=open?'block':'none';toggleTextareaBtn.textContent=open?'메모장 숨기기':'메모장 펼치기'});
-loadSettings();applyGuideVisibility();updateHp(config.maxHp);clearDamageLog();updateRaidButtons();
+loadSettings();applyGuideVisibility();updateHp(config.maxHp);clearDamageLog();setQueueInputMode(queueInputMode,{resetPlan:false});updateRaidButtons();
