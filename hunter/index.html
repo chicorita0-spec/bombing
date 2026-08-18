@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FINAL HIT · 보스 레이드</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="game" class="game" data-attack-type="gun" aria-label="보스 레이드">
+    <img class="background" src="assets/background.webp" alt="" />
+    <div class="bg-energy"></div><div class="scanlines"></div><div class="vignette"></div>
+    <img class="frame" src="assets/ui-frame.png" alt="" />
+
+    <header class="topbar">
+      <section class="player-card">
+        <img src="assets/bombing_idle.png" alt="바밍" />
+        <div><strong>바밍</strong><span>RAID UNIT</span></div>
+      </section>
+
+      <section class="boss-ui">
+        <div class="boss-title-row"><span class="boss-tag">BOSS</span><h1 id="bossName">피즐리베어</h1><span id="phaseText">PHASE 1</span></div>
+        <div class="hp-shell"><div id="hpLag" class="hp-lag"></div><div id="hpFill" class="hp-fill"></div><div class="hp-shine"></div></div>
+        <div class="hp-meta"><span id="currentHp">30,000</span><span class="slash">/</span><span id="maxHp">30,000</span><span id="hpPercent">100%</span><span id="armorStatus" class="armor-status">🛡 DEF +0%</span></div>
+      </section>
+    </header>
+
+    <div class="attacker-panel battle-history-panel">
+        <div class="damage-log-head">
+          <span>RECENT DAMAGE</span>
+          <b>최근 10회</b>
+        </div>
+        <div id="damageLog" class="damage-log" aria-live="polite">
+          <div class="damage-log-empty">공격 대기 중</div>
+        </div>
+        <div id="lastAttack" class="last-attack">대기 중</div>
+      </div>
+
+    <!-- 데미지 확률 안내 -->
+    <div id="damageGuidePanel" class="damage-guide">
+      <img src="assets/damage.png" alt="데미지 확률 안내">
+    </div>
+
+    <div id="phaseNotice" class="phase-notice" aria-live="polite" aria-hidden="true">
+      <div id="phaseNoticeIcon" class="phase-notice-icon">⚠</div>
+      <strong id="phaseNoticeTitle">PHASE 2</strong>
+      <span id="phaseNoticeBossText">피즐리베어가 분노했습니다.</span>
+      <em id="phaseNoticeDefenseText">방어력이 10% 증가합니다.</em>
+    </div>
+
+    <div id="dangerBanner" class="danger-banner">DANGER · EXECUTION RANGE</div>
+    <div id="phaseFlash" class="phase-flash"></div>
+
+    <div id="jackpotNotice" class="jackpot-notice" aria-live="assertive" aria-hidden="true">
+      <span class="jackpot-burst">✦</span>
+      <strong>JACKPOT!!</strong>
+      <em>초대박 데미지</em>
+    </div>
+
+    <img id="bombing" class="fighter bombing" src="assets/bombing_idle.png" alt="바밍 캐릭터" />
+    <div id="muzzle" class="muzzle"></div>
+    <img id="boss" class="fighter boss" src="assets/pizzlybear_idle.png" alt="피즐리베어" />
+    <div id="bossShadow" class="boss-shadow"></div>
+    <div id="centerLog" class="center-log" aria-hidden="true"></div>
+    <div id="fxLayer" class="fx-layer" aria-hidden="true"></div>
+    <div id="combo" class="combo"><b id="comboCount">0</b><span>HIT COMBO</span></div>
+
+    <section class="lower-ui raid-control-ui">
+      <div class="auto-hp-notice"><b>⚙ AUTO HP</b><span>누적 공격 횟수에 따라 보스 HP가 자동으로 조정됩니다.</span><small>막타 당첨 확률은 보유한 공격 횟수에 비례합니다.</small></div>
+      <div class="controls"><button id="raidStartBtn" class="attack-button raid-start" type="button"><span id="attackTypeIcon" class="attack-gun-icon" aria-hidden="true">🎯</span><span><b>막타 레이드 시작</b><small>SHUFFLE &amp; FINAL HIT</small></span></button><button id="pauseBtn" class="attack-button raid-pause" type="button" disabled><span aria-hidden="true">⏸</span><span><b>일시정지</b><small>PAUSE</small></span></button></div>
+    </section>
+
+    <!-- 왼쪽 아래 후원 대기열 패널 -->
+    <aside class="left-panel" style="position: absolute; left: 15px; bottom: 85px; width: 240px; background: rgba(20, 20, 30, 0.95); border: 2px solid #555; border-radius: 8px; padding: 10px; z-index: 100; color: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 6px;">
+        <h3 style="margin: 0; font-size: 14px; color: #ffea00;">📋 레이드 참가 명단</h3>
+        <button id="toggleTextareaBtn" type="button" style="background: #333; color: #ffea00; border: 1px solid #666; padding: 2px 5px; border-radius: 4px; cursor: pointer; font-size: 11px;">메모장 숨기기</button>
+      </div>
+
+      <div id="textareaContainer">
+        <div class="queue-format-tabs" role="group" aria-label="참가 명단 입력 형식">
+          <button id="balloonModeBtn" class="queue-format-btn active" type="button" aria-pressed="true">🎈 별풍선 명단</button>
+          <button id="pinballModeBtn" class="queue-format-btn" type="button" aria-pressed="false">🎯 핀볼 복붙</button>
+        </div>
+        <p id="queueFormatHelp" class="queue-format-help">형식: 닉네임 별풍선개수 (한 줄에 한 명)</p>
+        <textarea id="bulkQueueInput" placeholder="예시)&#10;부밍이 500&#10;밍밍이 1000" style="width: 100%; height: 90px; background: #111; color: #00ff66; border: 1px solid #444; border-radius: 4px; padding: 6px; font-family: monospace; font-size: 11px; resize: none; box-sizing: border-box; margin-bottom: 6px;"></textarea>
+      </div>
+      
+      <div style="display: flex; gap: 5px;">
+        <button id="bulkApplyBtn" type="button" style="flex: 1; background: #7b2cbf; color: #fff; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;">명단 확인·장전</button>
+        <button id="bulkClearBtn" type="button" style="background: #333; color: #aaa; border: 1px solid #555; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px;">비우기</button>
+      </div>
+      <div id="bulkStatusText" style="font-size: 10px; color: #ffea00; margin-top: 5px; text-align: center;">참가 명단을 입력해주세요</div>
+    </aside>
+
+    <!-- 오른쪽 설정창 -->
+    <aside class="settings-panel">
+      <button id="settingsToggle" type="button" class="settings-toggle">⚙</button>
+      <div id="settingsBody" class="settings-body">
+        <h2>게임 밸런스</h2>
+        <label>보스 프리셋<select id="bossPresetInput"><option value="pizzlybear">피즐리베어 · 총기</option><option value="tyrannosaurus">티라노사우루스 · 쌍검</option></select></label>
+        <label>보스 이름<input id="bossNameInput" type="text" value="피즐리베어" /></label>
+        
+        <label>최소 데미지<input id="minDamageInput" type="number" min="0" value="1" /></label>
+        <label>최대 데미지<input id="maxDamageInput" type="number" min="1" value="1500" /></label>
+        
+        <label>연사 간격(ms)<input id="shotIntervalInput" type="number" min="50" max="2000" value="240" /></label>
+        
+        <label style="display: flex; align-items: center; justify-content: space-between; margin: 12px 0; border-top: 1px solid #444; padding-top: 10px; cursor: pointer;">
+          <span style="font-size: 13px; font-weight: bold; color: #ffea00;">데미지 확률 안내 표시</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="guideToggleInput" checked style="width: 18px; height: 18px; cursor: pointer;" />
+            <span id="guideToggleText" style="font-size: 13px; font-weight: bold; color: #ffea00;">ON</span>
+          </div>
+        </label>
+
+        
+
+        <div class="raid-rule-box"><b>레이드 규칙</b><span id="raidAmountRule">100개당 1회 · 1,000개당 11회</span><span>모든 공격은 무작위 순서로 진행됩니다.</span><span>확정 막타 공격은 반드시 명중합니다.</span><span>사용된 공격 횟수는 다음 판으로 이월되지 않습니다.</span></div><div class="settings-actions">
+          <button id="applySettingsBtn" type="button">설정 적용</button>
+          <button id="healBtn" type="button">현재 판 초기화</button>
+        </div>
+      </div>
+    </aside>
+
+    <section id="winnerScreen" class="winner-screen" aria-hidden="true">
+      <div class="winner-rays"></div>
+      <div class="winner-card">
+        <img class="winner-boss" src="assets/pizzlybear_die.png" alt="쓰러진 피즐리베어">
+        <img class="winner-bombing" src="assets/bombing_idle.png" alt="승리한 바밍">
+
+        <span class="final-label">FINAL HIT</span>
+        <!-- 💡 막타 친 사람 이름 h2 태그 -->
+        <h2 id="winnerName">테스트 시청자</h2>
+        <p id="winnerBossResultText">피즐리베어 처치 성공</p>
+        <div id="winnerDamage" class="winner-damage"></div>
+
+        <div class="winner-hit-count">
+            총 타격 횟수 :
+            <span id="winnerHitCount">0</span>회
+        </div>
+
+        <!-- 웃긴 통계 -->
+        <div id="funStatsContainer"></div>
+
+        <!-- 버튼 -->
+        <button id="restartBtn" type="button">다음 보스 소환</button>
+
+        
+        <div id="winnerLeftover" class="winner-leftover-box">모든 참가 공격 사용 완료</div>
+      </div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
